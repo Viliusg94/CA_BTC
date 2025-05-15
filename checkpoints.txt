@@ -1,0 +1,14 @@
+
+## Naudojimas
+
+1. Aktyvuokite virtualią aplinką:venv\Scripts\activate
+
+
+2. Paleiskite programą: main.py
+
+## Checkpoints
+
+1. ✅ Duomenų rinkimas ir apdorojimas
+2. ⬜ Mašininio mokymosi modelio kūrimas
+3. ⬜ Prekybos strategijų kūrimas
+4. ⬜ Sistemos testavimas ir vertinimas
