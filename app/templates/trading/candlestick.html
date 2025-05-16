@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Žvakių grafikas - BTC Prekybos Sistema{% endblock %}
+
+{% block styles %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 500px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .volume-container {
+        position: relative;
+        height: 150px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .chart-controls {
+        margin-bottom: 15px;
+    }
+    
+    .indicator-card {
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Žvakių grafikas</h1>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="chart-controls">
+            <div class="input-group">
+                <span class="input-group-text">Simbolis</span>
+                <select class="form-select" id="symbolSelector">
+                    <option value="BTCUSDT" selected>Bitcoin (BTC/USDT)</option>
+                    <option value="ETHUSDT">Ethereum (ETH/USDT)</option>
+                    <option value="LTCUSDT">Litecoin (LTC/USDT)</option>
+                </select>
+                <span class="input-group-text">Intervalas</span>
+                <select class="form-select" id="intervalSelector">
+                    <option value="5m">5 min</option>
+                    <option value="15m">15 min</option>
+                    <option value="30m">30 min</option>
+                    <option value="1h" selected>1 val</option>
+                    <option value="4h">4 val</option>
+                    <option value="1d">1 diena</option>
+                </select>
+                <button class="btn btn-primary" id="updateBtn">Atnaujinti</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary" id="autoUpdateBtn" data-state="on">Auto atnaujinimas: ĮJ</button>
+            <button class="btn btn-outline-info" id="timeframeBtn" data-timeframe="100">Įrašų: 100</button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-9">
+        <!-- Žvakių grafikas -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">BTC/USDT Žvakių grafikas</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary" id="drawToolsBtn">
+                        <i class="fas fa-pencil-alt me-1"></i>Piešimo įrankiai
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="resetZoomBtn">
+                        <i class="fas fa-undo me-1"></i>Atstatyti
+                    </button>
+                    <div class="dropdown d-inline-block ms-2">
+                        <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-download me-1"></i>Eksportuoti
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li><a class="dropdown-item" href="#" id="exportCsvBtn">Eksportuoti į CSV</a></li>
+                            <li><a class="dropdown-item" href="#" id="exportJsonBtn">Eksportuoti į JSON</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="candlestickChart"></canvas>
+                </div>
+                <div class="volume-container">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3">
+        <!-- Techniniai indikatoriai -->
+        <div class="card indicator-card">
+            <div class="card-header">
+                <h5 class="card-title">Techniniai indikatoriai</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="sma20Switch" checked>
+                    <label class="form-check-label" for="sma20Switch">SMA 20</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="sma50Switch" checked>
+                    <label class="form-check-label" for="sma50Switch">SMA 50</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="bollingerSwitch">
+                    <label class="form-check-label" for="bollingerSwitch">Bollinger Bands</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="rsiSwitch">
+                    <label class="form-check-label" for="rsiSwitch">RSI</label>
+                </div>
+                <hr>
+                <button class="btn btn-primary btn-sm w-100 mb-2" id="addIndicatorBtn">
+                    <i class="fas fa-plus me-1"></i>Pridėti indikatorių
+                </button>
+            </div>
+        </div>
+        
+        <!-- Prekybos signalai -->
+        <div class="card indicator-card">
+            <div class="card-header">
+                <h5 class="card-title">Prekybos signalai</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush" id="signals-list">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success me-2">Pirkti</span>
+                            <small>2025-05-16 12:30</small>
+                        </div>
+                        <span>48,750 €</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-danger me-2">Parduoti</span>
+                            <small>2025-05-16 14:45</small>
+                        </div>
+                        <span>50,320 €</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js biblioteka -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Reikalingos papildomos bibliotekos žvakių grafikams -->
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.2.1/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.1/dist/chartjs-chart-financial.min.js"></script>
+
+<script>
+    // Žvakių grafiko skriptas
+    let candlestickChart = null;
+    let volumeChart = null;
+    let updateInterval = null;
+    
+    // Spalvos
+    const upColor = 'rgba(75, 192, 192, 0.8)';
+    const downColor = 'rgba(255, 99, 132, 0.8)';
+    
+    // Inicializuoja grafikus, kai dokumentas užkrautas
+    document.addEventListener('DOMContentLoaded', function() {
+        initCharts();
+        setupEventListeners();
+    });
+    
+    // Inicializuoja visus grafikus
+    function initCharts() {
+        fetchCandlestickData().then(data => {
+            initCandlestickChart(data);
+            initVolumeChart(data);
+            startAutoUpdate();
+        });
+    }
+    
+    // Nustato visus event listener'ius
+    function setupEventListeners() {
+        // Atnaujinimo mygtukas
+        document.getElementById('updateBtn').addEventListener('click', function() {
+            updateCharts();
+        });
+        
+        // Auto atnaujinimo mygtukas
+        document.getElementById('autoUpdateBtn').addEventListener('click', function() {
+            const currentState = this.getAttribute('data-state');
+            if (currentState === 'on') {
+                stopAutoUpdate();
+                this.setAttribute('data-state', 'off');
+                this.textContent = 'Auto atnaujinimas: IŠJ';
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-outline-danger');
+            } else {
+                startAutoUpdate();
+                this.setAttribute('data-state', 'on');
+                this.textContent = 'Auto atnaujinimas: ĮJ';
+                this.classList.remove('btn-outline-danger');
+                this.classList.add('btn-outline-secondary');
+            }
+        });
+        
+        // Indikatorių jungikliai
+        document.querySelectorAll('.form-check-input').forEach(input => {
+            input.addEventListener('change', updateIndicators);
+        });
+        
+        // Atstatymo mygtukas
+        document.getElementById('resetZoomBtn').addEventListener('click', function() {
+            if (candlestickChart) {
+                candlestickChart.resetZoom();
+            }
+        });
+
+        // Eksportavimo mygtukai
+        document.getElementById('exportCsvBtn').addEventListener('click', function() {
+            // Gauname duomenis
+            fetchCandlestickData().then(data => {
+                if (!data) return;
+                
+                const symbol = document.getElementById('symbolSelector').value;
+                const interval = document.getElementById('intervalSelector').value;
+                const fileName = `${symbol}-${interval}-${new Date().toISOString().slice(0, 10)}.csv`;
+                
+                exportChartDataToCsv(data, fileName);
+            });
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', function() {
+            // Gauname duomenis
+            fetchCandlestickData().then(data => {
+                if (!data) return;
+                
+                const symbol = document.getElementById('symbolSelector').value;
+                const interval = document.getElementById('intervalSelector').value;
+                const fileName = `${symbol}-${interval}-${new Date().toISOString().slice(0, 10)}.json`;
+                
+                exportChartDataToJson(data, fileName);
+            });
+        });
+    }
+    
+    // Gauna žvakių grafiko duomenis
+    async function fetchCandlestickData() {
+        try {
+            const symbol = document.getElementById('symbolSelector').value;
+            const interval = document.getElementById('intervalSelector').value;
+            const timeframe = document.getElementById('timeframeBtn').getAttribute('data-timeframe');
+            
+            const response = await fetch(`/trading/api/candlestick-data?symbol=${symbol}&interval=${interval}&limit=${timeframe}`);
+            const data = await response.json();
+            
+            // Gauname prekybos signalus
+            const signalsResponse = await fetch(`/trading/api/signals?symbol=${symbol}&interval=${interval}`);
+            const signalsData = await signalsResponse.json();
+            
+            // Pridedame signalų duomenis
+            data.buySignals = signalsData.buySignals;
+            data.sellSignals = signalsData.sellSignals;
+            
+            // Atnaujiname signalų sąrašą
+            updateSignalsList(data);
+            
+            return data;
+        } catch (error) {
+            console.error('Klaida gaunant duomenis:', error);
+            return null;
+        }
+    }
+    
+    // Inicializuoja žvakių grafiką
+    function initCandlestickChart(data) {
+        if (!data) return;
+        
+        const ctx = document.getElementById('candlestickChart').getContext('2d');
+        
+        // Paruošiame duomenis žvakėms
+        const candlestickData = [];
+        for (let i = 0; i < data.labels.length; i++) {
+            candlestickData.push({
+                x: new Date(data.labels[i]),
+                o: data.open[i],
+                h: data.high[i],
+                l: data.low[i],
+                c: data.close[i]
+            });
+        }
+        
+        // Paruošiame duomenis slenkančiam vidurkiui
+        const sma20Data = [];
+        for (let i = 0; i < data.labels.length; i++) {
+            if (data.sma20[i] !== null) {
+                sma20Data.push({
+                    x: new Date(data.labels[i]),
+                    y: data.sma20[i]
+                });
+            }
+        }
+        
+        const sma50Data = [];
+        for (let i = 0; i < data.labels.length; i++) {
+            if (data.sma50[i] !== null) {
+                sma50Data.push({
+                    x: new Date(data.labels[i]),
+                    y: data.sma50[i]
+                });
+            }
+        }
+        
+        // Sukuriame grafiką
+        candlestickChart = new Chart(ctx, {
+            type: 'candlestick',
+            data: {
+                datasets: [
+                    {
+                        label: 'BTC/USDT',
+                        data: candlestickData,
+                        borderColor: function(ctx) {
+                            return ctx.p0.parsed.o < ctx.p0.parsed.c ? upColor : downColor;
+                        },
+                        color: function(ctx) {
+                            return ctx.p0.parsed.o < ctx.p0.parsed.c ? downColor : upColor;
+                        }
+                    },
+                    {
+                        label: 'SMA 20',
+                        type: 'line',
+                        data: sma20Data,
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    },
+                    {
+                        label: 'SMA 50',
+                        type: 'line',
+                        data: sma50Data,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            displayFormats: {
+                                hour: 'HH:mm',
+                                day: 'MM-dd'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Laikas'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Kaina (EUR)'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.type === 'candlestick') {
+                                    const data = context.raw;
+                                    return [
+                                        'Atidarymo: ' + data.o.toFixed(2),
+                                        'Aukščiausia: ' + data.h.toFixed(2),
+                                        'Žemiausia: ' + data.l.toFixed(2),
+                                        'Uždarymo: ' + data.c.toFixed(2)
+                                    ];
+                                }
+                                return context.dataset.label + ': ' + context.raw.y.toFixed(2);
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'BTC/USDT Kaina'
+                    },
+                    zoom: {
+                        zoom: {
+                            drag: {
+                                enabled: true
+                            },
+                            mode: 'x'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Inicializuoja apyvartos grafiką
+    function initVolumeChart(data) {
+        if (!data) return;
+        
+        const ctx = document.getElementById('volumeChart').getContext('2d');
+        
+        // Paruošiame duomenis apyvartoms
+        const volumeData = [];
+        for (let i = 0; i < data.labels.length; i++) {
+            volumeData.push({
+                x: new Date(data.labels[i]),
+                y: data.volumes[i]
+            });
+        }
+        
+        // Sukuriame spalvas pagal kainų judėjimą (žalia - kylant, raudona - krintant)
+        const backgroundColors = [];
+        for (let i = 0; i < data.close.length; i++) {
+            if (i === 0) {
+                backgroundColors.push(upColor);
+                continue;
+            }
+            
+            backgroundColors.push(data.close[i] >= data.close[i-1] ? upColor : downColor);
+        }
+        
+        // Sukuriame grafiką
+        volumeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                datasets: [{
+                    label: 'Apyvarta',
+                    data: volumeData,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            displayFormats: {
+                                hour: 'HH:mm',
+                                day: 'MM-dd'
+                            }
+                        },
+                        display: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Apyvarta'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Funkcija grafikų atnaujinimui
+    function updateCharts() {
+        // Sustabdome auto atnaujinimą
+        stopAutoUpdate();
+        
+        // Gauname naujus duomenis
+        fetchCandlestickData().then(data => {
+            // Sunaikinti ankstesnius grafikus
+            if (candlestickChart) {
+                candlestickChart.destroy();
+                candlestickChart = null;
+            }
+            
+            if (volumeChart) {
+                volumeChart.destroy();
+                volumeChart = null;
+            }
+            
+            // Inicializuojame naujus grafikus
+            initCandlestickChart(data);
+            initVolumeChart(data);
+            
+            // Pradedame auto atnaujinimą iš naujo, jei buvo įjungtas
+            if (document.getElementById('autoUpdateBtn').getAttribute('data-state') === 'on') {
+                startAutoUpdate();
+            }
+        });
+    }
+    
+    // Auto atnaujinimo funkcijos
+    function startAutoUpdate() {
+        // Išvalome ankstesnį intervalą jei buvo
+        stopAutoUpdate();
+        
+        // Nustatome naują
+        updateInterval = setInterval(updateCharts, 30000); // Atnaujina kas 30 sekundžių
+    }
+    
+    function stopAutoUpdate() {
+        if (updateInterval) {
+            clearInterval(updateInterval);
+            updateInterval = null;
+        }
+    }
+    
+    // Indikatorių atnaujinimo funkcija
+    function updateIndicators() {
+        if (!candlestickChart) return;
+        
+        // SMA 20
+        candlestickChart.data.datasets[1].hidden = !document.getElementById('sma20Switch').checked;
+        
+        // SMA 50
+        candlestickChart.data.datasets[2].hidden = !document.getElementById('sma50Switch').checked;
+        
+        // Atnaujiname grafiką
+        candlestickChart.update();
+    }
+    
+    // Signalų atnaujinimo funkcija
+    function updateSignalsList(data) {
+        const signalsList = document.getElementById('signals-list');
+        
+        // Išvalome esamą sąrašą
+        signalsList.innerHTML = '';
+        
+        // Gauname ir rūšiuojame signalus pagal datą (naujausi viršuje)
+        const buySignals = Object.entries(data.buySignals || {})
+            .map(([date, price]) => ({ date, price, type: 'buy' }));
+            
+        const sellSignals = Object.entries(data.sellSignals || {})
+            .map(([date, price]) => ({ date, price, type: 'sell' }));
+            
+        const allSignals = [...buySignals, ...sellSignals]
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Pridedame pirmus 10 signalų į sąrašą
+        allSignals.slice(0, 10).forEach(signal => {
+            const isDateObject = signal.date instanceof Date;
+            const formattedDate = isDateObject 
+                ? signal.date.toLocaleString()
+                : signal.date;
+                
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            
+            const signalLabel = signal.type === 'buy' ? 'Pirkti' : 'Parduoti';
+            const signalClass = signal.type === 'buy' ? 'bg-success' : 'bg-danger';
+            
+            listItem.innerHTML = `
+                <div>
+                    <span class="badge ${signalClass} me-2">${signalLabel}</span>
+                    <small>${formattedDate}</small>
+                </div>
+                <span>${signal.price.toFixed(2)} €</span>
+            `;
+            
+            signalsList.appendChild(listItem);
+        });
+        
+        // Jei nėra signalų, rodome pranešimą
+        if (allSignals.length === 0) {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item text-center';
+            listItem.textContent = 'Nėra prekybos signalų';
+            signalsList.appendChild(listItem);
+        }
+    }
+</script>
+
+<!-- Nuorodą į eksportavimo skriptą -->
+<script src="{{ url_for('static', filename='js/export-data.js') }}"></script>
+{% endblock %}

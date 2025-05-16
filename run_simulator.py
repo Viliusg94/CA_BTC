@@ -23,6 +23,10 @@ from simulator.signals.hybrid_signal_generator import HybridSignalGenerator
 from simulator.signals.simple_test_signal_generator import SimpleTestSignalGenerator  # Naujas generatorius
 from simulator.strategies.trend_following_strategy import TrendFollowingStrategy
 from simulator.strategies.mean_reversion_strategy import MeanReversionStrategy
+from simulator.strategies.breakout_strategy import BreakoutStrategy
+from simulator.strategies.machine_learning_strategy import MachineLearningStrategy
+from simulator.risk.trailing_stop import TrailingStop
+from simulator.risk.portfolio_risk_manager import PortfolioRiskManager
 
 # Konfigūruojame logerio formatą
 logging.basicConfig(

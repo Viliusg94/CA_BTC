@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Grafikų analizė - BTC Prekybos Sistema{% endblock %}
+
+{% block styles %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .small-chart-container {
+        position: relative;
+        height: 200px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .chart-controls {
+        margin-bottom: 15px;
+    }
+    
+    .chart-card {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Grafikų analizė</h1>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="chart-controls">
+            <div class="input-group">
+                <span class="input-group-text">Simbolis</span>
+                <select class="form-select" id="symbolSelector">
+                    <option value="BTCUSDT" selected>Bitcoin (BTC/USDT)</option>
+                    <option value="ETHUSDT">Ethereum (ETH/USDT)</option>
+                    <option value="LTCUSDT">Litecoin (LTC/USDT)</option>
+                </select>
+                <span class="input-group-text">Intervalas</span>
+                <select class="form-select" id="intervalSelector">
+                    <option value="5m">5 min</option>
+                    <option value="15m">15 min</option>
+                    <option value="30m">30 min</option>
+                    <option value="1h" selected>1 val</option>
+                    <option value="4h">4 val</option>
+                    <option value="1d">1 diena</option>
+                </select>
+                <button class="btn btn-primary" id="updateBtn">Atnaujinti</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary" id="autoUpdateBtn" data-state="on">Auto atnaujinimas: ĮJ</button>
+            <button class="btn btn-outline-info" id="timeframeBtn" data-timeframe="100">Įrašų: 100</button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Kainos grafikas -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h5 class="card-title">BTC/USDT kaina ir slenkantys vidurkiai</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Apyvartos grafikas -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h5 class="card-title">Prekybos apyvarta</h5>
+            </div>
+            <div class="card-body">
+                <div class="small-chart-container">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MACD grafikas -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h5 class="card-title">MACD indikatorius</h5>
+            </div>
+            <div class="card-body">
+                <div class="small-chart-container">
+                    <canvas id="macdChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Portfelio grafikas -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h5 class="card-title">Portfelio istorija</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="portfolioChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Indikatorių paaiškinimai -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h5 class="card-title">Techniniai indikatoriai</h5>
+            </div>
+            <div class="card-body">
+                <h6>Slenkantys vidurkiai:</h6>
+                <p><small>Parodo vidutinę kainą per pasirinktą periodą. SMA 20 seka trumpalaikius trendus, SMA 50 - ilgesnius.</small></p>
+                
+                <h6>MACD:</h6>
+                <p><small>Moving Average Convergence Divergence - indikatorius, kuris parodo momento kryptį ir stiprumą. Kai MACD kerta signalo liniją iš apačios į viršų - tai pirkimo signalas, ir atvirkščiai.</small></p>
+                
+                <h6>Prekybos signalai:</h6>
+                <p><small>Trikampiai į viršų rodo pirkimo signalus, trikampiai į apačią - pardavimo signalus.</small></p>
+            </div>
+        </div>
+        
+        <!-- Prekybos statistika -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h5 class="card-title">Prekybos statistika</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Pirkimo signalai
+                        <span class="badge bg-success rounded-pill">5</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Pardavimo signalai
+                        <span class="badge bg-danger rounded-pill">5</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Pelningumas
+                        <span class="badge bg-primary rounded-pill">+5.32%</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js biblioteka -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Mūsų grafikų skriptas -->
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Atnaujinimo mygtukas
+        const updateBtn = document.getElementById('updateBtn');
+        if (updateBtn) {
+            updateBtn.addEventListener('click', function() {
+                updateCharts();
+            });
+        }
+        
+        // Auto atnaujinimo mygtukas
+        const autoUpdateBtn = document.getElementById('autoUpdateBtn');
+        if (autoUpdateBtn) {
+            autoUpdateBtn.addEventListener('click', function() {
+                const currentState = this.getAttribute('data-state');
+                if (currentState === 'on') {
+                    stopAutoUpdate();
+                    this.setAttribute('data-state', 'off');
+                    this.textContent = 'Auto atnaujinimas: IŠJ';
+                    this.classList.remove('btn-outline-secondary');
+                    this.classList.add('btn-outline-danger');
+                } else {
+                    startAutoUpdate();
+                    this.setAttribute('data-state', 'on');
+                    this.textContent = 'Auto atnaujinimas: ĮJ';
+                    this.classList.remove('btn-outline-danger');
+                    this.classList.add('btn-outline-secondary');
+                }
+            });
+        }
+        
+        // Laiko rėžio mygtukas
+        const timeframeBtn = document.getElementById('timeframeBtn');
+        if (timeframeBtn) {
+            timeframeBtn.addEventListener('click', function() {
+                const currentTimeframe = parseInt(this.getAttribute('data-timeframe'));
+                let newTimeframe;
+                
+                // Keičiame laiko rėžį cikliškai
+                if (currentTimeframe === 50) {
+                    newTimeframe = 100;
+                } else if (currentTimeframe === 100) {
+                    newTimeframe = 200;
+                } else {
+                    newTimeframe = 50;
+                }
+                
+                this.setAttribute('data-timeframe', newTimeframe);
+                this.textContent = `Įrašų: ${newTimeframe}`;
+                
+                // Atnaujiname grafikus su nauju laiko rėžiu
+                updateCharts();
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,16 @@
+{
+    "symbol": "BTCUSDT",
+    "interval": "5m",
+    "initial_balance": 10000.0,
+    "trade_enabled": false,
+    "trading_mode": "paper",
+    "strategies": ["trend", "mean_reversion"],
+    "risk_params": {
+        "max_position_size_usd": 1000,
+        "stop_loss_percentage": 0.05,
+        "take_profit_percentage": 0.1,
+        "max_open_positions": 3,
+        "daily_loss_limit_percentage": 5.0,
+        "max_trades_per_day": 10
+    }
+}
