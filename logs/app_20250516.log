@@ -1,0 +1,195 @@
+2025-05-16 09:31:56,724 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:31:56,725 - core.app - INFO - Aplikacijos resursai iðvalyti.
+2025-05-16 09:32:20,944 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:32:20,945 - core.app - INFO - Aplikacijos resursai iðvalyti.
+2025-05-16 09:32:25,075 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:32:25,083 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:32:25,083 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:32:26,360 - services.data_service - INFO - Duomenys ákelti ið CSV failo (naujesni): data/processed/btc_features.csv
+2025-05-16 09:32:26,360 - services.data_service - INFO - Duomenys ákelti ið CSV failo (naujesni): data/processed/btc_features.csv
+2025-05-16 09:32:26,367 - simulator.risk.risk_manager - INFO - Inicializuotas rizikos valdytojas: risk_per_trade=2.0%, max_risk_multiplier=3.0, stop_loss_atr_multiplier=2.0, take_profit_risk_ratio=2.0
+2025-05-16 09:32:26,367 - simulator.risk.risk_manager - INFO - Inicializuotas rizikos valdytojas: risk_per_trade=2.0%, max_risk_multiplier=3.0, stop_loss_atr_multiplier=2.0, take_profit_risk_ratio=2.0
+2025-05-16 09:32:26,367 - simulator.risk.dynamic_risk_adjuster - INFO - Inicializuotas dinaminis rizikos reguliatorius: base_risk=2.0%, min_risk=0.5%, max_risk=5.0%
+2025-05-16 09:32:26,367 - simulator.risk.dynamic_risk_adjuster - INFO - Inicializuotas dinaminis rizikos reguliatorius: base_risk=2.0%, min_risk=0.5%, max_risk=5.0%
+2025-05-16 09:32:26,368 - simulator.execution.order_executor - INFO - Inicializuotas uþsakymø vykdytojas: fee_model=percentage, fee_percentage=0.1%, slippage_model=random, slippage_range=(0.0001, 0.002)
+2025-05-16 09:32:26,368 - simulator.execution.order_executor - INFO - Inicializuotas uþsakymø vykdytojas: fee_model=percentage, fee_percentage=0.1%, slippage_model=random, slippage_range=(0.0001, 0.002)
+2025-05-16 09:32:26,368 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:32:26,368 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:32:26,416 - simulator.engine - INFO - Atnaujintas esamas portfelis: Simulator Portfolio
+2025-05-16 09:32:26,416 - simulator.engine - INFO - Atnaujintas esamas portfelis: Simulator Portfolio
+2025-05-16 09:32:26,416 - simulator.engine - INFO - Inicializuotas simuliatoriaus variklis. Pradinis balansas: 10000.0
+2025-05-16 09:32:26,416 - simulator.engine - INFO - Inicializuotas simuliatoriaus variklis. Pradinis balansas: 10000.0
+2025-05-16 09:32:26,427 - simulator.engine - INFO - Ákelti duomenys nuo 2023-01-03 07:15:00 iki 2025-05-14 19:15:00 (82796 eilutës)
+2025-05-16 09:32:26,427 - simulator.engine - INFO - Ákelti duomenys nuo 2023-01-03 07:15:00 iki 2025-05-14 19:15:00 (82796 eilutës)
+2025-05-16 09:32:26,428 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: TechnicalIndicatorSignalGenerator
+2025-05-16 09:32:26,428 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: TechnicalIndicatorSignalGenerator
+2025-05-16 09:32:26,428 - simulator.signals.technical_indicator_signal_generator - INFO - Inicializuotas TechnicalIndicatorSignalGenerator su indikatoriais: ['SMA_Signal', 'RSI_Signal', 'MACD_Signal', 'Bollinger_Signal']
+2025-05-16 09:32:26,428 - simulator.signals.technical_indicator_signal_generator - INFO - Inicializuotas TechnicalIndicatorSignalGenerator su indikatoriais: ['SMA_Signal', 'RSI_Signal', 'MACD_Signal', 'Bollinger_Signal']
+2025-05-16 09:32:26,429 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: ModelPredictionSignalGenerator
+2025-05-16 09:32:26,429 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: ModelPredictionSignalGenerator
+2025-05-16 09:32:26,429 - simulator.signals.model_prediction_signal_generator - INFO - Inicializuotas ML prognoziø signalø generatorius: prediction_col=predicted_direction, confidence_col=confidence, threshold=0.6
+2025-05-16 09:32:26,429 - simulator.signals.model_prediction_signal_generator - INFO - Inicializuotas ML prognoziø signalø generatorius: prediction_col=predicted_direction, confidence_col=confidence, threshold=0.6
+2025-05-16 09:32:26,430 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: HybridSignalGenerator
+2025-05-16 09:32:26,430 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: HybridSignalGenerator
+2025-05-16 09:32:26,430 - simulator.signals.hybrid_signal_generator - INFO - Inicializuotas hibridinis signalø generatorius su 2 generatoriais: ['TechnicalIndicatorSignalGenerator', 'ModelPredictionSignalGenerator']
+2025-05-16 09:32:26,430 - simulator.signals.hybrid_signal_generator - INFO - Inicializuotas hibridinis signalø generatorius su 2 generatoriais: ['TechnicalIndicatorSignalGenerator', 'ModelPredictionSignalGenerator']
+2025-05-16 09:32:26,430 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: TrendFollowingStrategy
+2025-05-16 09:32:26,430 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: TrendFollowingStrategy
+2025-05-16 09:32:26,430 - simulator.strategies.trend_following_strategy - INFO - Inicializuota TrendFollowingStrategy strategija, cooldown_periods=5
+2025-05-16 09:32:26,430 - simulator.strategies.trend_following_strategy - INFO - Inicializuota TrendFollowingStrategy strategija, cooldown_periods=5
+2025-05-16 09:32:26,431 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: MeanReversionStrategy
+2025-05-16 09:32:26,431 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: MeanReversionStrategy
+2025-05-16 09:32:26,431 - simulator.strategies.mean_reversion_strategy - INFO - Inicializuota MeanReversionStrategy strategija, z_score_threshold=2.0, lookback_period=20
+2025-05-16 09:32:26,431 - simulator.strategies.mean_reversion_strategy - INFO - Inicializuota MeanReversionStrategy strategija, z_score_threshold=2.0, lookback_period=20
+2025-05-16 09:32:26,437 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:32:26,437 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:32:26,438 - simulator.engine - INFO - Simuliatoriaus bûsena atstatyta á pradinæ
+2025-05-16 09:32:26,438 - simulator.engine - INFO - Simuliatoriaus bûsena atstatyta á pradinæ
+2025-05-16 09:32:26,438 - simulator.engine - INFO - Pradedama simuliacija su 82796 áraðais
+2025-05-16 09:32:26,438 - simulator.engine - INFO - Pradedama simuliacija su 82796 áraðais
+2025-05-16 09:33:26,246 - simulator.engine - INFO - Pasiekta duomenø pabaiga.
+2025-05-16 09:33:26,246 - simulator.engine - INFO - Pasiekta duomenø pabaiga.
+2025-05-16 09:33:26,392 - simulator.execution.trading_statistics - WARNING - Nëra prekybos operacijø metrikø skaièiavimui
+2025-05-16 09:33:26,392 - simulator.execution.trading_statistics - WARNING - Nëra prekybos operacijø metrikø skaièiavimui
+2025-05-16 09:33:29,580 - simulator.engine - INFO - Simuliacijos rezultatai iðsaugoti data/simulation/ kataloge
+2025-05-16 09:33:29,580 - simulator.engine - INFO - Simuliacijos rezultatai iðsaugoti data/simulation/ kataloge
+2025-05-16 09:33:29,583 - simulator.engine - INFO - Simuliacija baigta. Ávykdyta 82795 þingsniø, 0 sandoriø.
+2025-05-16 09:33:29,583 - simulator.engine - INFO - Simuliacija baigta. Ávykdyta 82795 þingsniø, 0 sandoriø.
+2025-05-16 09:33:29,599 - core.app - INFO - Aplikacijos resursai iðvalyti.
+2025-05-16 09:33:29,599 - core.app - INFO - Aplikacijos resursai iðvalyti.
+2025-05-16 09:38:48,453 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:38:48,461 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:38:48,461 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:38:49,362 - services.data_service - INFO - Duomenys ákelti ið CSV failo (naujesni): data/processed/btc_features.csv
+2025-05-16 09:38:49,362 - services.data_service - INFO - Duomenys ákelti ið CSV failo (naujesni): data/processed/btc_features.csv
+2025-05-16 09:38:49,388 - simulator.risk.risk_manager - INFO - Inicializuotas rizikos valdytojas: risk_per_trade=2.0%, max_risk_multiplier=3.0, stop_loss_atr_multiplier=2.0, take_profit_risk_ratio=2.0
+2025-05-16 09:38:49,388 - simulator.risk.risk_manager - INFO - Inicializuotas rizikos valdytojas: risk_per_trade=2.0%, max_risk_multiplier=3.0, stop_loss_atr_multiplier=2.0, take_profit_risk_ratio=2.0
+2025-05-16 09:38:49,389 - simulator.risk.dynamic_risk_adjuster - INFO - Inicializuotas dinaminis rizikos reguliatorius: base_risk=2.0%, min_risk=0.5%, max_risk=5.0%
+2025-05-16 09:38:49,389 - simulator.risk.dynamic_risk_adjuster - INFO - Inicializuotas dinaminis rizikos reguliatorius: base_risk=2.0%, min_risk=0.5%, max_risk=5.0%
+2025-05-16 09:38:49,390 - simulator.execution.order_executor - INFO - Inicializuotas uþsakymø vykdytojas: fee_model=percentage, fee_percentage=0.1%, slippage_model=random, slippage_range=(0.0001, 0.002)
+2025-05-16 09:38:49,390 - simulator.execution.order_executor - INFO - Inicializuotas uþsakymø vykdytojas: fee_model=percentage, fee_percentage=0.1%, slippage_model=random, slippage_range=(0.0001, 0.002)
+2025-05-16 09:38:49,390 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:38:49,390 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:38:49,402 - simulator.engine - INFO - Atnaujintas esamas portfelis: Simulator Portfolio
+2025-05-16 09:38:49,402 - simulator.engine - INFO - Atnaujintas esamas portfelis: Simulator Portfolio
+2025-05-16 09:38:49,403 - simulator.engine - INFO - Inicializuotas simuliatoriaus variklis. Pradinis balansas: 10000.0
+2025-05-16 09:38:49,403 - simulator.engine - INFO - Inicializuotas simuliatoriaus variklis. Pradinis balansas: 10000.0
+2025-05-16 09:38:49,414 - simulator.engine - INFO - Ákelti duomenys nuo 2023-01-03 07:15:00 iki 2025-05-14 19:15:00 (82796 eilutës)
+2025-05-16 09:38:49,414 - simulator.engine - INFO - Ákelti duomenys nuo 2023-01-03 07:15:00 iki 2025-05-14 19:15:00 (82796 eilutës)
+2025-05-16 09:38:49,415 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: TechnicalIndicatorSignalGenerator
+2025-05-16 09:38:49,415 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: TechnicalIndicatorSignalGenerator
+2025-05-16 09:38:49,416 - simulator.signals.technical_indicator_signal_generator - INFO - Inicializuotas TechnicalIndicatorSignalGenerator su indikatoriais: ['SMA_Signal', 'RSI_Signal', 'MACD_Signal', 'Bollinger_Signal']
+2025-05-16 09:38:49,416 - simulator.signals.technical_indicator_signal_generator - INFO - Inicializuotas TechnicalIndicatorSignalGenerator su indikatoriais: ['SMA_Signal', 'RSI_Signal', 'MACD_Signal', 'Bollinger_Signal']
+2025-05-16 09:38:49,416 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: ModelPredictionSignalGenerator
+2025-05-16 09:38:49,416 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: ModelPredictionSignalGenerator
+2025-05-16 09:38:49,417 - simulator.signals.model_prediction_signal_generator - INFO - Inicializuotas ML prognoziø signalø generatorius: prediction_col=predicted_direction, confidence_col=confidence, threshold=0.6
+2025-05-16 09:38:49,417 - simulator.signals.model_prediction_signal_generator - INFO - Inicializuotas ML prognoziø signalø generatorius: prediction_col=predicted_direction, confidence_col=confidence, threshold=0.6
+2025-05-16 09:38:49,417 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: HybridSignalGenerator
+2025-05-16 09:38:49,417 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: HybridSignalGenerator
+2025-05-16 09:38:49,417 - simulator.signals.hybrid_signal_generator - INFO - Inicializuotas hibridinis signalø generatorius su 2 generatoriais: ['TechnicalIndicatorSignalGenerator', 'ModelPredictionSignalGenerator']
+2025-05-16 09:38:49,417 - simulator.signals.hybrid_signal_generator - INFO - Inicializuotas hibridinis signalø generatorius su 2 generatoriais: ['TechnicalIndicatorSignalGenerator', 'ModelPredictionSignalGenerator']
+2025-05-16 09:38:49,419 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: TrendFollowingStrategy
+2025-05-16 09:38:49,419 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: TrendFollowingStrategy
+2025-05-16 09:38:49,419 - simulator.strategies.trend_following_strategy - INFO - Inicializuota TrendFollowingStrategy strategija, cooldown_periods=5
+2025-05-16 09:38:49,419 - simulator.strategies.trend_following_strategy - INFO - Inicializuota TrendFollowingStrategy strategija, cooldown_periods=5
+2025-05-16 09:38:49,419 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: MeanReversionStrategy
+2025-05-16 09:38:49,419 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: MeanReversionStrategy
+2025-05-16 09:38:49,420 - simulator.strategies.mean_reversion_strategy - INFO - Inicializuota MeanReversionStrategy strategija, z_score_threshold=2.0, lookback_period=20
+2025-05-16 09:38:49,420 - simulator.strategies.mean_reversion_strategy - INFO - Inicializuota MeanReversionStrategy strategija, z_score_threshold=2.0, lookback_period=20
+2025-05-16 09:38:49,425 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:38:49,425 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:38:49,425 - simulator.engine - INFO - Simuliatoriaus bûsena atstatyta á pradinæ
+2025-05-16 09:38:49,425 - simulator.engine - INFO - Simuliatoriaus bûsena atstatyta á pradinæ
+2025-05-16 09:38:49,426 - simulator.engine - INFO - Pradedama simuliacija su 82796 áraðais
+2025-05-16 09:38:49,426 - simulator.engine - INFO - Pradedama simuliacija su 82796 áraðais
+2025-05-16 09:39:50,793 - simulator.engine - INFO - Pasiekta duomenø pabaiga.
+2025-05-16 09:39:50,793 - simulator.engine - INFO - Pasiekta duomenø pabaiga.
+2025-05-16 09:39:50,942 - simulator.execution.trading_statistics - WARNING - Nëra prekybos operacijø metrikø skaièiavimui
+2025-05-16 09:39:50,942 - simulator.execution.trading_statistics - WARNING - Nëra prekybos operacijø metrikø skaièiavimui
+2025-05-16 09:39:54,155 - simulator.engine - INFO - Simuliacijos rezultatai iðsaugoti data/simulation/ kataloge
+2025-05-16 09:39:54,155 - simulator.engine - INFO - Simuliacijos rezultatai iðsaugoti data/simulation/ kataloge
+2025-05-16 09:39:54,157 - simulator.engine - INFO - Simuliacija baigta. Ávykdyta 82795 þingsniø, 0 sandoriø.
+2025-05-16 09:39:54,157 - simulator.engine - INFO - Simuliacija baigta. Ávykdyta 82795 þingsniø, 0 sandoriø.
+2025-05-16 09:39:55,869 - simulator.execution.trading_statistics - WARNING - Nëra prekybos operacijø grafiko kûrimui
+2025-05-16 09:39:55,869 - simulator.execution.trading_statistics - WARNING - Nëra prekybos operacijø grafiko kûrimui
+2025-05-16 09:39:55,964 - core.app - INFO - Aplikacijos resursai iðvalyti.
+2025-05-16 09:39:55,964 - core.app - INFO - Aplikacijos resursai iðvalyti.
+2025-05-16 09:53:43,760 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:55:30,455 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 09:55:30,580 - __main__ - INFO - Ákeliami duomenys ið failo: data/processed/btc_features.csv
+2025-05-16 09:55:31,305 - simulator.risk.risk_manager - INFO - Inicializuotas rizikos valdytojas: risk_per_trade=2.0%, max_risk_multiplier=3.0, stop_loss_atr_multiplier=2.0, take_profit_risk_ratio=2.0
+2025-05-16 09:55:31,305 - simulator.risk.dynamic_risk_adjuster - INFO - Inicializuotas dinaminis rizikos reguliatorius: base_risk=2.0%, min_risk=0.5%, max_risk=5.0%
+2025-05-16 09:55:31,306 - simulator.execution.order_executor - INFO - Inicializuotas uþsakymø vykdytojas: fee_model=percentage, fee_percentage=0.1%, slippage_model=random, slippage_range=(0.0001, 0.002)
+2025-05-16 09:55:31,306 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:55:31,334 - simulator.engine - INFO - Atnaujintas esamas portfelis: Simulator Portfolio
+2025-05-16 09:55:31,335 - simulator.engine - INFO - Inicializuotas simuliatoriaus variklis. Pradinis balansas: 10000
+2025-05-16 09:55:31,336 - simulator.engine - INFO - Atliekama duomenø diagnostika...
+2025-05-16 09:55:31,384 - simulator.utils.data_diagnostics - INFO - Duomenø diagnostikos rezultatai:
+2025-05-16 09:55:31,384 - simulator.utils.data_diagnostics - INFO - - Eiluèiø skaièius: 82796
+2025-05-16 09:55:31,385 - simulator.utils.data_diagnostics - INFO - - Laiko intervalas: nuo 2023-01-03 07:15:00 iki 2025-05-14 19:15:00
+2025-05-16 09:55:31,385 - simulator.utils.data_diagnostics - INFO - - Tipinis þingsnis: 0 days 00:15:00
+2025-05-16 09:55:31,385 - simulator.utils.data_diagnostics - INFO - - Rasti indikatoriai: SMA_7, SMA_25, SMA_30, SMA_50, SMA_200, EMA_7, EMA_14, EMA_30, RSI_7, RSI_14, MACD, MACD_signal, MACD_hist, ATR_14, Volume_SMA20
+2025-05-16 09:55:31,386 - simulator.utils.data_diagnostics - WARNING - - Nëra prognoziø stulpelio 'predicted_direction'
+2025-05-16 09:55:31,386 - simulator.engine - WARNING - Duomenyse trûksta techniniø indikatoriø arba ML prognoziø
+2025-05-16 09:55:31,386 - simulator.engine - INFO - Pridedami testiniai signalai ir prognozës simuliacijos testavimui
+2025-05-16 09:55:31,405 - simulator.utils.data_diagnostics - INFO - Pridëtas SMA_Signal stulpelis
+2025-05-16 09:55:31,415 - simulator.utils.data_diagnostics - INFO - Pridëti RSI_14 ir RSI_Signal stulpeliai
+2025-05-16 09:55:31,438 - simulator.utils.data_diagnostics - INFO - Pridëti predicted_direction ir confidence stulpeliai
+2025-05-16 09:55:31,481 - simulator.engine - INFO - Ákelti duomenys nuo 2023-01-03 07:15:00 iki 2025-05-14 19:15:00 (82796 eilutës)
+2025-05-16 09:55:31,486 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: TechnicalIndicatorSignalGenerator
+2025-05-16 09:55:31,486 - simulator.signals.technical_indicator_signal_generator - INFO - Inicializuotas TechnicalIndicatorSignalGenerator su indikatoriais: ['SMA_Signal', 'RSI_Signal', 'MACD_Signal', 'Bollinger_Signal']
+2025-05-16 09:55:31,487 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: ModelPredictionSignalGenerator
+2025-05-16 09:55:31,487 - simulator.signals.model_prediction_signal_generator - INFO - Inicializuotas ML prognoziø signalø generatorius: prediction_col=predicted_direction, confidence_col=confidence, threshold=0.6
+2025-05-16 09:55:31,487 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: HybridSignalGenerator
+2025-05-16 09:55:31,487 - simulator.signals.hybrid_signal_generator - INFO - Inicializuotas hibridinis signalø generatorius su 2 generatoriais: ['TechnicalIndicatorSignalGenerator', 'ModelPredictionSignalGenerator']
+2025-05-16 09:55:31,488 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: TrendFollowingStrategy
+2025-05-16 09:55:31,488 - simulator.strategies.trend_following_strategy - INFO - Inicializuota TrendFollowingStrategy strategija, cooldown_periods=5
+2025-05-16 09:55:31,488 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: MeanReversionStrategy
+2025-05-16 09:55:31,489 - simulator.strategies.mean_reversion_strategy - INFO - Inicializuota MeanReversionStrategy strategija, z_score_threshold=2.0, lookback_period=20
+2025-05-16 09:55:31,494 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 09:55:31,494 - simulator.engine - INFO - Simuliatoriaus bûsena atstatyta á pradinæ
+2025-05-16 09:55:31,494 - simulator.engine - INFO - Pradedama simuliacija su 82796 áraðais
+2025-05-16 09:56:33,853 - simulator.engine - INFO - Pasiekta duomenø pabaiga.
+2025-05-16 09:56:34,005 - simulator.execution.trading_statistics - WARNING - Nëra prekybos operacijø metrikø skaièiavimui
+2025-05-16 09:56:37,750 - simulator.engine - INFO - Simuliacijos rezultatai iðsaugoti data/simulation/ kataloge
+2025-05-16 09:56:37,754 - simulator.engine - INFO - Simuliacija baigta. Ávykdyta 82795 þingsniø, 0 sandoriø.
+2025-05-16 09:56:38,075 - core.app - INFO - Aplikacijos resursai iðvalyti.
+2025-05-16 10:10:41,407 - core.app - INFO - Aplikacija inicializuota.
+2025-05-16 10:10:41,564 - __main__ - INFO - Ákeliami duomenys ið failo: data/processed/btc_features.csv
+2025-05-16 10:10:42,307 - simulator.risk.risk_manager - INFO - Inicializuotas rizikos valdytojas: risk_per_trade=2.0%, max_risk_multiplier=3.0, stop_loss_atr_multiplier=2.0, take_profit_risk_ratio=2.0
+2025-05-16 10:10:42,308 - simulator.risk.dynamic_risk_adjuster - INFO - Inicializuotas dinaminis rizikos reguliatorius: base_risk=2.0%, min_risk=0.5%, max_risk=5.0%
+2025-05-16 10:10:42,308 - simulator.execution.order_executor - INFO - Inicializuotas uþsakymø vykdytojas: fee_model=percentage, fee_percentage=0.1%, slippage_model=random, slippage_range=(0.0001, 0.002)
+2025-05-16 10:10:42,308 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 10:10:42,352 - simulator.engine - INFO - Atnaujintas esamas portfelis: Simulator Portfolio
+2025-05-16 10:10:42,352 - simulator.engine - INFO - Inicializuotas simuliatoriaus variklis. Pradinis balansas: 50000.0
+2025-05-16 10:10:42,353 - simulator.engine - INFO - Atliekama duomenø diagnostika...
+2025-05-16 10:10:42,373 - simulator.utils.data_diagnostics - INFO - Duomenø diagnostikos rezultatai:
+2025-05-16 10:10:42,374 - simulator.utils.data_diagnostics - INFO - - Eiluèiø skaièius: 82796
+2025-05-16 10:10:42,374 - simulator.utils.data_diagnostics - INFO - - Laiko intervalas: nuo 2023-01-03 07:15:00 iki 2025-05-14 19:15:00
+2025-05-16 10:10:42,375 - simulator.utils.data_diagnostics - INFO - - Tipinis þingsnis: 0 days 00:15:00
+2025-05-16 10:10:42,375 - simulator.utils.data_diagnostics - INFO - - Rasti indikatoriai: SMA_7, SMA_25, SMA_30, SMA_50, SMA_200, EMA_7, EMA_14, EMA_30, RSI_7, RSI_14, MACD, MACD_signal, MACD_hist, ATR_14, Volume_SMA20
+2025-05-16 10:10:42,375 - simulator.utils.data_diagnostics - WARNING - - Nëra prognoziø stulpelio 'predicted_direction'
+2025-05-16 10:10:42,376 - simulator.engine - WARNING - Duomenyse trûksta techniniø indikatoriø arba ML prognoziø
+2025-05-16 10:10:42,376 - simulator.engine - INFO - Pridedami testiniai signalai ir prognozës simuliacijos testavimui
+2025-05-16 10:10:42,394 - simulator.utils.data_diagnostics - INFO - Pridëtas SMA_Signal stulpelis
+2025-05-16 10:10:42,407 - simulator.utils.data_diagnostics - INFO - Pridëti RSI_14 ir RSI_Signal stulpeliai
+2025-05-16 10:10:42,413 - simulator.utils.data_diagnostics - INFO - Pridëti predicted_direction ir confidence stulpeliai
+2025-05-16 10:10:42,469 - simulator.engine - INFO - Ákelti duomenys nuo 2023-01-03 07:15:00 iki 2025-05-14 19:15:00 (82796 eilutës)
+2025-05-16 10:10:42,472 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: TechnicalIndicatorSignalGenerator
+2025-05-16 10:10:42,473 - simulator.signals.technical_indicator_signal_generator - INFO - Inicializuotas TechnicalIndicatorSignalGenerator su indikatoriais: ['SMA_Signal', 'RSI_Signal', 'MACD_Signal', 'Bollinger_Signal']
+2025-05-16 10:10:42,473 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: ModelPredictionSignalGenerator
+2025-05-16 10:10:42,474 - simulator.signals.model_prediction_signal_generator - INFO - Inicializuotas ML prognoziø signalø generatorius: prediction_col=predicted_direction, confidence_col=confidence, threshold=0.6
+2025-05-16 10:10:42,474 - simulator.signals.base_signal_generator - INFO - Inicializuotas signalø generatorius: HybridSignalGenerator
+2025-05-16 10:10:42,475 - simulator.signals.hybrid_signal_generator - INFO - Inicializuotas hibridinis signalø generatorius su 2 generatoriais: ['TechnicalIndicatorSignalGenerator', 'ModelPredictionSignalGenerator']
+2025-05-16 10:10:42,476 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: TrendFollowingStrategy
+2025-05-16 10:10:42,476 - simulator.strategies.trend_following_strategy - INFO - Inicializuota TrendFollowingStrategy strategija, cooldown_periods=5
+2025-05-16 10:10:42,476 - simulator.strategies.base_strategy - INFO - Inicializuota prekybos strategija: MeanReversionStrategy
+2025-05-16 10:10:42,477 - simulator.strategies.mean_reversion_strategy - INFO - Inicializuota MeanReversionStrategy strategija, z_score_threshold=2.0, lookback_period=20
+2025-05-16 10:10:42,484 - simulator.execution.trading_statistics - INFO - Inicializuota prekybos statistikos klasë
+2025-05-16 10:10:42,485 - simulator.engine - INFO - Simuliatoriaus bûsena atstatyta á pradinæ
+2025-05-16 10:10:42,485 - simulator.engine - INFO - Pradedama simuliacija su 82796 áraðais
+2025-05-16 10:11:45,365 - simulator.engine - INFO - Pasiekta duomenø pabaiga.
+2025-05-16 10:11:45,513 - simulator.execution.trading_statistics - WARNING - Nëra prekybos operacijø metrikø skaièiavimui
+2025-05-16 10:11:49,368 - simulator.engine - INFO - Simuliacijos rezultatai iðsaugoti data/simulation/ kataloge
+2025-05-16 10:11:49,372 - simulator.engine - INFO - Simuliacija baigta. Ávykdyta 82795 þingsniø, 0 sandoriø.
+2025-05-16 10:11:49,689 - core.app - INFO - Aplikacijos resursai iðvalyti.

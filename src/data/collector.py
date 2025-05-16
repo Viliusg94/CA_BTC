@@ -2,31 +2,40 @@
 import os
 import pandas as pd
 import datetime
+from datetime import timedelta
 from dotenv import load_dotenv
 from binance.client import Client
 from database.models import init_db, BtcPriceData
 from database.repository import BtcPriceRepository
 
-def collect_btc_data(start_date='2020-01-01', end_date=None):
+def collect_btc_data(start_date=None, end_date=None):
     """
     Renka Bitcoin kainos duomenis iš Binance API ir išsaugo MySQL duomenų bazėje
     
     Args:
-        start_date (str): Pradžios data formatu 'YYYY-MM-DD'
-        end_date (str): Pabaigos data formatu 'YYYY-MM-DD'
+        start_date: Pradžios data (str arba datetime)
+        end_date: Pabaigos data (str arba datetime)
         
     Returns:
         pandas.DataFrame: Surinktų duomenų DataFrame arba None jei įvyko klaida
     """
     print(f"Renkame BTC duomenis nuo {start_date}")
     
+    # Jei nenurodyta pradžios data, naudojame datą prieš metus
+    if start_date is None:
+        start_date = datetime.datetime.now() - timedelta(days=365)
+    elif isinstance(start_date, str):
+        start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+    
     # Jei nenurodyta pabaigos data, naudojame šiandienos datą
     if end_date is None:
-        end_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        end_date = datetime.datetime.now()
+    elif isinstance(end_date, str):
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
     
     # Konvertuojame į timestamp formatą
-    start_timestamp = int(datetime.datetime.strptime(start_date, '%Y-%m-%d').timestamp() * 1000)
-    end_timestamp = int(datetime.datetime.strptime(end_date, '%Y-%m-%d').timestamp() * 1000)
+    start_timestamp = int(start_date.timestamp() * 1000)
+    end_timestamp = int(end_date.timestamp() * 1000)
     
     # Įkelti aplinkos kintamuosius iš .env failo
     load_dotenv()
