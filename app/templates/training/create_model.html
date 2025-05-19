@@ -224,6 +224,26 @@
                         </div>
                     </div>
                     
+                    <!-- Išsaugojimų parametrai -->
+                    <div class="form-section">
+                        <h4 class="form-section-title">Išsaugojimų parametrai</h4>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="saveCheckpoints" name="save_checkpoints" checked>
+                            <label class="form-check-label" for="saveCheckpoints">Išsaugoti tarpinius taškus</label>
+                            <div class="param-description">Išsaugo modelio būseną periodiškai.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="checkpointFrequency" class="form-label">Išsaugojimų dažnumas (epochos)</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1" id="checkpointFrequency" name="checkpoint_frequency" min="1" max="20" step="1" value="5">
+                                <span class="range-value ms-2" id="checkpointFrequencyValue">5</span>
+                            </div>
+                            <div class="param-description">Kas kiek epochų išsaugoti modelio būseną.</div>
+                        </div>
+                    </div>
+                    
                     <!-- Patvirtinimo mygtukas -->
                     <div class="text-center mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
@@ -286,10 +306,11 @@
             'layers': document.getElementById('layersValue'),
             'units': document.getElementById('unitsValue'),
             'dropout': document.getElementById('dropoutValue'),
-            'epochs': document.getElementById('epochsValue')
+            'epochs': document.getElementById('epochsValue'),
+            'checkpointFrequency': document.getElementById('checkpointFrequencyValue')
         };
         
-        // Susieti visus range laukus su jų reikšmių rodmenimis
+        // Susieti visus range laukus su jų reikšmėmis rodmenimis
         for (const [inputId, valueElement] of Object.entries(rangeInputs)) {
             const inputElement = document.getElementById(inputId);
             
@@ -338,6 +359,8 @@
             const optimizer = document.getElementById('optimizer').value;
             const earlyStopping = document.getElementById('earlyStopping').checked;
             const useValidation = document.getElementById('useValidation').checked;
+            const saveCheckpoints = document.getElementById('saveCheckpoints').checked;
+            const checkpointFrequency = document.getElementById('checkpointFrequency').value;
             
             // Sukuriame HTML turinį
             let html = `
@@ -363,6 +386,10 @@
                 <p><strong>Optimizatorius:</strong> ${optimizer}</p>
                 <p><strong>Ankstyvasis sustojimas:</strong> ${earlyStopping ? 'Taip' : 'Ne'}</p>
                 <p><strong>Validacijos rinkinys:</strong> ${useValidation ? 'Taip' : 'Ne'}</p>
+                
+                <h6 class="mt-3">Išsaugojimų parametrai</h6>
+                <p><strong>Išsaugoti tarpinius taškus:</strong> ${saveCheckpoints ? 'Taip' : 'Ne'}</p>
+                <p><strong>Išsaugojimų dažnumas:</strong> ${checkpointFrequency} epochų</p>
             `;
             
             summary.innerHTML = html;
@@ -517,6 +544,11 @@
         
         // Pradinis parametrų suvestinės atnaujinimas
         updateParamSummary();
+        
+        // Išsaugojimų parametrų slankikliai
+        document.getElementById('checkpointFrequency').addEventListener('input', function() {
+            document.getElementById('checkpointFrequencyValue').textContent = this.value;
+        });
     });
 </script>
 {% endblock %}

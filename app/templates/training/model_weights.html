@@ -1,518 +1,122 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Modelio svoriai ir histogramos - BTC Prekybos Sistema{% endblock %}
+{% block title %}Modelio svoriai{% endblock %}
 
 {% block styles %}
 <style>
-    /* Pagrindinio konteinerio stilius */
-    .weights-container {
-        margin-top: 20px;
-    }
-    
-    /* Modelio pasirinkimo kortelės stilius */
-    .model-selection-card {
+    .model-card {
+        transition: transform 0.3s;
         margin-bottom: 20px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
     
-    /* Sluoksnio kortelės stilius */
-    .layer-card {
-        margin-bottom: 25px;
-        transition: all 0.3s ease;
+    .model-card:hover {
+        transform: translateY(-5px);
     }
     
-    .layer-card:hover {
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        transform: translateY(-3px);
+    .model-list-container {
+        max-width: 800px;
+        margin: 0 auto;
     }
     
-    /* Histogramos ir šilumos žemėlapio konteineriui */
-    .histogram-container, .heatmap-container {
+    .no-models-message {
         text-align: center;
-        margin-top: 15px;
-        margin-bottom: 15px;
-    }
-    
-    /* Statistikos lentelei */
-    .stats-table th {
-        width: 30%;
-    }
-    
-    /* Spalvinis kodavimas statistikai */
-    .positive-value {
-        color: #28a745;
-    }
-    
-    .negative-value {
-        color: #dc3545;
-    }
-    
-    .zero-value {
-        color: #6c757d;
-    }
-    
-    /* Interaktyvios histogramos konteineriui */
-    .interactive-histogram {
-        height: 300px;
-        margin-top: 20px;
-    }
-    
-    /* Spalvų legendos stilius */
-    .color-legend {
-        display: flex;
-        justify-content: center;
-        margin-top: 10px;
-    }
-    
-    .color-legend-item {
-        display: flex;
-        align-items: center;
-        margin-right: 15px;
-    }
-    
-    .color-box {
-        width: 15px;
-        height: 15px;
-        margin-right: 5px;
-    }
-    
-    /* Statistikos santraukos konteineris */
-    .stats-summary {
+        padding: 50px;
         background-color: #f8f9fa;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 20px;
+        border-radius: 10px;
+        margin-top: 30px;
+    }
+    
+    .feature-list {
+        margin-top: 30px;
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    .feature-item {
+        margin-bottom: 10px;
+    }
+    
+    .feature-icon {
+        color: #0d6efd;
+        margin-right: 10px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1>Modelio svoriai ir histogramos</h1>
-            <p class="text-muted">Analizuokite modelio sluoksnių svorius ir jų pasiskirstymą</p>
-        </div>
-    </div>
+    <h1 class="my-4">Modelio svorių vizualizacija</h1>
     
-    <!-- Modelio pasirinkimo forma -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card model-selection-card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Pasirinkite modelį analizei</h5>
-                </div>
-                <div class="card-body">
-                    <form id="modelSelectForm" method="GET" action="{{ url_for('training.model_weights') }}">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="mb-3">
-                                    <label for="model_id" class="form-label">Modelis:</label>
-                                    <select class="form-select" id="model_id" name="model_id">
-                                        <option value="">-- Pasirinkite modelį --</option>
-                                        {% for model in models %}
-                                            <option value="{{ model.filename }}" {% if selected_model and selected_model.filename == model.filename %}selected{% endif %}>
-                                                {{ model.name }} ({{ model.created_at }})
-                                            </option>
-                                        {% endfor %}
-                                    </select>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="model-list-container">
+                {% if available_models %}
+                    <p class="lead mb-4">Pasirinkite modelį, kurio svorius norite analizuoti:</p>
+                    
+                    <div class="row">
+                        {% for model in available_models %}
+                        <div class="col-md-6">
+                            <div class="card model-card">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-chart-bar me-2"></i>{{ model }}
+                                    </h5>
                                 </div>
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <div class="d-grid w-100">
-                                    <button type="submit" class="btn btn-primary">Analizuoti svorius</button>
+                                <div class="card-body">
+                                    <p class="card-text">Peržiūrėkite šio modelio svorių histogramas, aktyvacijas ir svorių analizę.</p>
+                                    <a href="{{ url_for('model_training.model_weights_details', model_name=model) }}" class="btn btn-primary">
+                                        <i class="fas fa-eye me-1"></i>Analizuoti svorius
+                                    </a>
                                 </div>
                             </div>
                         </div>
-                    </form>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-models-message">
+                        <i class="fas fa-exclamation-circle fa-3x mb-3 text-muted"></i>
+                        <h4>Nerasta modelių</h4>
+                        <p class="text-muted">Sistemoje nėra išsaugotų modelių. Pirmiausia treniruokite ir išsaugokite modelį.</p>
+                        <a href="{{ url_for('model_training.train') }}" class="btn btn-primary mt-3">
+                            <i class="fas fa-brain me-1"></i>Treniruoti naują modelį
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="feature-list">
+                <h4 class="mb-3">Funkcionalumas</h4>
+                
+                <div class="feature-item">
+                    <i class="fas fa-chart-bar feature-icon"></i>
+                    <strong>Svorių histogramos</strong> - peržiūrėkite svorių pasiskirstymą.
+                </div>
+                
+                <div class="feature-item">
+                    <i class="fas fa-fire feature-icon"></i>
+                    <strong>Aktyvacijų vizualizacija</strong> - matykite neuronų aktyvacijas.
+                </div>
+                
+                <div class="feature-item">
+                    <i class="fas fa-search feature-icon"></i>
+                    <strong>Svorių analizė</strong> - statistiniai svorių rodikliai ir metrikos.
+                </div>
+                
+                <div class="feature-item">
+                    <i class="fas fa-filter feature-icon"></i>
+                    <strong>Sluoksnių filtravimas</strong> - greitai raskite dominančius sluoksnius.
+                </div>
+                
+                <div class="feature-item">
+                    <i class="fas fa-layer-group feature-icon"></i>
+                    <strong>Sluoksnių pasirinkimas</strong> - analizuokite bet kurį modelio sluoksnį.
                 </div>
             </div>
         </div>
     </div>
-    
-    {% if selected_model and weights_analysis %}
-    <div class="weights-container">
-        <!-- Modelio statistikos santrauka -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Modelio statistikos santrauka</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="stats-summary">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h5>{{ selected_model.name }}</h5>
-                                    <p class="text-muted">Sukurtas: {{ selected_model.created_at }}</p>
-                                    
-                                    <div class="mt-3">
-                                        <h6>Parametrų skaičiai:</h6>
-                                        <ul class="list-unstyled">
-                                            <li><strong>Visų parametrų:</strong> {{ weights_analysis.total_params|default('Nenurodyta') }}</li>
-                                            <li><strong>Apmokymų parametrų:</strong> {{ weights_analysis.trainable_params|default('Nenurodyta') }}</li>
-                                            <li><strong>Neapmokymų parametrų:</strong> {{ weights_analysis.non_trainable_params|default('Nenurodyta') }}</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6>Modelio architektūra:</h6>
-                                    <ul class="list-unstyled">
-                                        <li><strong>Sluoksnių skaičius:</strong> {{ weights_analysis.layer_count }}</li>
-                                        <li><strong>Modelio dydis:</strong> {{ "%.2f"|format(weights_analysis.model_size_mb) }} MB</li>
-                                    </ul>
-                                    
-                                    <div class="mt-3">
-                                        <a href="{{ url_for('training.model_architecture', model_id=selected_model.filename) }}" class="btn btn-sm btn-outline-info">
-                                            <i class="fas fa-project-diagram"></i> Peržiūrėti architektūrą
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Sluoksnių svorių analizė -->
-        <div class="row mb-2">
-            <div class="col-12">
-                <h4>Sluoksnių svorių analizė</h4>
-                <p class="text-muted">Pasirinkite sluoksnį iš sąrašo, kad pamatytumėte detalią informaciją</p>
-            </div>
-        </div>
-        
-        <!-- Sluoksnių pasirinkimas -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Sluoksnių pasirinkimas</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex flex-wrap gap-2">
-                            {% for layer in weights_analysis.layers %}
-                            <button class="btn btn-outline-primary layer-button" data-layer="{{ layer.name }}">
-                                {{ layer.name }} ({{ layer.type }})
-                            </button>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Sluoksnių svorių kortelės -->
-        {% for layer in weights_analysis.layers %}
-        <div class="row layer-section" id="layer-{{ layer.name }}" style="display: none;">
-            <div class="col-12">
-                <div class="card layer-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">{{ layer.name }} ({{ layer.type }})</h5>
-                        <span class="badge bg-primary">{{ layer.params }} parametrų</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- Statistika -->
-                            <div class="col-md-4">
-                                <h6>Svorių statistika:</h6>
-                                <table class="table table-sm stats-table">
-                                    <tbody>
-                                        <tr>
-                                            <th>Minimali reikšmė:</th>
-                                            <td class="{% if layer.stats.min < 0 %}negative-value{% elif layer.stats.min > 0 %}positive-value{% else %}zero-value{% endif %}">
-                                                {{ "%.6f"|format(layer.stats.min) }}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th>Maksimali reikšmė:</th>
-                                            <td class="{% if layer.stats.max < 0 %}negative-value{% elif layer.stats.max > 0 %}positive-value{% else %}zero-value{% endif %}">
-                                                {{ "%.6f"|format(layer.stats.max) }}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th>Vidurkis:</th>
-                                            <td class="{% if layer.stats.mean < 0 %}negative-value{% elif layer.stats.mean > 0 %}positive-value{% else %}zero-value{% endif %}">
-                                                {{ "%.6f"|format(layer.stats.mean) }}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th>Standartinis nuokrypis:</th>
-                                            <td>{{ "%.6f"|format(layer.stats.std) }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                
-                                <h6 class="mt-4">Formos informacija:</h6>
-                                <p>
-                                    {% for shape in layer.shape %}
-                                    <span class="badge bg-secondary mb-1">{{ shape }}</span>
-                                    {% endfor %}
-                                </p>
-                            </div>
-                            
-                            <!-- Histograma -->
-                            <div class="col-md-8">
-                                <div class="histogram-container">
-                                    {% if layer.name in histogram_images and histogram_images[layer.name] %}
-                                    <img src="{{ histogram_images[layer.name] }}" class="img-fluid" alt="Svorių histograma {{ layer.name }}">
-                                    {% else %}
-                                    <div class="alert alert-warning">
-                                        Nepavyko sugeneruoti histogramos.
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <!-- Interaktyvi histograma -->
-                                <div class="interactive-histogram" id="interactive-histogram-{{ layer.name }}"></div>
-                                
-                                <div class="color-legend">
-                                    <div class="color-legend-item">
-                                        <div class="color-box" style="background-color: #3498db;"></div>
-                                        <div>Svorių dažnis</div>
-                                    </div>
-                                    <div class="color-legend-item">
-                                        <div class="color-box" style="background-color: #e74c3c;"></div>
-                                        <div>Vidurkis</div>
-                                    </div>
-                                    <div class="color-legend-item">
-                                        <div class="color-box" style="background-color: #2ecc71;"></div>
-                                        <div>Vidurkis ± Std</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Šilumos žemėlapis -->
-                        {% if layer.name in heatmap_images and heatmap_images[layer.name] %}
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <h6>Svorių šilumos žemėlapis:</h6>
-                                <div class="heatmap-container">
-                                    <img src="{{ heatmap_images[layer.name] }}" class="img-fluid" alt="Svorių šilumos žemėlapis {{ layer.name }}">
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-        
-    </div>
-    {% elif selected_model %}
-    <div class="alert alert-warning">
-        <h5 class="alert-heading">Svorių analizė nepavyko!</h5>
-        <p>Nepavyko gauti modelio svorių analizės duomenų. Patikrinkite, ar modelis turi svorių, arba pabandykite su kitu modeliu.</p>
-    </div>
-    {% endif %}
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Automatiškai pateikti formą, kai pasirenkamas modelis
-        document.getElementById('model_id').addEventListener('change', function() {
-            if (this.value) {
-                document.getElementById('modelSelectForm').submit();
-            }
-        });
-        
-        {% if selected_model and weights_analysis %}
-        // Sluoksnių mygtukų valdymas
-        const layerButtons = document.querySelectorAll('.layer-button');
-        const layerSections = document.querySelectorAll('.layer-section');
-        
-        // Pradžioje rodome pirmą sluoksnį
-        if (layerSections.length > 0) {
-            layerSections[0].style.display = 'block';
-            layerButtons[0].classList.add('active');
-        }
-        
-        // Pridedame mygtukų klausytojus
-        layerButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const layerName = this.getAttribute('data-layer');
-                
-                // Paslepiame visus sluoksnius
-                layerSections.forEach(section => {
-                    section.style.display = 'none';
-                });
-                
-                // Pašaliname aktyvią klasę iš visų mygtukų
-                layerButtons.forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                // Rodome pasirinktą sluoksnį ir pažymime mygtuką kaip aktyvų
-                document.getElementById(`layer-${layerName}`).style.display = 'block';
-                this.classList.add('active');
-            });
-        });
-        
-        // Interaktyvių histogramų kūrimas su D3.js
-        {% for layer in weights_analysis.layers %}
-        // Užkrauname sluoksnio svorių duomenis
-        fetch('{{ url_for("training.get_layer_weights_data", filename=selected_model.filename, layer_name=layer.name) }}')
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    console.error('Klaida gaunant svorių duomenis:', data.error);
-                    return;
-                }
-                
-                // Kuriame interaktyvią histogramą
-                createInteractiveHistogram(
-                    data.weights,
-                    'interactive-histogram-{{ layer.name }}',
-                    '{{ layer.name }}',
-                    {
-                        min: {{ layer.stats.min }},
-                        max: {{ layer.stats.max }},
-                        mean: {{ layer.stats.mean }},
-                        std: {{ layer.stats.std }}
-                    }
-                );
-            })
-            .catch(error => {
-                console.error('Klaida gaunant svorių duomenis:', error);
-            });
-        {% endfor %}
-        
-        // Funkcija interaktyvios histogramos kūrimui
-        function createInteractiveHistogram(weights, containerId, layerName, stats) {
-            // Gauname konteinerio elementą
-            const container = document.getElementById(containerId);
-            
-            // Apskaičiuojame histogramos duomenis
-            const binCount = 30;  // Stulpelių skaičius
-            
-            // Apskaičiuojame reikšmių diapazoną
-            const extent = [stats.min, stats.max];
-            const range = extent[1] - extent[0];
-            
-            // Apskaičiuojame stulpelių plotį
-            const binWidth = range / binCount;
-            
-            // Sukuriame bins (intervalus)
-            const bins = Array(binCount).fill().map((_, i) => {
-                const x0 = extent[0] + i * binWidth;
-                const x1 = x0 + binWidth;
-                return { x0, x1, count: 0 };
-            });
-            
-            // Skaičiuojame reikšmių skaičių kiekviename intervale
-            weights.forEach(value => {
-                // Nustatome į kurį intervalą patenka reikšmė
-                const index = Math.min(Math.floor((value - extent[0]) / binWidth), binCount - 1);
-                if (index >= 0) {
-                    bins[index].count++;
-                }
-            });
-            
-            // Nustatome grafiko matmenis
-            const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-            const width = container.clientWidth - margin.left - margin.right;
-            const height = container.clientHeight - margin.top - margin.bottom;
-            
-            // Sukuriame SVG elementą
-            const svg = d3.select(`#${containerId}`)
-                .append('svg')
-                .attr('width', width + margin.left + margin.right)
-                .attr('height', height + margin.top + margin.bottom)
-                .append('g')
-                .attr('transform', `translate(${margin.left},${margin.top})`);
-            
-            // Sukuriame x ašies skalę
-            const x = d3.scaleLinear()
-                .domain([extent[0], extent[1]])
-                .range([0, width]);
-            
-            // Sukuriame y ašies skalę
-            const y = d3.scaleLinear()
-                .domain([0, d3.max(bins, d => d.count)])
-                .range([height, 0]);
-            
-            // Pridedame x ašį
-            svg.append('g')
-                .attr('transform', `translate(0,${height})`)
-                .call(d3.axisBottom(x));
-            
-            // Pridedame y ašį
-            svg.append('g')
-                .call(d3.axisLeft(y));
-            
-            // Pridedame x ašies pavadinimą
-            svg.append('text')
-                .attr('x', width / 2)
-                .attr('y', height + margin.bottom - 5)
-                .style('text-anchor', 'middle')
-                .text('Svorių reikšmės');
-            
-            // Pridedame y ašies pavadinimą
-            svg.append('text')
-                .attr('transform', 'rotate(-90)')
-                .attr('x', -height / 2)
-                .attr('y', -margin.left + 15)
-                .style('text-anchor', 'middle')
-                .text('Dažnis');
-            
-            // Braižome histogramą
-            svg.selectAll('rect')
-                .data(bins)
-                .enter()
-                .append('rect')
-                .attr('x', d => x(d.x0))
-                .attr('width', d => Math.max(0, x(d.x1) - x(d.x0) - 1))
-                .attr('y', d => y(d.count))
-                .attr('height', d => height - y(d.count))
-                .style('fill', '#3498db')
-                .style('opacity', 0.7);
-            
-            // Pridedame vidurkio liniją
-            svg.append('line')
-                .attr('x1', x(stats.mean))
-                .attr('x2', x(stats.mean))
-                .attr('y1', 0)
-                .attr('y2', height)
-                .style('stroke', '#e74c3c')
-                .style('stroke-width', 2)
-                .style('stroke-dasharray', '5,5');
-            
-            // Pridedame vidurkio + std liniją
-            svg.append('line')
-                .attr('x1', x(stats.mean + stats.std))
-                .attr('x2', x(stats.mean + stats.std))
-                .attr('y1', 0)
-                .attr('y2', height)
-                .style('stroke', '#2ecc71')
-                .style('stroke-width', 1.5)
-                .style('stroke-dasharray', '3,3');
-            
-            // Pridedame vidurkio - std liniją
-            svg.append('line')
-                .attr('x1', x(stats.mean - stats.std))
-                .attr('x2', x(stats.mean - stats.std))
-                .attr('y1', 0)
-                .attr('y2', height)
-                .style('stroke', '#2ecc71')
-                .style('stroke-width', 1.5)
-                .style('stroke-dasharray', '3,3');
-            
-            // Pridedame antraštę
-            svg.append('text')
-                .attr('x', width / 2)
-                .attr('y', -5)
-                .style('text-anchor', 'middle')
-                .style('font-weight', 'bold')
-                .text(`Sluoksnio '${layerName}' svorių pasiskirstymas`);
-        }
-        {% endif %}
-    });
-</script>
 {% endblock %}

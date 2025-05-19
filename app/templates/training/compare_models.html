@@ -7,21 +7,44 @@
     .comparison-card {
         margin-bottom: 20px;
         transition: transform 0.2s;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
     
     .comparison-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
     
-    .metrics-container {
-        margin-top: 15px;
+    .model-selection {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 20px;
     }
     
     .chart-container {
         height: 300px;
         width: 100%;
         margin-top: 20px;
+    }
+    
+    .best-value {
+        font-weight: bold;
+        color: green;
+    }
+    
+    .worst-value {
+        color: red;
+    }
+    
+    .model-filter {
+        margin-bottom: 20px;
+    }
+    
+    .filter-options {
+        background-color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
 </style>
 {% endblock %}
@@ -30,24 +53,340 @@
 <div class="container">
     <h1 class="my-4">Modelių palyginimas</h1>
     
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i> Šis puslapis yra kūrimo stadijoje.
+    <!-- Modelių filtravimas -->
+    <div class="model-filter">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                        <i class="fas fa-filter me-1"></i>Filtravimo parinktys
+                    </button>
+                </h5>
+            </div>
+            <div id="filterCollapse" class="collapse">
+                <div class="card-body filter-options">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="nameFilter" class="form-label">Modelio pavadinimas:</label>
+                                <input type="text" class="form-control" id="nameFilter" placeholder="Įveskite pavadinimą...">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="minAccuracy" class="form-label">Min. tikslumas:</label>
+                                <input type="number" class="form-control" id="minAccuracy" min="0" max="1" step="0.01" placeholder="0.0">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="dateFilter" class="form-label">Data nuo:</label>
+                                <input type="date" class="form-control" id="dateFilter">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button id="applyFilters" class="btn btn-primary me-2">
+                            <i class="fas fa-check me-1"></i>Taikyti filtrus
+                        </button>
+                        <button id="resetFilters" class="btn btn-secondary">
+                            <i class="fas fa-undo me-1"></i>Atstatyti
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
-    <div class="card comparison-card">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Modelių palyginimo langas</h5>
+    <!-- Modelių pasirinkimas -->
+    <div class="model-selection">
+        <h5>Pasirinkite modelius palyginimui:</h5>
+        <form id="comparison-form">
+            <div class="row" id="model-checkboxes">
+                {% for model in models %}
+                <div class="col-md-4 mb-2 model-checkbox-container">
+                    <div class="form-check">
+                        <input class="form-check-input model-checkbox" type="checkbox" value="{{ model.model_id }}" 
+                               id="model-{{ model.model_id }}" name="selected_models">
+                        <label class="form-check-label" for="model-{{ model.model_id }}">
+                            {{ model.model_name }} ({{ model.date_created }})
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">
+                <i class="fas fa-chart-bar me-1"></i>Palyginti modelius
+            </button>
+        </form>
+    </div>
+    
+    <!-- Palyginimo rezultatai, iš pradžių paslėpti -->
+    <div id="comparison-results" style="display: none;">
+        <!-- Tikslumo palyginimo grafikas -->
+        <div class="card comparison-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Tikslumo palyginimas</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="accuracy-chart"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <p>Šiame puslapyje galėsite palyginti skirtingus treniruotus modelius.</p>
-            
-            <div class="chart-container">
-                <div class="text-center py-5">
-                    <i class="fas fa-chart-bar fa-3x mb-3 text-muted"></i>
-                    <p class="text-muted">Čia bus rodomi modelių palyginimo grafikai.</p>
+        
+        <!-- Nuostolių palyginimo grafikas -->
+        <div class="card comparison-card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Nuostolių palyginimas</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="loss-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Epochų palyginimo grafikas -->
+        <div class="card comparison-card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Epochų palyginimas</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="epochs-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Metrikų palyginimo lentelė -->
+        <div class="card comparison-card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Metrikų palyginimo lentelė</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Modelis</th>
+                                <th>Tikslumas</th>
+                                <th>Valid. tikslumas</th>
+                                <th>Nuostoliai</th>
+                                <th>Valid. nuostoliai</th>
+                                <th>Epochos</th>
+                                <th>Sukūrimo data</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-table-body">
+                            <!-- Čia bus pridėti modelių duomenys -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Eksportavimo mygtukai -->
+                <div class="mt-3 text-center">
+                    <button id="export-csv" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-file-csv me-1"></i>Eksportuoti kaip CSV
+                    </button>
+                    <button id="export-img" class="btn btn-outline-success">
+                        <i class="fas fa-file-image me-1"></i>Eksportuoti grafiką
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Globalūs kintamieji grafikams
+    let accuracyChart = null;
+    let lossChart = null;
+    let epochsChart = null;
+    
+    // Visi modeliai iš serverio
+    let allModels = [];
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Užkrauname visus modelius
+        allModels = [
+            {% for model in models %}
+            {
+                model_id: {{ model.model_id }},
+                model_name: "{{ model.model_name }}",
+                date_created: "{{ model.date_created }}",
+                accuracy: {{ model.accuracy }},
+                loss: {{ model.loss }},
+                val_accuracy: {{ model.val_accuracy }},
+                val_loss: {{ model.val_loss }},
+                epochs: {{ model.epochs }},
+                description: "{{ model.description }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        // Modelių filtravimo logika
+        document.getElementById('applyFilters').addEventListener('click', function() {
+            filterModels();
+        });
+        
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            // Atstatome filtravimo laukus
+            document.getElementById('nameFilter').value = '';
+            document.getElementById('minAccuracy').value = '';
+            document.getElementById('dateFilter').value = '';
+            
+            // Rodome visus modelius
+            displayAllModels();
+        });
+        
+        // Modelių palyginimo forma
+        const comparisonForm = document.getElementById('comparison-form');
+        
+        comparisonForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Surenkame pasirinktus modelius
+            const checkboxes = document.querySelectorAll('.model-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Prašome pasirinkti bent vieną modelį palyginimui');
+                return;
+            }
+            
+            const modelIds = Array.from(checkboxes).map(checkbox => parseInt(checkbox.value));
+            
+            // Filtruojame modelius
+            const selectedModels = allModels.filter(model => modelIds.includes(model.model_id));
+            
+            // Rodome palyginimo rezultatus
+            document.getElementById('comparison-results').style.display = 'block';
+            
+            // Sukuriame grafikus
+            createAccuracyChart(selectedModels);
+            createLossChart(selectedModels);
+            createEpochsChart(selectedModels);
+            populateComparisonTable(selectedModels);
+            
+            // Slenkame prie rezultatų
+            document.getElementById('comparison-results').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // Eksportavimo mygtukai
+        document.getElementById('export-csv').addEventListener('click', function() {
+            exportTableAsCSV('model_comparison.csv');
+        });
+        
+        document.getElementById('export-img').addEventListener('click', function() {
+            // Parodome pranešimą
+            alert('Grafiką galite eksportuoti paspaudę dešinį pelės mygtuką ant jo ir pasirinkę "Išsaugoti paveikslėlį kaip..."');
+        });
+    });
+    
+    // Filtruoja modelius pagal įvestus kriterijus
+    function filterModels() {
+        const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+        const minAccuracy = parseFloat(document.getElementById('minAccuracy').value) || 0;
+        const dateFilter = document.getElementById('dateFilter').value;
+        
+        // Paslepiame visus modelių pasirinkimus
+        const containers = document.querySelectorAll('.model-checkbox-container');
+        containers.forEach(container => {
+            container.style.display = 'none';
+        });
+        
+        // Filtruojame ir rodome tik tinkamus modelius
+        allModels.forEach(model => {
+            // Tikriname ar modelis atitinka filtrus
+            const nameMatch = nameFilter === '' || model.model_name.toLowerCase().includes(nameFilter);
+            const accuracyMatch = model.accuracy >= minAccuracy;
+            const dateMatch = dateFilter === '' || new Date(model.date_created) >= new Date(dateFilter);
+            
+            // Jei modelis atitinka visus filtrus, rodome jį
+            if (nameMatch && accuracyMatch && dateMatch) {
+                const container = document.querySelector(`#model-${model.model_id}`).closest('.model-checkbox-container');
+                container.style.display = 'block';
+            }
+        });
+    }
+    
+    // Rodo visus modelius
+    function displayAllModels() {
+        const containers = document.querySelectorAll('.model-checkbox-container');
+        containers.forEach(container => {
+            container.style.display = 'block';
+        });
+    }
+    
+    // Sukuria tikslumo grafiką
+    function createAccuracyChart(models) {
+        const ctx = document.getElementById('accuracy-chart').getContext('2d');
+        
+        // Sunaikina seną grafiką jei toks yra
+        if (accuracyChart) {
+            accuracyChart.destroy();
+        }
+        
+        const labels = models.map(model => model.model_name);
+        const trainingData = models.map(model => model.accuracy);
+        const validationData = models.map(model => model.val_accuracy);
+        
+        accuracyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Mokymo tikslumas',
+                        data: trainingData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Validavimo tikslumas',
+                        data: validationData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 0.5,
+                        max: 1.0
+                    }
+                }
+            }
+        });
+    }
+    
+    // Sukuria nuostolių grafiką
+    function createLossChart(models) {
+        const ctx = document.getElementById('loss-chart').getContext('2d');
+        
+        // Sunaikina seną grafiką jei toks yra
+        if (lossChart) {
+            lossChart.destroy();
+        }
+        
+        const labels = models.map(model => model.model_name);
+        const trainingData = models.map(model => model.loss);
+        const validationData = models.map(model => model.val_loss);
+        
+        lossChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Mokymo nuostoliai',
+                        data: trainingData,
+                        backgroundColor: 'rgba(75, 192, 192, 0

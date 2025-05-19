@@ -21,6 +21,8 @@ import itertools
 import random
 from concurrent.futures import ThreadPoolExecutor
 from keras.callbacks import ModelCheckpoint
+from app.services.checkpoint_service import CheckpointService
+from app.models.model_checkpoint import ModelCheckpoint
 
 logger = logging.getLogger(__name__)
 
@@ -1409,3 +1411,215 @@ def is_training(self, training_id):
         logger.error(f"Klaida tikrinant treniravimo būseną: {e}")
         traceback.print_exc()
         return False
+
+def train_model(model, X_train, y_train, epochs=100, batch_size=32, validation_split=0.2, 
+                early_stopping=True, verbose=1, model_id=None, parameters=None, 
+                enable_checkpoints=True, checkpoint_frequency=5):
+    """
+    Apmoko modelį su išsaugojimų valdymu
+    
+    Args:
+        model: Modelio objektas
+        X_train: Treniravimo duomenys (įvestis)
+        y_train: Treniravimo duomenys (išvestis)
+        epochs (int): Epochų skaičius
+        batch_size (int): Batch dydis
+        validation_split (float): Validacijos duomenų dalis
+        early_stopping (bool): Ar naudoti ankstyvą sustabdymą
+        verbose (int): Išsamumo lygis treniravimo metu
+        model_id (str): Modelio ID išsaugojimams
+        parameters (dict): Modelio parametrai
+        enable_checkpoints (bool): Ar įgalinti išsaugojimus
+        checkpoint_frequency (int): Kas kiek epochų išsaugoti modelį
+    
+    Returns:
+        dict: Treniravimo rezultatai
+    """
+    # Sukuriame išsaugojimų konfigūraciją
+    checkpoint_config = CheckpointConfig(
+        enable_checkpoints=enable_checkpoints,
+        save_frequency=checkpoint_frequency,
+        max_checkpoints=10,
+        save_best_only=False
+    )
+    
+    # Inicializuojame callbacks sąrašą
+    callbacks = []
+    
+    # Pridedame early stopping, jei reikia
+    if early_stopping:
+        es_callback = tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=10,
+            restore_best_weights=True
+        )
+        callbacks.append(es_callback)
+    
+    # Modelio mokymo metu saugome tarpinius išsaugojimus
+    if enable_checkpoints and model_id:
+        # Sukuriame Keras callback funkciją, kuri bus iškviečiama po kiekvienos epochos
+        class CheckpointCallback(tf.keras.callbacks.Callback):
+            def on_epoch_end(self, epoch, logs=None):
+                # Epoch yra 0-indeksuojamas, todėl pridedame 1 geresniam žmogaus skaitomumui
+                actual_epoch = epoch + 1  
+                
+                # Tikriname, ar reikia sukurti išsaugojimą šioje epochoje
+                if checkpoint_config.should_save_checkpoint(actual_epoch):
+                    # Gauname dabartines metrikas
+                    metrics = {
+                        'loss': float(logs.get('loss', 0)),
+                        'val_loss': float(logs.get('val_loss', 0)),
+                        'accuracy': float(logs.get('accuracy', 0)),
+                        'val_accuracy': float(logs.get('val_accuracy', 0))
+                    }
+                    
+                    # Išsaugome tarpinį modelį
+                    save_model_checkpoint(
+                        model=model,
+                        model_id=model_id,
+                        epoch=actual_epoch,
+                        metrics=metrics,
+                        parameters=parameters,
+                        config=checkpoint_config
+                    )
+        
+        # Pridedame išsaugojimų callback į mokymo callback sąrašą
+        callbacks.append(CheckpointCallback())
+    
+    # Padalijame duomenis į mokymosi ir validavimo rinkinius, jei validation_split > 0
+    if validation_split > 0:
+        # Apskaičiuojame, kiek duomenų skirti validavimui
+        val_samples = int(len(X_train) * validation_split)
+        X_val = X_train[-val_samples:]
+        y_val = y_train[-val_samples:]
+        X_train = X_train[:-val_samples]
+        y_train = y_train[:-val_samples]
+        
+        # Apmokymo istorija
+        history = model.fit(
+            X_train, y_train,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_data=(X_val, y_val),
+            callbacks=callbacks,
+            verbose=verbose
+        )
+    else:
+        # Apmokymo istorija be validavimo
+        history = model.fit(
+            X_train, y_train,
+            epochs=epochs,
+            batch_size=batch_size,
+            callbacks=callbacks,
+            verbose=verbose
+        )
+    
+    # Sukuriame rezultatų žodyną
+    results = {
+        'history': history.history,
+        'epochs_completed': len(history.history['loss']),
+        'model_id': model_id,
+        'parameters': parameters
+    }
+    
+    return results
+
+def save_model_checkpoint(model, model_id, epoch, metrics, parameters=None, config=None):
+    """
+    Išsaugo modelio tarpinį tašką treniravimo metu
+    
+    Args:
+        model: Modelio objektas
+        model_id (str): Modelio ID
+        epoch (int): Dabartinė epocha
+        metrics (dict): Metrikos reikšmės
+        parameters (dict): Modelio parametrai
+        config (CheckpointConfig): Išsaugojimų konfigūracija
+    
+    Returns:
+        str: Išsaugojimo kelias arba None, jei įvyko klaida
+    """
+    try:
+        # Jei išsaugojimai išjungti, grąžiname None
+        if not config or not config.enable_checkpoints:
+            return None
+        
+        # Sukuriame išsaugojimų katalogą, jei jo nėra
+        checkpoints_dir = os.path.join('data', 'checkpoints')
+        os.makedirs(checkpoints_dir, exist_ok=True)
+        
+        # Sukuriame katalogą šiam modeliui
+        model_dir = os.path.join(checkpoints_dir, model_id)
+        os.makedirs(model_dir, exist_ok=True)
+        
+        # Sukuriame išsaugojimo failo pavadinimą
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        checkpoint_filename = f"checkpoint_epoch_{epoch}_{timestamp}.h5"
+        checkpoint_path = os.path.join(model_dir, checkpoint_filename)
+        
+        # Išsaugome modelį
+        model.save(checkpoint_path)
+        
+        # Išsaugome metrikos informaciją
+        metrics_filename = f"checkpoint_epoch_{epoch}_{timestamp}_metrics.json"
+        metrics_path = os.path.join(model_dir, metrics_filename)
+        
+        metrics_data = {
+            'epoch': epoch,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'metrics': metrics,
+            'parameters': parameters
+        }
+        
+        with open(metrics_path, 'w') as f:
+            json.dump(metrics_data, f, indent=4)
+        
+        # Atnaujiname išsaugojimų sąrašą, kad pašalintume senus išsaugojimus, jei viršija maksimumą
+        cleanup_old_checkpoints(model_dir, config.max_checkpoints)
+        
+        logger.info(f"Modelio tarpinis taškas išsaugotas: {checkpoint_path}")
+        
+        return checkpoint_path
+    
+    except Exception as e:
+        logger.error(f"Klaida išsaugant modelio tarpinį tašką: {e}")
+        traceback.print_exc()
+        return None
+
+def cleanup_old_checkpoints(model_dir, max_checkpoints):
+    """
+    Išvalo senus išsaugojimus, jei viršijamas maksimalus skaičius
+    
+    Args:
+        model_dir (str): Modelio direktorija
+        max_checkpoints (int): Maksimalus išsaugojimų skaičius
+    """
+    try:
+        # Gauname visus .h5 failus
+        h5_files = [f for f in os.listdir(model_dir) if f.endswith('.h5') and 'checkpoint' in f]
+        
+        # Jei jų mažiau nei maksimumas, nieko nedarome
+        if len(h5_files) <= max_checkpoints:
+            return
+        
+        # Rūšiuojame pagal modifikavimo laiką (seniausi pirmi)
+        h5_files.sort(key=lambda x: os.path.getmtime(os.path.join(model_dir, x)))
+        
+        # Ištriname seniausius išsaugojimus
+        files_to_remove = h5_files[:-max_checkpoints]
+        
+        for filename in files_to_remove:
+            # Ištrinti .h5 failą
+            os.remove(os.path.join(model_dir, filename))
+            
+            # Taip pat ištrinti susijusį metrics.json failą
+            metrics_filename = filename.replace('.h5', '_metrics.json')
+            metrics_path = os.path.join(model_dir, metrics_filename)
+            
+            if os.path.exists(metrics_path):
+                os.remove(metrics_path)
+                
+        logger.info(f"Ištrinta {len(files_to_remove)} senų išsaugojimų")
+        
+    except Exception as e:
+        logger.error(f"Klaida tvarkant senus išsaugojimus: {e}")

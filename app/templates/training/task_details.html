@@ -1,0 +1,212 @@
+<!-- Užduoties detalių šablonas -->
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Užduoties informacija</h1>
+            <p class="text-muted">Peržiūrėkite užduoties detalią informaciją ir būseną</p>
+        </div>
+        <div>
+            <a href="{{ url_for('tasks.task_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Grįžti į sąrašą
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Pagrindinė informacija -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">{{ task.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted">Aprašymas</h6>
+                        <p>{{ task.description or 'Aprašymas nepateiktas' }}</p>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Modelis</h6>
+                            <p class="mb-0">
+                                <a href="{{ url_for('model_training.model_details', filename=task.model_id) }}">
+                                    {{ model.name if model else task.model_id }}
+                                </a>
+                            </p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Suplanuotas laikas</h6>
+                            <p class="mb-0">{{ task.scheduled_time.strftime('%Y-%m-%d %H:%M') if task.scheduled_time else 'Nenurodytas' }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Sukurta</h6>
+                            <p class="mb-0">{{ task.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Paskutinis atnaujinimas</h6>
+                            <p class="mb-0">{{ task.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted">Būsena</h6>
+                        {% if task.status.value == 'pending' %}
+                        <span class="badge bg-secondary">Laukiama vykdymo</span>
+                        {% elif task.status.value == 'running' %}
+                        <span class="badge bg-primary">Vykdoma</span>
+                        {% elif task.status.value == 'completed' %}
+                        <span class="badge bg-success">Įvykdyta sėkmingai</span>
+                        {% elif task.status.value == 'failed' %}
+                        <span class="badge bg-danger">Nepavyko įvykdyti</span>
+                        {% elif task.status.value == 'canceled' %}
+                        <span class="badge bg-warning">Atšaukta</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex gap-2">
+                        {% if task.status.value == 'pending' %}
+                        <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-2"></i>Redaguoti
+                        </a>
+                        
+                        <form method="POST" action="{{ url_for('tasks.cancel_task', task_id=task.id) }}">
+                            <button type="submit" class="btn btn-outline-warning" onclick="return confirm('Ar tikrai norite atšaukti šią užduotį?')">
+                                <i class="fas fa-times me-2"></i>Atšaukti
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        {% if task.status.value != 'running' %}
+                        <form method="POST" action="{{ url_for('tasks.delete_task', task_id=task.id) }}">
+                            <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Ar tikrai norite ištrinti šią užduotį?')">
+                                <i class="fas fa-trash me-2"></i>Ištrinti
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Treniravimo parametrai -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Treniravimo parametrai</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Epochos</h6>
+                            <p>{{ task.training_params.epochs or 10 }}</p>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Batch dydis</h6>
+                            <p>{{ task.training_params.batch_size or 32 }}</p>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Mokymosi greitis</h6>
+                            <p>{{ task.training_params.learning_rate or 0.001 }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Tarpiniai išsaugojimai</h6>
+                            <p>{{ 'Įjungta' if task.training_params.save_checkpoints else 'Išjungta' }}</p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Ankstyvas sustabdymas</h6>
+                            <p>{{ 'Įjungta' if task.training_params.early_stopping else 'Išjungta' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rezultatai (jei užduotis įvykdyta) -->
+            {% if task.status.value == 'completed' and task.result %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">Treniravimo rezultatai</h5>
+                </div>
+                <div class="card-body">
+                    {% if task.result.metrics %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Tikslumas</h6>
+                            <p>{{ (task.result.metrics.accuracy * 100)|round(2) }}%</p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Nuostoliai</h6>
+                            <p>{{ task.result.metrics.loss }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if task.result.message %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ task.result.message }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Klaidos (jei užduotis nepavyko) -->
+            {% if task.status.value == 'failed' and task.result and task.result.error %}
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">Klaidos informacija</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ task.result.error }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Užduoties žurnalai -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Užduoties žurnalai</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% if task.logs %}
+                            {% for log in task.logs %}
+                            <div class="list-group-item">
+                                <div class="small text-muted">{{ log.timestamp }}</div>
+                                <div>{{ log.message }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="list-group-item text-center py-4">
+                                <i class="fas fa-info-circle mb-2 text-muted"></i>
+                                <p class="mb-0 text-muted">Nėra žurnalo įrašų</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

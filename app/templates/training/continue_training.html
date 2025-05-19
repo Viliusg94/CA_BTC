@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Tęsti modelio treniravimą{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigacija atgal -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.index') }}">Pradžia</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.model_weights') }}">Modeliai</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.model_weights_details', model_name=model.filename) }}">{{ model.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.model_checkpoints', model_id=model.id) }}">Išsaugojimai</a></li>
+            <li class="breadcrumb-item active">Tęsti treniravimą</li>
+        </ol>
+    </nav>
+
+    <!-- Antraštė -->
+    <div class="mb-4">
+        <h1>Tęsti modelio treniravimą</h1>
+        <p class="text-muted">Tęskite modelio treniravimą nuo pasirinkto išsaugojimo taško</p>
+    </div>
+
+    <!-- Informacinis blokas -->
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <i class="fas fa-info-circle fa-2x"></i>
+            </div>
+            <div>
+                <h5>Apie treniravimo tęsimą</h5>
+                <p class="mb-0">Tęsiant treniravimą nuo išsaugojimo taško, išsaugoma visa ankstesnė modelio būsena ir treniravimo istorija.
+                Jūs galite pasirinkti mokymosi greitį, optimizatorių ir kitus parametrus, kad pagerintumėte modelio tikslumą.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pasirinkto išsaugojimo informacija -->
+    {% if selected_checkpoint %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Pasirinktas išsaugojimas</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Epocha:</strong> {{ selected_checkpoint.epoch }}</p>
+                    <p><strong>Data:</strong> {{ selected_checkpoint.timestamp }}</p>
+                    <p>
+                        <strong>Statusas:</strong> 
+                        {% if selected_checkpoint.is_best %}
+                        <span class="badge bg-success">Geriausias</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Standartinis</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Loss:</strong> {{ "%.6f"|format(selected_checkpoint.metrics.loss or 0) }}</p>
+                    <p><strong>Validation Loss:</strong> {{ "%.6f"|format(selected_checkpoint.metrics.val_loss or 0) }}</p>
+                    <p><strong>Validation Accuracy:</strong> {{ "%.4f"|format(selected_checkpoint.metrics.val_accuracy or 0) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Treniravimo parametrų forma -->
+    <form method="POST" action="{{ url_for('model_training.continue_training', model_id=model.id, checkpoint_id=selected_checkpoint.checkpoint_id) }}">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Treniravimo parametrai</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Epochų skaičius -->
+                    <div class="col-md-6">
+                        <label for="epochs" class="form-label">Papildomų epochų skaičius</label>
+                        <input type="number" class="form-control" id="epochs" name="epochs" min="1" max="500" value="10" required>
+                        <div class="form-text">Kiek naujų epochų reikia apmokyti</div>
+                    </div>
+
+                    <!-- Batch dydis -->
+                    <div class="col-md-6">
+                        <label for="batch_size" class="form-label">Batch dydis</label>
+                        <input type="number" class="form-control" id="batch_size" name="batch_size" min="1" max="1024" value="32" required>
+                        <div class="form-text">Pavyzdžių skaičius viename batch'e</div>
+                    </div>
+
+                    <!-- Optimizatorius -->
+                    <div class="col-md-6">
+                        <label for="optimizer" class="form-label">Optimizatorius</label>
+                        <select class="form-select" id="optimizer" name="optimizer">
+                            <option value="adam" selected>Adam</option>
+                            <option value="sgd">SGD</option>
+                            <option value="rmsprop">RMSprop</option>
+                            <option value="adagrad">Adagrad</option>
+                        </select>
+                        <div class="form-text">Optimizavimo algoritmas</div>
+                    </div>
+
+                    <!-- Mokymosi greitis -->
+                    <div class="col-md-6">
+                        <label for="learning_rate" class="form-label">Mokymosi greitis</label>
+                        <input type="number" class="form-control" id="learning_rate" name="learning_rate" min="0.00001" max="1" step="0.0001" value="0.001" required>
+                        <div class="form-text">Optimizatoriaus mokymosi greitis</div>
+                    </div>
+
+                    <!-- Išsaugojimų konfigūracija -->
+                    <div class="col-md-6">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="save_best_only" name="save_best_only" checked>
+                            <label class="form-check-label" for="save_best_only">Išsaugoti tik geriausią modelį</label>
+                        </div>
+                        <div class="form-text">Išsaugomas tik tas modelis, kuris pasiekia geriausią rezultatą</div>
+                    </div>
+
+                    <!-- Ankstyvas sustabdymas -->
+                    <div class="col-md-6">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="early_stopping" name="early_stopping" checked>
+                            <label class="form-check-label" for="early_stopping">Ankstyvas sustabdymas</label>
+                        </div>
+                        <div class="form-text">Sustabdyti treniravimą, kai metrikos nebegerėja</div>
+                    </div>
+
+                    <!-- Kantrybė -->
+                    <div class="col-md-6">
+                        <label for="patience" class="form-label">Kantrybė (patience)</label>
+                        <input type="number" class="form-control" id="patience" name="patience" min="1" max="100" value="10" required>
+                        <div class="form-text">Kiek epochų laukti geresnio rezultato prieš sustabdant</div>
+                    </div>
+
+                    <!-- Stebima metrika -->
+                    <div class="col-md-6">
+                        <label for="monitor_metric" class="form-label">Stebima metrika</label>
+                        <select class="form-select" id="monitor_metric" name="monitor_metric">
+                            <option value="val_loss" selected>Validation Loss</option>
+                            <option value="val_accuracy">Validation Accuracy</option>
+                            <option value="loss">Loss</option>
+                            <option value="accuracy">Accuracy</option>
+                        </select>
+                        <div class="form-text">Metrika, pagal kurią nustatomas geriausias modelis</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Išsaugojimų pasirinkimas -->
+        {% if not checkpoint_id and checkpoints|length > 1 %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Pasirinkite išsaugojimą</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Epocha</th>
+                                <th>Data</th>
+                                <th>Loss</th>
+                                <th>Val Loss</th>
+                                <th>Accuracy</th>
+                                <th>Val Accuracy</th>
+                                <th>Statusas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cp in checkpoints %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="checkpoint_id" id="checkpoint_{{ cp.checkpoint_id }}" value="{{ cp.checkpoint_id }}" {{ 'checked' if cp.checkpoint_id == selected_checkpoint.checkpoint_id else '' }}>
+                                        <label class="form-check-label" for="checkpoint_{{ cp.checkpoint_id }}"></label>
+                                    </div>
+                                </td>
+                                <td>{{ cp.epoch }}</td>
+                                <td>{{ cp.timestamp }}</td>
+                                <td>{{ "%.6f"|format(cp.metrics.loss or 0) }}</td>
+                                <td>{{ "%.6f"|format(cp.metrics.val_loss or 0) }}</td>
+                                <td>{{ "%.4f"|format(cp.metrics.accuracy or 0) }}</td>
+                                <td>{{ "%.4f"|format(cp.metrics.val_accuracy or 0) }}</td>
+                                <td>
+                                    {% if cp.is_best %}
+                                    <span class="badge bg-success">Geriausias</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Standartinis</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Veiksmo mygtukai -->
+        <div class="d-flex gap-2 mb-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-play me-2"></i>Pradėti tęstinį apmokymą
+            </button>
+            <a href="{{ url_for('model_training.model_checkpoints', model_id=model.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-times me-2"></i>Atšaukti
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

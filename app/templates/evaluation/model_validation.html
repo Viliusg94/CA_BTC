@@ -1,0 +1,674 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigacija atgal -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_evaluation.index') }}">Modelių įvertinimas</a></li>
+            <li class="breadcrumb-item active">Modelio validavimo grafikai</li>
+        </ol>
+    </nav>
+
+    <!-- Antraštė -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>{{ model.name }} validavimo grafikai</h1>
+            <p class="text-muted">Vizualinė modelio efektyvumo analizė</p>
+        </div>
+        <div>
+            <a href="{{ url_for('model_evaluation.model_details', model_id=model.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Grįžti į modelio detales
+            </a>
+            <div class="btn-group ms-2">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-download me-2"></i>Eksportuoti
+                </button>
+                <ul class="dropdown-menu">
+                    <li><button class="dropdown-item" id="exportPNG">
+                        <i class="fas fa-image me-2"></i>Eksportuoti kaip PNG
+                    </button></li>
+                    <li><button class="dropdown-item" id="exportPDF">
+                        <i class="fas fa-file-pdf me-2"></i>Eksportuoti kaip PDF
+                    </button></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informacinis blokas apie grafikų interpretavimą -->
+    <div class="alert alert-info mb-4">
+        <div class="d-flex">
+            <div class="me-3">
+                <i class="fas fa-info-circle fa-2x"></i>
+            </div>
+            <div>
+                <h5>Apie validavimo grafikus</h5>
+                <p class="mb-0">Šie grafikai padeda įvertinti modelio efektyvumą ir nustatyti potencialias problemas. Mokymosi kreivės parodo, ar modelis nėra permokęs, ROC kreivės ir Precision-Recall kreivės padeda įvertinti klasifikavimo kokybę, o painiavos matrica (Confusion Matrix) parodo, kurias klases modelis geriausiai atpažįsta.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mokymosi kreivių sekcija -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Mokymosi kreivės</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Šios kreivės parodo modelio mokymosi procesą. Didelis atotrūkis tarp mokymosi ir validavimo kreivių gali reikšti permokymą (angl. overfitting).</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Mokymosi kreivės grafikas -->
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="learningCurveChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <!-- Mokymosi kreivių interpretacija -->
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Interpretacija</h6>
+                        </div>
+                        <div class="card-body">
+                            <dl>
+                                <dt>Mokymosi nuostoliai:</dt>
+                                <dd>Parodo, kaip gerai modelis mokosi iš treniravimo duomenų.</dd>
+                                <dt>Validavimo nuostoliai:</dt>
+                                <dd>Parodo, kaip gerai modelis veikia su naujais, dar nematytais duomenimis.</dd>
+                                <dt>Permokymų požymiai:</dt>
+                                <dd>Jei validavimo nuostoliai didėja, nors mokymosi nuostoliai mažėja, tai rodo permokymą.</dd>
+                                <dt>Nepakankamo apmokymo požymiai:</dt>
+                                <dd>Jei abu nuostoliai išlieka dideli, modelis gali būti nepakankamai apmokytas.</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ROC kreivių sekcija -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">ROC kreivės</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">ROC (Receiver Operating Characteristic) kreivės parodo modelio jautrumą ir specifiškumą skirtingiems slenksčiams. AUC (Area Under Curve) nurodo bendrą modelio klasifikavimo kokybę.</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- ROC kreivės grafikas -->
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="rocCurveChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <!-- ROC kreivių interpretacija -->
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Interpretacija</h6>
+                        </div>
+                        <div class="card-body">
+                            <dl>
+                                <dt>AUC (plotas po kreive):</dt>
+                                <dd>
+                                    <span id="aucValue" class="badge bg-success">0.95</span>
+                                    Kuo didesnis AUC (arčiau 1.0), tuo geresnis modelis.
+                                </dd>
+                                <dt>Idealus taškas:</dt>
+                                <dd>Optimali vieta kreivėje, kur pasiekiamas geriausias tikslumas.</dd>
+                                <dt>Interpretacija:</dt>
+                                <dd>
+                                    <ul>
+                                        <li>AUC > 0.9: Puikus</li>
+                                        <li>AUC > 0.8: Geras</li>
+                                        <li>AUC > 0.7: Patenkinamas</li>
+                                        <li>AUC > 0.6: Prastas</li>
+                                        <li>AUC ≈ 0.5: Atsitiktinis spėjimas</li>
+                                    </ul>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Precision-Recall kreivių sekcija -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Precision-Recall kreivės</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Precision-Recall kreivės parodo santykį tarp tikslumo (Precision) ir jautrumo (Recall). Ypač naudinga, kai klasių balansas yra netolygus.</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Precision-Recall kreivės grafikas -->
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="prCurveChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <!-- Precision-Recall kreivių interpretacija -->
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Interpretacija</h6>
+                        </div>
+                        <div class="card-body">
+                            <dl>
+                                <dt>Average Precision:</dt>
+                                <dd>
+                                    <span id="apValue" class="badge bg-success">0.92</span>
+                                    Vidutinis tikslumas skirtingiems jautrumo lygiams.
+                                </dd>
+                                <dt>Kam naudoti:</dt>
+                                <dd>Ypač naudinga, kai duomenų klasės yra nesubalansuotos (pvz., kai teigiamų pavyzdžių yra daug mažiau nei neigiamų).</dd>
+                                <dt>F1 Score:</dt>
+                                <dd>Harmoningas vidurkis tarp tikslumo ir jautrumo, parodo bendrą balansą.</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confusion Matrix sekcija -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Painiavos matrica (Confusion Matrix)</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Painiavos matrica parodo, kaip dažnai modelis teisingai ir klaidingai klasifikuoja įvairių klasių duomenis.</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Confusion Matrix grafikas - naudosime heatmap -->
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="confusionMatrixChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <!-- Confusion Matrix interpretacija -->
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Interpretacija</h6>
+                        </div>
+                        <div class="card-body">
+                            <dl>
+                                <dt>Teisingai teigiami (TP):</dt>
+                                <dd>Teisingai nustatyta teigiama klasė.</dd>
+                                <dt>Teisingai neigiami (TN):</dt>
+                                <dd>Teisingai nustatyta neigiama klasė.</dd>
+                                <dt>Klaidingai teigiami (FP):</dt>
+                                <dd>Neteisingai nustatyta teigiama klasė.</dd>
+                                <dt>Klaidingai neigiami (FN):</dt>
+                                <dd>Neteisingai nustatyta neigiama klasė.</dd>
+                                <dt>Bendras tikslumas:</dt>
+                                <dd><span id="accuracyValue" class="badge bg-primary">0.94</span></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modelio parametrų santrauka -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Modelio konfigūracija</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Modelio parametrai:</h6>
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for key, value in model.parameters.items() %}
+                            <tr>
+                                <td><code>{{ key }}</code></td>
+                                <td>{{ value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Apmokymo konfigūracija:</h6>
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td>Epochų skaičius:</td>
+                                <td>{{ model.training_config.epochs }}</td>
+                            </tr>
+                            <tr>
+                                <td>Batch dydis:</td>
+                                <td>{{ model.training_config.batch_size }}</td>
+                            </tr>
+                            <tr>
+                                <td>Optimizer:</td>
+                                <td>{{ model.training_config.optimizer }}</td>
+                            </tr>
+                            <tr>
+                                <td>Learning rate:</td>
+                                <td>{{ model.training_config.learning_rate }}</td>
+                            </tr>
+                            <tr>
+                                <td>Validavimo dalis:</td>
+                                <td>{{ model.training_config.validation_split }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript grafikų piešimui -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modelio ID gavimas
+        const modelId = '{{ model.id }}';
+        
+        // Funkcija duomenų užkrovimui iš serverio
+        function loadValidationData() {
+            fetch(`/api/model/${modelId}/validation-data`)
+                .then(response => response.json())
+                .then(data => {
+                    // Duomenų gavę, piešiame visus grafikus
+                    drawLearningCurve(data.learning_curve);
+                    drawROCCurve(data.roc_curve);
+                    drawPRCurve(data.pr_curve);
+                    drawConfusionMatrix(data.confusion_matrix);
+                    
+                    // Atnaujiname metrikos ženklus
+                    document.getElementById('aucValue').textContent = data.metrics.auc.toFixed(3);
+                    document.getElementById('apValue').textContent = data.metrics.average_precision.toFixed(3);
+                    document.getElementById('accuracyValue').textContent = data.metrics.accuracy.toFixed(3);
+                    
+                    // Nustatome ženklų spalvas pagal vertes
+                    setMetricBadgeColor('aucValue', data.metrics.auc);
+                    setMetricBadgeColor('apValue', data.metrics.average_precision);
+                    setMetricBadgeColor('accuracyValue', data.metrics.accuracy);
+                })
+                .catch(error => {
+                    console.error('Klaida užkraunant validavimo duomenis:', error);
+                    // Rodome klaidos pranešimą
+                    showErrorMessage('Nepavyko užkrauti validavimo duomenų.');
+                });
+        }
+        
+        // Funkcija metrikos ženklelio spalvos nustatymui
+        function setMetricBadgeColor(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (value >= 0.9) {
+                element.className = 'badge bg-success';
+            } else if (value >= 0.8) {
+                element.className = 'badge bg-primary';
+            } else if (value >= 0.7) {
+                element.className = 'badge bg-info';
+            } else if (value >= 0.6) {
+                element.className = 'badge bg-warning';
+            } else {
+                element.className = 'badge bg-danger';
+            }
+        }
+        
+        // Funkcija klaidos pranešimui rodyti
+        function showErrorMessage(message) {
+            const container = document.querySelector('.container');
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show';
+            alert.innerHTML = `
+                <strong>Klaida!</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            container.insertBefore(alert, container.firstChild);
+        }
+        
+        // Mokymosi kreivės piešimas
+        function drawLearningCurve(data) {
+            const ctx = document.getElementById('learningCurveChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: data.epochs}, (_, i) => i + 1),
+                    datasets: [
+                        {
+                            label: 'Mokymosi nuostoliai',
+                            data: data.train_loss,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Validavimo nuostoliai',
+                            data: data.val_loss,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Mokymosi/validavimo nuostoliai per epochas'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Epocha'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Nuostolis'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ROC kreivės piešimas
+        function drawROCCurve(data) {
+            const ctx = document.getElementById('rocCurveChart').getContext('2d');
+            
+            // Apskaičiuojame 45 laipsnių liniją (atsitiktinio spėjimo linija)
+            const randomGuessLine = data.fpr.map(x => x);
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.fpr,
+                    datasets: [
+                        {
+                            label: 'ROC kreivė (AUC = ' + data.auc.toFixed(3) + ')',
+                            data: data.tpr,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Atsitiktinis spėjimas',
+                            data: randomGuessLine,
+                            borderColor: 'rgba(128, 128, 128, 0.5)',
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'ROC kreivė'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Klaidingai teigiamų dažnis (FPR)'
+                            },
+                            min: 0,
+                            max: 1
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Teisingai teigiamų dažnis (TPR)'
+                            },
+                            min: 0,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Precision-Recall kreivės piešimas
+        function drawPRCurve(data) {
+            const ctx = document.getElementById('prCurveChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.recall,
+                    datasets: [
+                        {
+                            label: 'Precision-Recall kreivė (AP = ' + data.average_precision.toFixed(3) + ')',
+                            data: data.precision,
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Precision-Recall kreivė'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Jautrumas (Recall)'
+                            },
+                            min: 0,
+                            max: 1
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Tikslumas (Precision)'
+                            },
+                            min: 0,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Confusion Matrix piešimas
+        function drawConfusionMatrix(data) {
+            const ctx = document.getElementById('confusionMatrixChart').getContext('2d');
+            
+            // Gauname klases ir paruošiame etiketes
+            const classes = data.classes;
+            
+            // Sukuriame duomenis heatmap formatui
+            let matrixData = [];
+            for (let i = 0; i < data.matrix.length; i++) {
+                for (let j = 0; j < data.matrix[i].length; j++) {
+                    matrixData.push({
+                        x: j,
+                        y: i,
+                        v: data.matrix[i][j]
+                    });
+                }
+            }
+            
+            // Randame didžiausią reikšmę spalvų skalei
+            const maxValue = Math.max(...data.matrix.flat());
+            
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Painiavos matrica',
+                        data: matrixData,
+                        backgroundColor: function(context) {
+                            const value = context.raw.v;
+                            // Spalvos intensyvumas pagal reikšmę
+                            const intensity = value / maxValue;
+                            return `rgba(54, 162, 235, ${intensity})`;
+                        },
+                        pointRadius: function(context) {
+                            // Taško dydis pagal reikšmę (min 5, max 30)
+                            const value = context.raw.v;
+                            return 5 + (value / maxValue) * 25;
+                        },
+                        pointHoverRadius: function(context) {
+                            // Hover taško dydis
+                            const value = context.raw.v;
+                            return 7 + (value / maxValue) * 25;
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Painiavos matrica'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const data = context.raw;
+                                    return `Tikra klasė: ${classes[data.y]}, Prognozė: ${classes[data.x]}, Reikšmė: ${data.v}`;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'category',
+                            position: 'bottom',
+                            labels: classes,
+                            title: {
+                                display: true,
+                                text: 'Prognozuojama klasė'
+                            },
+                            offset: true,
+                            ticks: {
+                                padding: 10
+                            }
+                        },
+                        y: {
+                            type: 'category',
+                            position: 'left',
+                            labels: classes,
+                            title: {
+                                display: true,
+                                text: 'Tikroji klasė'
+                            },
+                            offset: true,
+                            reverse: true,
+                            ticks: {
+                                padding: 10
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Eksportavimo į PNG funkcija
+        document.getElementById('exportPNG').addEventListener('click', function() {
+            // Laikinos drobės sukūrimas visų grafikų apjungimui
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Nustatome drobės dydį
+            canvas.width = 1200;
+            canvas.height = 1800;
+            
+            // Nupiešiame baltą foną
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Piešiamo antraštę
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText(`${document.querySelector('h1').textContent}`, 50, 50);
+            
+            // Surenkame visus grafikus
+            const charts = [
+                document.getElementById('learningCurveChart'),
+                document.getElementById('rocCurveChart'),
+                document.getElementById('prCurveChart'),
+                document.getElementById('confusionMatrixChart')
+            ];
+            
+            // Piešiame kiekvieną grafiką
+            let yOffset = 100;
+            charts.forEach((chart, index) => {
+                const chartImage = chart.toDataURL('image/png');
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 50, yOffset, 1100, 400);
+                    yOffset += 420;
+                    
+                    // Jei tai paskutinis grafikas, sukuriame ir atsisiunčiame failą
+                    if (index === charts.length - 1) {
+                        const link = document.createElement('a');
+                        link.download = `${document.querySelector('h1').textContent.replace(/\s+/g, '_')}_grafikai.png`;
+                        link.href = canvas.toDataURL();
+                        link.click();
+                    }
+                };
+                img.src = chartImage;
+            });
+        });
+        
+        // Užkrauname duomenis ir piešiame grafikus
+        loadValidationData();
+    });
+</script>
+{% endblock %}

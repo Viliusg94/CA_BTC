@@ -11,11 +11,24 @@ from flask import Flask
 
 # Importuojame WebSocket managerį
 from app.services.websocket_manager import WebSocketManager
+from app.utils.generate_sample_metrics import add_sample_models
 
 # Sukuriame WebSocket managerio objektą
 websocket_manager = WebSocketManager()
 
-def create_app():
+# Importuojame modelio validavimo maršrutus
+from app.evaluation.evaluation_routes import model_evaluation
+from app.api.validation_routes import api_validation
+
+# Importuojame užduočių maršrutus
+from app.routes.task_routes import task_routes
+
+# Užduočių vykdymo serviso įtraukimas į aplikaciją
+
+# Importuojame:
+from app.services.task_executor import task_executor
+
+def create_app(config=None):
     """
     Sukuria ir sukonfigūruoja Flask aplikaciją
     
@@ -45,6 +58,12 @@ def create_app():
     app.register_blueprint(scheduler, url_prefix='/scheduler')
     app.register_blueprint(models, url_prefix='/models')
     
+    # Registruojame modelio įvertinimo maršrutus
+    app.register_blueprint(model_evaluation)
+    
+    # Registruojame API validavimo maršrutus
+    app.register_blueprint(api_validation)
+    
     # Registruojame klaidų apdorojimo funkcijas
     register_error_handlers(app)
     
@@ -52,6 +71,15 @@ def create_app():
     @app.context_processor
     def inject_now():
         return {'now': datetime.utcnow()}
+    
+    # Pridedame pavyzdinius modelius
+    add_sample_models()
+    
+    # Registruojame užduočių maršrutus
+    app.register_blueprint(task_routes)
+    
+    # Paleidžiame užduočių vykdytoją
+    task_executor.start()
     
     return app
 

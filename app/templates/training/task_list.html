@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Treniravimo užduotys</h1>
+            <p class="text-muted">Suplanuotų modelių treniravimo užduočių sąrašas</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('tasks.create_task') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nauja užduotis
+            </a>
+            <a href="{{ url_for('tasks.calendar_view') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-calendar-alt me-2"></i>Kalendorius
+            </a>
+        </div>
+    </div>
+    
+    {% if tasks %}
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0">Visos užduotys</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Užduotis</th>
+                            <th>Modelis</th>
+                            <th>Suplanuotas laikas</th>
+                            <th>Būsena</th>
+                            <th>Veiksmai</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('tasks.task_details', task_id=task.id) }}">{{ task.name }}</a>
+                                {% if task.description %}
+                                <div class="small text-muted">{{ task.description|truncate(50) }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ task.model_id }}</td>
+                            <td>{{ task.scheduled_time.strftime('%Y-%m-%d %H:%M') if task.scheduled_time else 'Nenurodytas' }}</td>
+                            <td>
+                                {% if task.status.value == 'pending' %}
+                                <span class="badge bg-secondary">Laukiama</span>
+                                {% elif task.status.value == 'running' %}
+                                <span class="badge bg-primary">Vykdoma</span>
+                                {% elif task.status.value == 'completed' %}
+                                <span class="badge bg-success">Įvykdyta</span>
+                                {% elif task.status.value == 'failed' %}
+                                <span class="badge bg-danger">Nepavyko</span>
+                                {% elif task.status.value == 'canceled' %}
+                                <span class="badge bg-warning">Atšaukta</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('tasks.task_details', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    
+                                    {% if task.status.value == 'pending' %}
+                                    <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    <form method="POST" action="{{ url_for('tasks.cancel_task', task_id=task.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('Ar tikrai norite atšaukti šią užduotį?')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    
+                                    {% if task.status.value != 'running' %}
+                                    <form method="POST" action="{{ url_for('tasks.delete_task', task_id=task.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Ar tikrai norite ištrinti šią užduotį?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Nėra suplanuotų užduočių. <a href="{{ url_for('tasks.create_task') }}">Sukurkite naują užduotį</a>.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Ištrynimo modalinio lango konfigūracija
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteTaskModal = document.getElementById('deleteTaskModal');
+        deleteTaskModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const taskId = button.getAttribute('data-task-id');
+            const taskName = button.getAttribute('data-task-name');
+            
+            document.getElementById('taskNameToDelete').textContent = taskName;
+            document.getElementById('deleteTaskForm').action = "{{ url_for('tasks.delete_task', task_id='') }}" + taskId;
+        });
+    });
+</script>
+{% endblock %}

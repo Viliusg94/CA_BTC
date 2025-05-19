@@ -1,0 +1,101 @@
+model_id,model_name,date_created,accuracy,loss,val_accuracy,val_loss,epochs,description
+1,LSTM_BTC_v1,2025-05-19 16:26:21,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:26:21,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:26:21,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:26:21,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:26:21,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:26:35,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:26:35,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:26:35,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:26:35,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:26:35,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:27:56,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:27:56,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:27:56,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:27:56,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:27:56,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:35:54,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:35:54,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:35:54,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:35:54,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:35:54,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:36:42,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:36:42,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:36:42,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:36:42,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:36:42,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:47:05,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:47:05,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:47:05,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:47:05,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:47:05,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:47:15,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:47:15,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:47:15,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:47:15,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:47:15,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:48:19,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:48:19,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:48:19,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:48:19,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:48:19,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:48:35,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:48:35,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:48:35,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:48:35,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:48:35,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:52:10,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:52:10,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:52:10,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:52:10,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:52:10,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 16:53:22,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 16:53:22,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 16:53:22,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 16:53:22,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 16:53:22,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:32:06,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:32:06,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:32:06,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:32:06,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:32:06,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:33:25,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:33:25,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:33:25,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:33:25,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:33:25,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:38:33,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:38:34,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:38:34,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:38:34,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:38:34,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:39:11,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:39:11,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:39:11,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:39:11,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:39:11,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:39:39,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:39:39,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:39:39,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:39:39,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:39:39,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:39:51,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:39:51,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:39:51,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:39:51,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:39:51,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:45:13,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:45:13,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:45:13,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:45:13,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:45:13,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:58:07,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:58:07,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:58:07,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:58:07,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:58:07,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø
+1,LSTM_BTC_v1,2025-05-19 17:58:50,0.85,0.23,0.82,0.25,50,"LSTM modelis Bitcoin kainø prognozavimui, 2 sluoksniai"
+1,GRU_BTC_v1,2025-05-19 17:58:50,0.87,0.2,0.84,0.22,50,"GRU modelis su dropout=0.2, optimizuotas Bitcoin kainoms"
+1,Dense_NN_v1,2025-05-19 17:58:50,0.78,0.35,0.75,0.38,30,Paprastas Dense neural network modelis
+1,CNN_BTC_v1,2025-05-19 17:58:50,0.82,0.28,0.79,0.31,40,1D CNN modelis su 3 sluoksniais
+1,LSTM_BTC_v2,2025-05-19 17:58:50,0.88,0.19,0.84,0.21,70,Patobulinta LSTM versija su daugiau epochø

@@ -1,0 +1,576 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigacija atgal -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.optimization_index') }}">Hiperparametrų optimizavimas</a></li>
+            <li class="breadcrumb-item active">Bayesian optimizavimo konfigūracija</li>
+        </ol>
+    </nav>
+
+    <!-- Antraštė -->
+    <div class="mb-4">
+        <h1>Bayesian optimizavimas</h1>
+        <p class="text-muted">Sukonfigūruokite parametrų erdvę efektyviam optimizavimui</p>
+    </div>
+    
+    <!-- Informacinis blokas -->
+    <div class="alert alert-info mb-4">
+        <div class="d-flex">
+            <div class="me-3">
+                <i class="fas fa-info-circle fa-2x"></i>
+            </div>
+            <div>
+                <h5>Apie Bayesian optimizavimą</h5>
+                <p class="mb-0">Bayesian optimizavimas naudoja Gaussian Process regresiją efektyviau tirti parametrų erdvę. Šis metodas išmoksta iš ankstesnių bandymų rezultatų ir nukreipia paiešką į perspektyvesnius regionus, todėl yra našesnis nei Grid Search ar Random Search.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bayesian optimizavimo konfigūracijos forma -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Optimizavimo nustatymai</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="bayesianOptForm">
+                <!-- Pagrindiniai nustatymai -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Sesijos pavadinimas</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="Bayesian - YYYY-MM-DD" required>
+                            <div class="form-text">Unikalus pavadinimas šiai optimizavimo sesijai</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="model_type" class="form-label">Modelio tipas</label>
+                            <select class="form-select" id="model_type" name="model_type" required>
+                                <option value="" selected disabled>Pasirinkite modelio tipą</option>
+                                <option value="lstm">LSTM</option>
+                                <option value="cnn">CNN</option>
+                                <option value="default">Paprastas neuroninis tinklas</option>
+                            </select>
+                            <div class="form-text">Modelio architektūra, kuriai optimizuosite parametrus</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Parametrų konfigūracija -->
+                <h5 class="mb-3">Parametrų ribos</h5>
+                <p class="text-muted mb-3">Nurodykite parametrų ribas (min ir max reikšmes). Bayesian optimizavimas efektyviai išbandys reikšmes šiame intervale.</p>
+                
+                <div id="parametersContainer">
+                    <!-- Pradiniai parametrų laukai -->
+                    <div class="parameter-group mb-3 pb-3 border-bottom">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-2">
+                                    <label class="form-label">Parametro pavadinimas</label>
+                                    <input type="text" class="form-control param-name" name="param_names[]" 
+                                           placeholder="pvz., learning_rate" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-2">
+                                    <label class="form-label">Min reikšmė</label>
+                                    <input type="text" class="form-control param-min" name="param_min[]" 
+                                           placeholder="pvz., 0.001" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-2">
+                                    <label class="form-label">Max reikšmė</label>
+                                    <input type="text" class="form-control param-max" name="param_max[]" 
+                                           placeholder="pvz., 0.1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-danger remove-parameter mb-2">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <button type="button" id="addParameterBtn" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-2"></i>Pridėti parametrą
+                    </button>
+                </div>
+                
+                <!-- Apribojimai -->
+                <h5 class="mb-3">Optimizavimo nustatymai</h5>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="n_iter" class="form-label">Iteracijų skaičius</label>
+                            <input type="number" class="form-control" id="n_iter" name="n_iter" 
+                                   min="5" max="50" value="15" required>
+                            <div class="form-text">Kiek kartų bus vykdomas optimizavimo algoritmas</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="n_initial_points" class="form-label">Pradinių taškų skaičius</label>
+                            <input type="number" class="form-control" id="n_initial_points" name="n_initial_points" 
+                                   min="3" max="10" value="5">
+                            <div class="form-text">Kiek atsitiktinių taškų bus išbandyta prieš taikant optimizavimą</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="cv" class="form-label">Kryžminio patikrinimo skaičius (CV)</label>
+                            <input type="number" class="form-control" id="cv" name="cv" 
+                                   min="2" max="10" value="3">
+                            <div class="form-text">Kiek kartų bus atliktas kryžminis patikrinimas</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="acq_func" class="form-label">Įsigijimo funkcija (Acquisition)</label>
+                            <select class="form-select" id="acq_func" name="acq_func">
+                                <option value="EI" selected>Expected Improvement (EI)</option>
+                                <option value="PI">Probability of Improvement (PI)</option>
+                                <option value="UCB">Upper Confidence Bound (UCB)</option>
+                            </select>
+                            <div class="form-text">Funkcija, kuri nurodo, kuriuos taškus tirti toliau</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="random_seed" class="form-label">Atsitiktinių skaičių sėkla</label>
+                            <input type="number" class="form-control" id="random_seed" name="random_seed" 
+                                   min="0" value="42">
+                            <div class="form-text">Užtikrina rezultatų pakartojamumą</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Treniravimo duomenų nustatymai -->
+                <h5 class="mb-3">Treniravimo duomenų nustatymai</h5>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="data_percentage" class="form-label">Duomenų dalis (%)</label>
+                            <input type="number" class="form-control" id="data_percentage" name="data_percentage" 
+                                   min="10" max="100" value="100">
+                            <div class="form-text">Kiek procentų turimų duomenų naudoti optimizavimui</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formos pateikimas -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('model_training.optimization_index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Grįžti
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i>Pradėti optimizavimą
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Optimizavimo informacijos blokas -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Optimizavimo informacija</h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div id="estimatedTime" class="h4">~0 minučių</div>
+                    <p class="text-muted">Apytikslis optimizavimo laikas (darant prielaidą, kad vienas bandymas trunka 1 min.)</p>
+                </div>
+                <div class="col-md-6">
+                    <div class="alert alert-success">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Bayesian optimizavimas paprastai pasiekia geresnius rezultatus su mažiau bandymų nei kiti metodai.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parametrų pridėjimo mygtukas
+        const addParameterBtn = document.getElementById('addParameterBtn');
+        const parametersContainer = document.getElementById('parametersContainer');
+        
+        // Parametrų šalinimo mygtukų funkcionalumas
+        function setupRemoveButtons() {
+            document.querySelectorAll('.remove-parameter').forEach(button => {
+                button.addEventListener('click', function() {
+                    // Nepašaliname paskutinio parametro
+                    if (document.querySelectorAll('.parameter-group').length > 1) {
+                        this.closest('.parameter-group').remove();
+                        updateEstimatedTime();
+                    } else {
+                        alert('Turi būti bent vienas parametras');
+                    }
+                });
+            });
+        }
+        
+        // Atnaujina apytikslį laiką
+        function updateEstimatedTime() {
+            const nIter = parseInt(document.getElementById('n_iter').value) || 15;
+            const initialPoints = parseInt(document.getElementById('n_initial_points').value) || 5;
+            const cv = parseInt(document.getElementById('cv').value) || 3;
+            
+            const totalTrials = nIter + initialPoints;
+            const estimatedMinutes = totalTrials * cv;
+            let timeText = '';
+            
+            if (estimatedMinutes < 60) {
+                timeText = `~${estimatedMinutes} minučių`;
+            } else {
+                const hours = Math.floor(estimatedMinutes / 60);
+                const minutes = estimatedMinutes % 60;
+                timeText = `~${hours} val. ${minutes} min.`;
+            }
+            
+            document.getElementById('estimatedTime').textContent = timeText;
+        }
+        
+        // Pridedame parametrą
+        addParameterBtn.addEventListener('click', function() {
+            const newParameterGroup = document.createElement('div');
+            newParameterGroup.className = 'parameter-group mb-3 pb-3 border-bottom';
+            newParameterGroup.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <label class="form-label">Parametro pavadinimas</label>
+                            <input type="text" class="form-control param-name" name="param_names[]" 
+                                   placeholder="pvz., learning_rate" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-2">
+                            <label class="form-label">Min reikšmė</label>
+                            <input type="text" class="form-control param-min" name="param_min[]" 
+                                   placeholder="pvz., 0.001" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-2">
+                            <label class="form-label">Max reikšmė</label>
+                            <input type="text" class="form-control param-max" name="param_max[]" 
+                                   placeholder="pvz., 0.1" required>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger remove-parameter mb-2">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            parametersContainer.appendChild(newParameterGroup);
+            setup<!-- filepath: d:\CA_BTC\app\templates\training\bayesian_optimization.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigacija atgal -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.optimization_index') }}">Hiperparametrų optimizavimas</a></li>
+            <li class="breadcrumb-item active">Bayesian optimizavimo konfigūracija</li>
+        </ol>
+    </nav>
+
+    <!-- Antraštė -->
+    <div class="mb-4">
+        <h1>Bayesian optimizavimas</h1>
+        <p class="text-muted">Sukonfigūruokite parametrų erdvę efektyviam optimizavimui</p>
+    </div>
+    
+    <!-- Informacinis blokas -->
+    <div class="alert alert-info mb-4">
+        <div class="d-flex">
+            <div class="me-3">
+                <i class="fas fa-info-circle fa-2x"></i>
+            </div>
+            <div>
+                <h5>Apie Bayesian optimizavimą</h5>
+                <p class="mb-0">Bayesian optimizavimas naudoja Gaussian Process regresiją efektyviau tirti parametrų erdvę. Šis metodas išmoksta iš ankstesnių bandymų rezultatų ir nukreipia paiešką į perspektyvesnius regionus, todėl yra našesnis nei Grid Search ar Random Search.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bayesian optimizavimo konfigūracijos forma -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Optimizavimo nustatymai</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="bayesianOptForm">
+                <!-- Pagrindiniai nustatymai -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Sesijos pavadinimas</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="Bayesian - YYYY-MM-DD" required>
+                            <div class="form-text">Unikalus pavadinimas šiai optimizavimo sesijai</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="model_type" class="form-label">Modelio tipas</label>
+                            <select class="form-select" id="model_type" name="model_type" required>
+                                <option value="" selected disabled>Pasirinkite modelio tipą</option>
+                                <option value="lstm">LSTM</option>
+                                <option value="cnn">CNN</option>
+                                <option value="default">Paprastas neuroninis tinklas</option>
+                            </select>
+                            <div class="form-text">Modelio architektūra, kuriai optimizuosite parametrus</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Parametrų konfigūracija -->
+                <h5 class="mb-3">Parametrų ribos</h5>
+                <p class="text-muted mb-3">Nurodykite parametrų ribas (min ir max reikšmes). Bayesian optimizavimas efektyviai išbandys reikšmes šiame intervale.</p>
+                
+                <div id="parametersContainer">
+                    <!-- Pradiniai parametrų laukai -->
+                    <div class="parameter-group mb-3 pb-3 border-bottom">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-2">
+                                    <label class="form-label">Parametro pavadinimas</label>
+                                    <input type="text" class="form-control param-name" name="param_names[]" 
+                                           placeholder="pvz., learning_rate" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-2">
+                                    <label class="form-label">Min reikšmė</label>
+                                    <input type="text" class="form-control param-min" name="param_min[]" 
+                                           placeholder="pvz., 0.001" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-2">
+                                    <label class="form-label">Max reikšmė</label>
+                                    <input type="text" class="form-control param-max" name="param_max[]" 
+                                           placeholder="pvz., 0.1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-danger remove-parameter mb-2">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <button type="button" id="addParameterBtn" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-2"></i>Pridėti parametrą
+                    </button>
+                </div>
+                
+                <!-- Apribojimai -->
+                <h5 class="mb-3">Optimizavimo nustatymai</h5>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="n_iter" class="form-label">Iteracijų skaičius</label>
+                            <input type="number" class="form-control" id="n_iter" name="n_iter" 
+                                   min="5" max="50" value="15" required>
+                            <div class="form-text">Kiek kartų bus vykdomas optimizavimo algoritmas</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="n_initial_points" class="form-label">Pradinių taškų skaičius</label>
+                            <input type="number" class="form-control" id="n_initial_points" name="n_initial_points" 
+                                   min="3" max="10" value="5">
+                            <div class="form-text">Kiek atsitiktinių taškų bus išbandyta prieš taikant optimizavimą</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="cv" class="form-label">Kryžminio patikrinimo skaičius (CV)</label>
+                            <input type="number" class="form-control" id="cv" name="cv" 
+                                   min="2" max="10" value="3">
+                            <div class="form-text">Kiek kartų bus atliktas kryžminis patikrinimas</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="acq_func" class="form-label">Įsigijimo funkcija (Acquisition)</label>
+                            <select class="form-select" id="acq_func" name="acq_func">
+                                <option value="EI" selected>Expected Improvement (EI)</option>
+                                <option value="PI">Probability of Improvement (PI)</option>
+                                <option value="UCB">Upper Confidence Bound (UCB)</option>
+                            </select>
+                            <div class="form-text">Funkcija, kuri nurodo, kuriuos taškus tirti toliau</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="random_seed" class="form-label">Atsitiktinių skaičių sėkla</label>
+                            <input type="number" class="form-control" id="random_seed" name="random_seed" 
+                                   min="0" value="42">
+                            <div class="form-text">Užtikrina rezultatų pakartojamumą</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Treniravimo duomenų nustatymai -->
+                <h5 class="mb-3">Treniravimo duomenų nustatymai</h5>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="data_percentage" class="form-label">Duomenų dalis (%)</label>
+                            <input type="number" class="form-control" id="data_percentage" name="data_percentage" 
+                                   min="10" max="100" value="100">
+                            <div class="form-text">Kiek procentų turimų duomenų naudoti optimizavimui</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formos pateikimas -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('model_training.optimization_index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Grįžti
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i>Pradėti optimizavimą
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Optimizavimo informacijos blokas -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Optimizavimo informacija</h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div id="estimatedTime" class="h4">~0 minučių</div>
+                    <p class="text-muted">Apytikslis optimizavimo laikas (darant prielaidą, kad vienas bandymas trunka 1 min.)</p>
+                </div>
+                <div class="col-md-6">
+                    <div class="alert alert-success">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Bayesian optimizavimas paprastai pasiekia geresnius rezultatus su mažiau bandymų nei kiti metodai.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parametrų pridėjimo mygtukas
+        const addParameterBtn = document.getElementById('addParameterBtn');
+        const parametersContainer = document.getElementById('parametersContainer');
+        
+        // Parametrų šalinimo mygtukų funkcionalumas
+        function setupRemoveButtons() {
+            document.querySelectorAll('.remove-parameter').forEach(button => {
+                button.addEventListener('click', function() {
+                    // Nepašaliname paskutinio parametro
+                    if (document.querySelectorAll('.parameter-group').length > 1) {
+                        this.closest('.parameter-group').remove();
+                        updateEstimatedTime();
+                    } else {
+                        alert('Turi būti bent vienas parametras');
+                    }
+                });
+            });
+        }
+        
+        // Atnaujina apytikslį laiką
+        function updateEstimatedTime() {
+            const nIter = parseInt(document.getElementById('n_iter').value) || 15;
+            const initialPoints = parseInt(document.getElementById('n_initial_points').value) || 5;
+            const cv = parseInt(document.getElementById('cv').value) || 3;
+            
+            const totalTrials = nIter + initialPoints;
+            const estimatedMinutes = totalTrials * cv;
+            let timeText = '';
+            
+            if (estimatedMinutes < 60) {
+                timeText = `~${estimatedMinutes} minučių`;
+            } else {
+                const hours = Math.floor(estimatedMinutes / 60);
+                const minutes = estimatedMinutes % 60;
+                timeText = `~${hours} val. ${minutes} min.`;
+            }
+            
+            document.getElementById('estimatedTime').textContent = timeText;
+        }
+        
+        // Pridedame parametrą
+        addParameterBtn.addEventListener('click', function() {
+            const newParameterGroup = document.createElement('div');
+            newParameterGroup.className = 'parameter-group mb-3 pb-3 border-bottom';
+            newParameterGroup.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <label class="form-label">Parametro pavadinimas</label>
+                            <input type="text" class="form-control param-name" name="param_names[]" 
+                                   placeholder="pvz., learning_rate" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-2">
+                            <label class="form-label">Min reikšmė</label>
+                            <input type="text" class="form-control param-min" name="param_min[]" 
+                                   placeholder="pvz., 0.001" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-2">
+                            <label class="form-label">Max reikšmė</label>
+                            <input type="text" class="form-control param-max" name="param_max[]" 
+                                   placeholder="pvz., 0.1" required>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger remove-parameter mb-2">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            parametersContainer.appendChild(newParameterGroup);
+            setup

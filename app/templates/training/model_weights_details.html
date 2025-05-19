@@ -1,0 +1,601 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block styles %}
+<style>
+    .weights-container {
+        margin-top: 20px;
+    }
+    
+    .layer-card {
+        margin-bottom: 20px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+    }
+    
+    .layer-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .layer-header {
+        cursor: pointer;
+    }
+    
+    .visualization-container {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    
+    .filter-container {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .chart-container {
+        text-align: center;
+        margin: 20px 0;
+    }
+    
+    .spinner-overlay {
+        position: relative;
+        text-align: center;
+        min-height: 100px;
+    }
+    
+    .spinner-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .analysis-table {
+        margin-top: 20px;
+    }
+    
+    .analysis-value {
+        font-weight: bold;
+    }
+    
+    .stats-card {
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .stats-title {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .stats-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <h1>Modelio "{{ model_name }}" svoriai</h1>
+        <a href="{{ url_for('model_training.model_weights') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Grįžti į sąrašą
+        </a>
+    </div>
+    
+    <!-- Sluoksnių filtravimo dalis -->
+    <div class="filter-container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="layerTypeFilter" class="form-label">Filtruoti pagal sluoksnio tipą:</label>
+                    <select class="form-select" id="layerTypeFilter">
+                        <option value="">Visi tipai</option>
+                        {% set layer_types = [] %}
+                        {% for layer in layers_info %}
+                            {% if layer.type not in layer_types %}
+                                {% set _ = layer_types.append(layer.type) %}
+                                <option value="{{ layer.type }}">{{ layer.type }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="layerNameFilter" class="form-label">Ieškoti pagal pavadinimą:</label>
+                    <input type="text" class="form-control" id="layerNameFilter" placeholder="Įveskite sluoksnio pavadinimą...">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showWeightsOnly" value="1">
+                    <label class="form-check-label" for="showWeightsOnly">
+                        Rodyti tik sluoksnius su svoriais
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <button id="resetFilters" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync me-1"></i>Atstatyti filtrus
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-2">
+        <div id="filter-message" class="alert alert-success" style="display: none;"></div>
+        <div id="results-count" class="text-muted small">Rodoma sluoksnių: {{ layers_info|length }}</div>
+    </div>
+    
+    <!-- Sluoksnių sąrašas ir svorių vizualizacija -->
+    <div class="weights-container">
+        <div class="accordion" id="layersAccordion">
+            {% for layer in layers_info %}
+            <div class="accordion-item layer-card" data-layer-type="{{ layer.type }}" data-layer-name="{{ layer.name }}" data-has-weights="{{ layer.has_weights }}">
+                <h2 class="accordion-header layer-header" id="heading{{ layer.index }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ layer.index }}">
+                        <span class="me-2">{{ layer.index }}.</span>
+                        <strong>{{ layer.name }}</strong> 
+                        <span class="badge bg-primary ms-2">{{ layer.type }}</span>
+                        {% if layer.has_weights %}
+                            <span class="badge bg-success ms-2">Su svoriais</span>
+                        {% else %}
+                            <span class="badge bg-secondary ms-2">Be svorių</span>
+                        {% endif %}
+                    </button>
+                </h2>
+                
+                <div id="collapse{{ layer.index }}" class="accordion-collapse collapse" data-bs-parent="#layersAccordion">
+                    <div class="accordion-body">
+                        <!-- Sluoksnio informacija -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Sluoksnio tipas:</th>
+                                        <td>{{ layer.type }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Svorių skaičius:</th>
+                                        <td>{{ layer.weights_count if layer.has_weights else 0 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Treniruojamas:</th>
+                                        <td>
+                                            {% if layer.trainable %}
+                                                <span class="badge bg-success">Taip</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Ne</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            {% if layer.has_weights %}
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="weightSelect{{ layer.index }}" class="form-label">Pasirinkite svorį:</label>
+                                    <select class="form-select weight-select" id="weightSelect{{ layer.index }}" data-layer-index="{{ layer.index }}">
+                                        {% for weight in layer.weights %}
+                                            <option value="{{ weight.index }}">{{ weight.name }} ({{ weight.shape }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary load-visualization-btn" data-layer-index="{{ layer.index }}">
+                                    <i class="fas fa-chart-bar me-1"></i>Analizuoti svorius
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if layer.has_weights %}
+                        <!-- Svorių vizualizacija -->
+                        <div class="visualization-container" id="visualization{{ layer.index }}" style="display: none;">
+                            <!-- Vizualizacijos tabai -->
+                            <ul class="nav nav-tabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="histogram-tab{{ layer.index }}" data-bs-toggle="tab" 
+                                            data-bs-target="#histogram{{ layer.index }}" type="button" role="tab">
+                                        <i class="fas fa-chart-bar me-1"></i>Histograma
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="activations-tab{{ layer.index }}" data-bs-toggle="tab" 
+                                            data-bs-target="#activations{{ layer.index }}" type="button" role="tab">
+                                        <i class="fas fa-fire me-1"></i>Aktyvacijos
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="analysis-tab{{ layer.index }}" data-bs-toggle="tab" 
+                                            data-bs-target="#analysis{{ layer.index }}" type="button" role="tab">
+                                        <i class="fas fa-search me-1"></i>Statistika
+                                    </button>
+                                </li>
+                            </ul>
+                            
+                            <!-- Tabų turinys -->
+                            <div class="tab-content">
+                                <!-- Histogramos tabas -->
+                                <div class="tab-pane fade show active" id="histogram{{ layer.index }}" role="tabpanel">
+                                    <div class="chart-container">
+                                        <div class="spinner-overlay" id="histogramSpinner{{ layer.index }}">
+                                            <div class="spinner-center">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Kraunama...</span>
+                                                </div>
+                                                <p class="mt-2">Generuojama histograma...</p>
+                                            </div>
+                                        </div>
+                                        <img id="histogramImg{{ layer.index }}" class="img-fluid" style="display: none;" />
+                                    </div>
+                                </div>
+                                
+                                <!-- Aktyvacijų tabas -->
+                                <div class="tab-pane fade" id="activations{{ layer.index }}" role="tabpanel">
+                                    <div class="chart-container">
+                                        <div class="spinner-overlay" id="activationsSpinner{{ layer.index }}">
+                                            <div class="spinner-center">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Kraunama...</span>
+                                                </div>
+                                                <p class="mt-2">Generuojamos aktyvacijos...</p>
+                                            </div>
+                                        </div>
+                                        <img id="activationsImg{{ layer.index }}" class="img-fluid" style="display: none;" />
+                                    </div>
+                                </div>
+                                
+                                <!-- Analizės tabas -->
+                                <div class="tab-pane fade" id="analysis{{ layer.index }}" role="tabpanel">
+                                    <div class="mt-3">
+                                        <div class="spinner-overlay" id="analysisSpinner{{ layer.index }}">
+                                            <div class="spinner-center">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Kraunama...</span>
+                                                </div>
+                                                <p class="mt-2">Analizuojami svoriai...</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="analysisContent{{ layer.index }}" style="display: none;">
+                                            <!-- Pagrindinė statistika "kortelėse" -->
+                                            <div class="row mb-4">
+                                                <div class="col-md-3">
+                                                    <div class="card stats-card bg-light">
+                                                        <div class="card-body text-center">
+                                                            <div class="stats-title">Vidurkis</div>
+                                                            <div class="stats-value" id="meanValue{{ layer.index }}">0.0</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card stats-card bg-light">
+                                                        <div class="card-body text-center">
+                                                            <div class="stats-title">Stand. nuokrypis</div>
+                                                            <div class="stats-value" id="stdValue{{ layer.index }}">0.0</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card stats-card bg-light">
+                                                        <div class="card-body text-center">
+                                                            <div class="stats-title">Min. reikšmė</div>
+                                                            <div class="stats-value" id="minValue{{ layer.index }}">0.0</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card stats-card bg-light">
+                                                        <div class="card-body text-center">
+                                                            <div class="stats-title">Maks. reikšmė</div>
+                                                            <div class="stats-value" id="maxValue{{ layer.index }}">0.0</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Detalesnė statistika lentelėje -->
+                                            <div class="table-responsive analysis-table">
+                                                <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Rodiklis</th>
+                                                            <th>Reikšmė</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="analysisTable{{ layer.index }}">
+                                                        <!-- Čia bus įterpta analizės rezultatai -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Pridėti atstatymo būsenos indikatorių į modelio detalių puslapį -->
+    {% if model.restored_from %}
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <div class="me-3">
+                <i class="fas fa-history fa-2x"></i>
+            </div>
+            <div>
+                <h5>Modelis atstatytas iš išsaugojimo</h5>
+                <p class="mb-0">Šis modelis buvo atstatytas iš {{ model.restored_from.epoch }} epochos išsaugojimo {{ model.restored_from.timestamp }}.</p>
+                
+                <div class="mt-2">
+                    <a href="{{ url_for('model_training.checkpoint_details', model_id=model.id, checkpoint_id=model.restored_from.checkpoint_id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>Peržiūrėti išsaugojimą
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sluoksnių filtravimo funkcionalumas
+        const layerTypeFilter = document.getElementById('layerTypeFilter');
+        const layerNameFilter = document.getElementById('layerNameFilter');
+        const showWeightsOnly = document.getElementById('showWeightsOnly');
+        const resetFilters = document.getElementById('resetFilters');
+        const layerCards = document.querySelectorAll('.layer-card');
+        
+        // Filtravimo funkcija
+        function filterLayers() {
+            const typeFilter = layerTypeFilter.value.toLowerCase();
+            const nameFilter = layerNameFilter.value.toLowerCase();
+            const onlyWithWeights = showWeightsOnly.checked;
+            
+            layerCards.forEach(card => {
+                const layerType = card.dataset.layerType.toLowerCase();
+                const layerName = card.dataset.layerName.toLowerCase();
+                const hasWeights = card.dataset.hasWeights === 'True';
+                
+                const typeMatch = !typeFilter || layerType === typeFilter;
+                const nameMatch = !nameFilter || layerName.includes(nameFilter);
+                const weightsMatch = !onlyWithWeights || hasWeights;
+                
+                if (typeMatch && nameMatch && weightsMatch) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Atnaujiname rezultatų skaičių
+            updateResultsCount();
+        }
+        
+        // Rezultatų skaičiaus atnaujinimo funkcija
+        function updateResultsCount() {
+            const visibleCards = Array.from(layerCards).filter(card => card.style.display !== 'none');
+            const countElement = document.getElementById('results-count');
+            
+            if (visibleCards.length === 0) {
+                countElement.textContent = 'Nerasta sluoksnių, atitinkančių filtrus.';
+            } else {
+                countElement.textContent = `Rodoma sluoksnių: ${visibleCards.length}`;
+            }
+        }
+        
+        // Pririšame įvykius
+        layerTypeFilter.addEventListener('change', filterLayers);
+        layerNameFilter.addEventListener('input', filterLayers);
+        showWeightsOnly.addEventListener('change', filterLayers);
+        
+        // Filtrų atstatymas
+        resetFilters.addEventListener('click', function() {
+            layerTypeFilter.value = '';
+            layerNameFilter.value = '';
+            showWeightsOnly.checked = false;
+            
+            layerCards.forEach(card => {
+                card.style.display = '';
+            });
+            
+            // Atstatome rezultatų skaičių
+            updateResultsCount();
+        });
+        
+        // Svorių vizualizacijos funkcionalumas
+        const visualizationButtons = document.querySelectorAll('.load-visualization-btn');
+        
+        visualizationButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const layerIndex = this.dataset.layerIndex;
+                const weightSelect = document.getElementById(`weightSelect${layerIndex}`);
+                const weightIndex = weightSelect.value;
+                
+                // Rodome vizualizacijos konteinerį
+                const visualizationContainer = document.getElementById(`visualization${layerIndex}`);
+                visualizationContainer.style.display = 'block';
+                
+                // Krauname histogramą
+                loadHistogram(layerIndex, weightIndex);
+                
+                // Krauname aktyvacijas
+                loadActivations(layerIndex);
+                
+                // Krauname analizę
+                loadAnalysis(layerIndex, weightIndex);
+            });
+        });
+        
+        // Svorių pasirinkimo keitimo įvykis
+        const weightSelects = document.querySelectorAll('.weight-select');
+        
+        weightSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                const layerIndex = this.dataset.layerIndex;
+                const weightIndex = this.value;
+                const visualizationContainer = document.getElementById(`visualization${layerIndex}`);
+                
+                // Jei vizualizacija jau rodoma, atnaujiname
+                if (visualizationContainer.style.display === 'block') {
+                    // Atnaujiname histogramą
+                    loadHistogram(layerIndex, weightIndex);
+                    
+                    // Atnaujiname analizę
+                    loadAnalysis(layerIndex, weightIndex);
+                }
+            });
+        });
+        
+        // Histogramos užkrovimo funkcija
+        function loadHistogram(layerIndex, weightIndex) {
+            // Rodome įkrovimo animaciją
+            const spinner = document.getElementById(`histogramSpinner${layerIndex}`);
+            const img = document.getElementById(`histogramImg${layerIndex}`);
+            spinner.style.display = 'block';
+            img.style.display = 'none';
+            
+            // Užkrauname histogramą
+            fetch(`/training/api/model_weights/histogram?model_name={{ model_name }}&layer_index=${layerIndex}&weight_index=${weightIndex}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Klaida: ${data.error}`);
+                    } else {
+                        // Rodome histogramą
+                        img.src = `data:image/png;base64,${data.histogram}`;
+                        img.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida:', error);
+                    alert('Įvyko klaida kraunant histogramą');
+                })
+                .finally(() => {
+                    // Paslepiame įkrovimo animaciją
+                    spinner.style.display = 'none';
+                });
+        }
+        
+        // Aktyvacijų užkrovimo funkcija
+        function loadActivations(layerIndex) {
+            // Rodome įkrovimo animaciją
+            const spinner = document.getElementById(`activationsSpinner${layerIndex}`);
+            const img = document.getElementById(`activationsImg${layerIndex}`);
+            spinner.style.display = 'block';
+            img.style.display = 'none';
+            
+            // Užkrauname aktyvacijas
+            fetch(`/training/api/model_weights/activations?model_name={{ model_name }}&layer_index=${layerIndex}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Klaida: ${data.error}`);
+                    } else {
+                        // Rodome aktyvacijas
+                        img.src = `data:image/png;base64,${data.heatmap}`;
+                        img.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida:', error);
+                    alert('Įvyko klaida kraunant aktyvacijas');
+                })
+                .finally(() => {
+                    // Paslepiame įkrovimo animaciją
+                    spinner.style.display = 'none';
+                });
+        }
+        
+        // Analizės užkrovimo funkcija
+        function loadAnalysis(layerIndex, weightIndex) {
+            // Rodome įkrovimo animaciją
+            const spinner = document.getElementById(`analysisSpinner${layerIndex}`);
+            const content = document.getElementById(`analysisContent${layerIndex}`);
+            spinner.style.display = 'block';
+            content.style.display = 'none';
+            
+            // Užkrauname analizę
+            fetch(`/training/api/model_weights/analysis?model_name={{ model_name }}&layer_index=${layerIndex}&weight_index=${weightIndex}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Klaida: ${data.error}`);
+                    } else {
+                        // Atnaujiname statistikos korteles
+                        document.getElementById(`meanValue${layerIndex}`).textContent = data.mean.toFixed(4);
+                        document.getElementById(`stdValue${layerIndex}`).textContent = data.std.toFixed(4);
+                        document.getElementById(`minValue${layerIndex}`).textContent = data.min.toFixed(4);
+                        document.getElementById(`maxValue${layerIndex}`).textContent = data.max.toFixed(4);
+                        
+                        // Atnaujiname analizės lentelę
+                        const table = document.getElementById(`analysisTable${layerIndex}`);
+                        table.innerHTML = '';
+                        
+                        // Pridedame eilutes
+                        addAnalysisRow(table, 'Mediana', data.median.toFixed(4));
+                        addAnalysisRow(table, 'Retumas (sparsity)', `${(data.sparsity * 100).toFixed(2)}%`);
+                        addAnalysisRow(table, 'Teigiamų reikšmių dalis', `${(data.positive_ratio * 100).toFixed(2)}%`);
+                        addAnalysisRow(table, 'Neigiamų reikšmių dalis', `${(data.negative_ratio * 100).toFixed(2)}%`);
+                        addAnalysisRow(table, 'Elementų skaičius', data.total_elements);
+                        
+                        // Pridedame procentiles
+                        table.innerHTML += '<tr><td colspan="2" class="table-secondary"><strong>Procentilės</strong></td></tr>';
+                        for (const [percentile, value] of Object.entries(data.percentiles)) {
+                            addAnalysisRow(table, `${percentile}%`, value.toFixed(4));
+                        }
+                        
+                        // Rodome analizės turinį
+                        content.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida:', error);
+                    alert('Įvyko klaida kraunant analizę');
+                })
+                .finally(() => {
+                    // Paslepiame įkrovimo animaciją
+                    spinner.style.display = 'none';
+                });
+        }
+        
+        // Pagalbinė funkcija analizės eilutėms
+        function addAnalysisRow(table, label, value) {
+            const row = document.createElement('tr');
+            
+            const labelCell = document.createElement('td');
+            labelCell.textContent = label;
+            
+            const valueCell = document.createElement('td');
+            valueCell.textContent = value;
+            valueCell.className = 'analysis-value';
+            
+            row.appendChild(labelCell);
+            row.appendChild(valueCell);
+            
+            table.appendChild(row);
+        }
+    });
+</script>
+{% endblock %}

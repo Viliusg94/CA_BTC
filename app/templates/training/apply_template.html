@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigacija atgal -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.optimization_index') }}">Hiperparametrų optimizavimas</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.parameter_templates') }}">Parametrų šablonai</a></li>
+            <li class="breadcrumb-item active">Pritaikyti šabloną</li>
+        </ol>
+    </nav>
+
+    <!-- Antraštė -->
+    <div class="mb-4">
+        <h1>Šablono pritaikymas</h1>
+        <p class="text-muted">Pritaikykite išsaugotą parametrų šabloną naujam modeliui</p>
+    </div>
+    
+    <!-- Informacija apie šabloną -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Parametrų šablonas: {{ template.name }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Modelio tipas:</dt>
+                        <dd class="col-sm-8">{{ template.model_type }}</dd>
+                        
+                        <dt class="col-sm-4">Sukurta:</dt>
+                        <dd class="col-sm-8">{{ template.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Šaltinis:</dt>
+                        <dd class="col-sm-8">
+                            {% if template.source == 'optimization' %}
+                            <span class="badge bg-primary">Optimizavimas</span>
+                            {% elif template.source == 'manual' %}
+                            <span class="badge bg-secondary">Rankinis</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Parametrų skaičius:</dt>
+                        <dd class="col-sm-8">{{ template.parameters|length }}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <!-- Parametrų lentelė -->
+            <h6 class="mb-3">Parametrų reikšmės:</h6>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Parametras</th>
+                            <th>Reikšmė</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for param_name, param_value in template.parameters.items() %}
+                        <tr>
+                            <td><code>{{ param_name }}</code></td>
+                            <td>{{ param_value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modelio kūrimo forma -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Sukurti modelį su šiuo šablonu</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('model_training.apply_template_post', template_id=template.template_id) }}">
+                <!-- Modelio pavadinimas -->
+                <div class="mb-3">
+                    <label for="model_name" class="form-label">Modelio pavadinimas:</label>
+                    <input type="text" class="form-control" id="model_name" name="model_name" 
+                           value="{{ template.model_type }} modelis su šablonu - {{ now.strftime('%Y-%m-%d') }}" required>
+                    <div class="form-text">Unikalus naujo modelio pavadinimas.</div>
+                </div>
+                
+                <!-- Duomenų šaltinio nustatymai -->
+                <div class="mb-3">
+                    <label for="data_source" class="form-label">Duomenų šaltinis:</label>
+                    <select class="form-select" id="data_source" name="data_source" required>
+                        <option value="latest">Naujausi duomenys</option>
+                        <option value="custom">Pasirinktinis duomenų rinkinys</option>
+                    </select>
+                    <div class="form-text">Pasirinkite, kokie duomenys bus naudojami modelio apmokymui.</div>
+                </div>
+                
+                <!-- Pasirinktinio duomenų šaltinio laukai (rodomi tik pasirinkus "custom") -->
+                <div id="customDataContainer" class="mb-3" style="display: none;">
+                    <label for="custom_data" class="form-label">Pasirinktinis duomenų rinkinys:</label>
+                    <select class="form-select" id="custom_data" name="custom_data">
+                        {% for dataset in datasets %}
+                        <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Papildomi apmokymo nustatymai -->
+                <div class="mb-3">
+                    <label for="early_stopping" class="form-label">Ankstyvas sustabdymas:</label>
+                    <select class="form-select" id="early_stopping" name="early_stopping">
+                        <option value="true" selected>Įjungtas</option>
+                        <option value="false">Išjungtas</option>
+                    </select>
+                    <div class="form-text">Ankstyvas sustabdymas padeda išvengti permokymo.</div>
+                </div>
+                
+                <!-- Parametrų redagavimo mygtukas -->
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editParameters">
+                        <label class="form-check-label" for="editParameters">Redaguoti parametrus prieš pritaikymą</label>
+                    </div>
+                </div>
+                
+                <!-- Parametrų redagavimo sekcija (rodoma tik pažymėjus varnelę) -->
+                <div id="parametersEditContainer" style="display: none;">
+                    <h6 class="mb-3">Redaguoti parametrus:</h6>
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Parametrų keitimas gali sumažinti modelio efektyvumą. Keiskite tik jei žinote, ką darote.
+                    </div>
+                    
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Parametras</th>
+                                    <th>Šablono reikšmė</th>
+                                    <th>Nauja reikšmė</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for param_name, param_value in template.parameters.items() %}
+                                <tr>
+                                    <td><code>{{ param_name }}</code></td>
+                                    <td>{{ param_value }}</td>
+                                    <td>
+                                        <input type="text" class="form-control" name="params[{{ param_name }}]" 
+                                               value="{{ param_value }}">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Pateikimo mygtukai -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('model_training.parameter_templates') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Atgal
+                    </a>
+                    <div>
+                        <button type="submit" name="action" value="preview" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-eye me-2"></i>Peržiūrėti rezultatus
+                        </button>
+                        <button type="submit" name="action" value="apply" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>Sukurti modelį
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript parametrų redagavimo logikai -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Duomenų šaltinio nustatymų valdymas
+        const dataSourceSelect = document.getElementById('data_source');
+        const customDataContainer = document.getElementById('customDataContainer');
+        
+        dataSourceSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customDataContainer.style.display = 'block';
+            } else {
+                customDataContainer.style.display = 'none';
+            }
+        });
+        
+        // Parametrų redagavimo valdymas
+        const editParametersSwitch = document.getElementById('editParameters');
+        const parametersEditContainer = document.getElementById('parametersEditContainer');
+        
+        editParametersSwitch.addEventListener('change', function() {
+            if (this.checked) {
+                parametersEditContainer.style.display = 'block';
+            } else {
+                parametersEditContainer.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
