@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}Užduoties informacija{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Užduoties informacija</h1>
+    
+    <div class="mb-3">
+        <a href="{{ url_for('scheduler.task_queue') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Grįžti į sąrašą
+        </a>
+        <a href="{{ url_for('scheduler.edit_task', task_id=task.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Redaguoti
+        </a>
+        <a href="{{ url_for('scheduler.run_task', task_id=task.id) }}" class="btn btn-primary">
+            <i class="fas fa-play"></i> Vykdyti dabar
+        </a>
+        <a href="{{ url_for('scheduler.delete_task', task_id=task.id) }}" class="btn btn-danger" 
+           onclick="return confirm('Ar tikrai norite ištrinti šią užduotį?')">
+            <i class="fas fa-trash"></i> Ištrinti
+        </a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title">Pagrindinė informacija</h5>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <tr>
+                    <th style="width: 200px;">Pavadinimas:</th>
+                    <td>{{ task.name }}</td>
+                </tr>
+                <tr>
+                    <th>ID:</th>
+                    <td>{{ task.id }}</td>
+                </tr>
+                <tr>
+                    <th>Būsena:</th>
+                    <td>
+                        {% if task.status == 'pending' %}
+                        <span class="badge bg-secondary">Laukianti</span>
+                        {% elif task.status == 'running' %}
+                        <span class="badge bg-primary">Vykdoma</span>
+                        {% elif task.status == 'completed' %}
+                        <span class="badge bg-success">Baigta</span>
+                        {% elif task.status == 'failed' %}
+                        <span class="badge bg-danger">Klaida</span>
+                        {% else %}
+                        <span class="badge bg-info">{{ task.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Dažnumas:</th>
+                    <td>
+                        {% if task.frequency == 'once' %}
+                        Vienkartinė
+                        {% elif task.frequency == 'daily' %}
+                        Kasdien
+                        {% elif task.frequency == 'weekly' %}
+                        Kas savaitę
+                        {% elif task.frequency == 'monthly' %}
+                        Kas mėnesį
+                        {% else %}
+                        {{ task.frequency }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Prioritetas:</th>
+                    <td>
+                        {% if task.priority == 1 %}
+                        <span class="text-danger">Aukštas</span>
+                        {% elif task.priority == 5 %}
+                        <span class="text-warning">Vidutinis</span>
+                        {% elif task.priority == 10 %}
+                        <span class="text-success">Žemas</span>
+                        {% else %}
+                        {{ task.priority }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Kitas vykdymas:</th>
+                    <td>{{ task.next_run_time }}</td>
+                </tr>
+                <tr>
+                    <th>Sukurta:</th>
+                    <td>{{ task.created_at }}</td>
+                </tr>
+                {% if task.description %}
+                <tr>
+                    <th>Aprašymas:</th>
+                    <td>{{ task.description }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+    
+    {% if task.status == 'running' %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title">Progresas</h5>
+        </div>
+        <div class="card-body">
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
+                     style="width: {{ task.progress|default(0) }}%;" 
+                     aria-valuenow="{{ task.progress|default(0) }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                    {{ task.progress|default(0) }}%
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if task.last_run %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Paskutinio vykdymo informacija</h5>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <tr>
+                    <th style="width: 200px;">Data:</th>
+                    <td>{{ task.last_run.date }}</td>
+                </tr>
+                <tr>
+                    <th>Rezultatas:</th>
+                    <td>
+                        {% if task.last_run.success %}
+                        <span class="text-success">Sėkmingai</span>
+                        {% else %}
+                        <span class="text-danger">Nepavyko</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if task.last_run.message %}
+                <tr>
+                    <th>Žinutė:</th>
+                    <td>{{ task.last_run.message }}</td>
+                </tr>
+                {% endif %}
+                {% if task.last_run.error %}
+                <tr>
+                    <th>Klaida:</th>
+                    <td class="text-danger">{{ task.last_run.error }}</td>
+                </tr>
+                {% endif %}
+                {% if task.last_run.duration %}
+                <tr>
+                    <th>Trukmė:</th>
+                    <td>{{ task.last_run.duration }} s</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

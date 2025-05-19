@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% block title %}Užduočių kalendorius{% endblock %}
+
+{% block styles %}
+<style>
+    .calendar-container {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        padding: 20px;
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+    
+    .calendar-day {
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 10px;
+        min-height: 120px;
+        position: relative;
+    }
+    
+    .today {
+        background-color: #f8f9fa;
+        border: 2px solid #007bff;
+    }
+    
+    .day-number {
+        font-weight: bold;
+        position: absolute;
+        top: 5px;
+        right: 8px;
+    }
+    
+    .calendar-event {
+        background-color: #cfe2ff;
+        border-radius: 3px;
+        padding: 2px 5px;
+        margin-bottom: 5px;
+        font-size: 0.85rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    
+    .week-header {
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 10px;
+        padding: 5px;
+        background-color: #f1f1f1;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Užduočių kalendorius</h1>
+    
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button class="btn btn-outline-primary">
+                <i class="fas fa-chevron-left"></i> Ankstesnis mėnuo
+            </button>
+            <h3 id="current-month">Gegužė 2025</h3>
+            <button class="btn btn-outline-primary">
+                Kitas mėnuo <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        
+        <div class="calendar-grid">
+            <div class="week-header">Pr</div>
+            <div class="week-header">An</div>
+            <div class="week-header">Tr</div>
+            <div class="week-header">Kt</div>
+            <div class="week-header">Pn</div>
+            <div class="week-header">Št</div>
+            <div class="week-header">Sk</div>
+            
+            <!-- Pirma savaitė -->
+            <div class="calendar-day">
+                <div class="day-number">1</div>
+                <div class="calendar-event">Duomenų rinkimas</div>
+                <div class="calendar-event">Modelio treniravimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">2</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">3</div>
+                <div class="calendar-event">Ataskaitos generavimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">4</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">5</div>
+                <div class="calendar-event">Strategijos testavimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">6</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">7</div>
+            </div>
+            
+            <!-- Antra savaitė -->
+            <div class="calendar-day">
+                <div class="day-number">8</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">9</div>
+                <div class="calendar-event">Duomenų rinkimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">10</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">11</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">12</div>
+                <div class="calendar-event">Modelio treniravimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">13</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">14</div>
+            </div>
+            
+            <!-- Trečia savaitė -->
+            <div class="calendar-day">
+                <div class="day-number">15</div>
+                <div class="calendar-event">Ataskaitos generavimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">16</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">17</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">18</div>
+                <div class="calendar-event">Strategijos testavimas</div>
+            </div>
+            <div class="calendar-day today">
+                <div class="day-number">19</div>
+                <div class="calendar-event">Duomenų rinkimas</div>
+                <div class="calendar-event">Modelio treniravimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">20</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">21</div>
+            </div>
+            
+            <!-- Ketvirta savaitė -->
+            <div class="calendar-day">
+                <div class="day-number">22</div>
+                <div class="calendar-event">Ataskaitos generavimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">23</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">24</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">25</div>
+                <div class="calendar-event">Strategijos testavimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">26</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">27</div>
+                <div class="calendar-event">Duomenų rinkimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">28</div>
+            </div>
+            
+            <!-- Penkta savaitė -->
+            <div class="calendar-day">
+                <div class="day-number">29</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">30</div>
+                <div class="calendar-event">Modelio treniravimas</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">31</div>
+            </div>
+            <div class="calendar-day"></div>
+            <div class="calendar-day"></div>
+            <div class="calendar-day"></div>
+            <div class="calendar-day"></div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{{ url_for('scheduler.new_task') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Pridėti naują užduotį
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Demo: pridėti įvykių paspaudimo apdorojimą
+        const calendarEvents = document.querySelectorAll('.calendar-event');
+        
+        calendarEvents.forEach(event => {
+            event.addEventListener('click', function() {
+                alert('Užduotis: ' + this.textContent);
+            });
+        });
+    });
+</script>
+{% endblock %}

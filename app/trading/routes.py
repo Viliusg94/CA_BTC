@@ -6,6 +6,10 @@ Prekybos maršrutai
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
 from app.trading.chart_data import get_price_data, get_portfolio_history
+from app.services.scheduler_service import scheduler_service
+from datetime import datetime, timedelta
+import json
+from app.routes.scheduler import scheduler
 
 # Sukuriame Blueprint objektą
 trading = Blueprint('trading', __name__, url_prefix='/trading')
@@ -124,3 +128,15 @@ def charts():
 def candlestick():
     """Žvakių grafiko puslapis"""
     return render_template('trading/candlestick.html', title='Žvakių grafikas')
+
+# Papildyti failą šiais maršrutais
+
+# Sukurkite naują blueprint
+trading_scheduler = Blueprint('trading_scheduler', __name__, url_prefix='/trading/scheduler')
+
+@trading_scheduler.route('/calendar_view')
+def trading_calendar_view():
+    """
+    Prekybos kalendoriaus peržiūros puslapis
+    """
+    return render_template('scheduler/calendar_view.html', title='Prekybos kalendorius')

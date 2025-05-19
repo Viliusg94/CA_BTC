@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Modeliai - BTC Prekybos Sistema{% endblock %}
+
+{% block styles %}
+<style>
+    .model-card {
+        transition: all 0.3s ease;
+    }
+    
+    .model-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .metric-badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.65em;
+    }
+    
+    .actions-col {
+        width: 150px;
+    }
+    
+    .model-name {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .filter-section {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Modeliai</h1>
+            <div>
+                <a href="{{ url_for('training.create_model') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-1"></i>Naujas modelis
+                </a>
+                <a href="{{ url_for('training.compare_models') }}" class="btn btn-info mb-3">
+                    <i class="fas fa-balance-scale"></i> Palyginti modelius
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Filtravimo sekcija -->
+        <div class="card filter-section">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Ieškoti modelio...">
+                            <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="d-flex gap-2">
+                            <select class="form-select" id="typeFilter">
+                                <option value="">Visi tipai</option>
+                                <option value="lstm">LSTM</option>
+                                <option value="gru">GRU</option>
+                                <option value="cnn">CNN</option>
+                                <option value="mlp">MLP</option>
+                            </select>
+                            <select class="form-select" id="sortSelect">
+                                <option value="date_desc">Naujausi</option>
+                                <option value="date_asc">Seniausi</option>
+                                <option value="accuracy_desc">Geriausi</option>
+                                <option value="accuracy_asc">Blogiausi</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pranešimas, jei nėra modelių -->
+{% if not models %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle me-2"></i>Nėra sukurtų modelių. <a href="{{ url_for('training.create_model') }}" class="alert-link">Sukurkite pirmą modelį</a>.
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modelių sąrašas -->
+<div class="row" id="modelsContainer">
+    {% for model in models %}
+    <div class="col-lg-6 mb-4 model-item" data-type="{{ model.parameters.model_type }}" data-name="{{ model.name }}">
+        <div class="card model-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    {% if model.parameters.model_type == 'lstm' %}
+                    <i class="fas fa-brain text-primary me-2"></i>
+                    {% elif model.parameters.model_type == 'gru' %}
+                    <i class="fas fa-network-wired text-info me-2"></i>
+                    {% elif model.parameters.model_type == 'cnn' %}
+                    <i class="fas fa-filter text-warning me-2"></i>
+                    {% else %}
+                    <i class="fas fa-cube text-secondary me-2"></i>
+                    {% endif %}
+                    <h5 class="card-title mb-0 model-name">{{ model.name }}</h5>
+                </div>
+                <span class="badge bg-light text-dark">{{ model.parameters.model_type|upper }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Sukurtas:</small>
+                        <span>{{ model.created_at }}</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Laiko rėžis:</small>
+                        <span>{{ model.parameters.timeframe }}</span>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <span class="metric-badge badge bg-primary" title="Vidutinė absoliuti paklaida">
+                            MAE: {{ model.final_metrics.mae|round(4) }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="metric-badge badge bg-info text-dark" title="Validacijos MAE">
+                            Val. MAE: {{ model.final_metrics.val_mae|round(4) }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="metric-badge badge bg-warning text-dark" title="Nuostolis">
+                            Nuostolis: {{ model.final_metrics.loss|round(4) }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Sluoksniai:</small>
+                        <span>{{ model.parameters.layers }}</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Vienetai:</small>
+                        <span>{{ model.parameters.units }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <a href="{{ url_for('training.model_details', model_id=model.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-info-circle me-1"></i>Detalės
+                </a>
+                <a href="{{ url_for('inference.predict', model_id=model.id) }}" class="btn btn-outline-success">
+                    <i class="fas fa-chart-line me-1"></i>Prognozuoti
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Paieškos funkcionalumas
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const typeFilter = document.getElementById('typeFilter');
+        const sortSelect = document.getElementById('sortSelect');
+        const modelsContainer = document.getElementById('modelsContainer');
+        
+        // Paieškos funkcija
+        function filterModels() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const modelType = typeFilter.value;
+            const modelItems = document.querySelectorAll('.model-item');
+            
+            modelItems.forEach(item => {
+                const modelName = item.getAttribute('data-name').toLowerCase();
+                const modelDataType = item.getAttribute('data-type');
+                
+                // Tikriname, ar modelis atitinka paieškos kriterijus
+                const matchesSearch = searchTerm === '' || modelName.includes(searchTerm);
+                const matchesType = modelType === '' || modelDataType === modelType;
+                
+                // Rodome arba slepiame modelį
+                if (matchesSearch && matchesType) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        // Rūšiavimo funkcija
+        function sortModels() {
+            const sortValue = sortSelect.value;
+            const modelItems = Array.from(document.querySelectorAll('.model-item'));
+            
+            // Rūšiuojame modelius pagal pasirinktą kriterijų
+            modelItems.sort((a, b) => {
+                if (sortValue === 'date_desc' || sortValue === 'date_asc') {
+                    // Pagal sukūrimo datą
+                    const dateA = new Date(a.querySelector('.card-body span').textContent);
+                    const dateB = new Date(b.querySelector('.card-body span').textContent);
+                    
+                    return sortValue === 'date_desc' ? dateB - dateA : dateA - dateB;
+                } else {
+                    // Pagal MAE metriką
+                    const maeA = parseFloat(a.querySelector('.metric-badge').textContent.split(':')[1]);
+                    const maeB = parseFloat(b.querySelector('.metric-badge').textContent.split(':')[1]);
+                    
+                    return sortValue === 'accuracy_desc' ? maeA - maeB : maeB - maeA;
+                }
+            });
+            
+            // Pridedame rūšiuotus elementus atgal į konteinerį
+            modelItems.forEach(item => {
+                modelsContainer.appendChild(item);
+            });
+        }
+        
+        // Pridedame įvykių klausytojus
+        searchButton.addEventListener('click', filterModels);
+        searchInput.addEventListener('keyup', filterModels);
+        typeFilter.addEventListener('change', filterModels);
+        sortSelect.addEventListener('change', sortModels);
+        
+        // Filtruojame modelius iš pradžių
+        filterModels();
+    });
+</script>
+{% endblock %}

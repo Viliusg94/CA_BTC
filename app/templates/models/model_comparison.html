@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Modelių palyginimas{% endblock %}
+
+{% block styles %}
+<style>
+    .comparison-card {
+        margin-bottom: 20px;
+    }
+    
+    .model-checkbox-list {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .comparison-chart {
+        height: 400px;
+    }
+    
+    .metric-card {
+        transition: transform 0.3s;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Modelių palyginimas</h1>
+    
+    <!-- Modelių pasirinkimas -->
+    <div class="card comparison-card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Pasirinkite modelius palyginimui</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="model-checkbox-list">
+                        {% if models %}
+                            {% for model in models %}
+                            <div class="form-check">
+                                <input class="form-check-input model-checkbox" type="checkbox" value="{{ model.id }}" id="model-{{ model.id }}">
+                                <label class="form-check-label" for="model-{{ model.id }}">
+                                    {{ model.name }} ({{ model.type }})
+                                </label>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info">Nerasta modelių palyginimui.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button id="compare-btn" class="btn btn-primary mb-2 w-100">Palyginti modelius</button>
+                    <a href="{{ url_for('models.model_visualization') }}" class="btn btn-success w-100">Modelio vizualizacija</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Palyginimo rezultatai -->
+    <div id="comparison-results" style="display: none;">
+        <!-- Metrikos santrauka -->
+        <div class="row mb-4" id="metrics-cards">
+            <!-- Čia bus įdėtos metrikų kortelės -->
+        </div>
+        
+        <!-- Tikslumo grafikas -->
+        <div class="card comparison-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Tikslumo palyginimas</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="accuracy-chart" class="comparison-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Nuostolių grafikas -->
+        <div class="card comparison-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Nuostolių funkcijos palyginimas</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="loss-chart" class="comparison-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Modelių parametrų palyginimo lentelė -->
+        <div class="card comparison-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Modelių parametrų palyginimas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="params-table">
+                        <thead>
+                            <tr>
+                                <th>Modelis</th>
+                                <th>Sluoksnių skaičius</th>
+                                <th>Parametrų skaičius</th>
+                                <th>Treniravimo laikas</th>
+                                <th>Tikslumas</th>
+                                <th>Nuostoliai</th>
+                                <th>Veiksmai</th>
+                            </tr>
+                        </thead>
+                        <tbody id="params-table-body">
+                            <!-- Čia bus įdėtos modelių eilutės -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Nėra pasirinktų modelių -->
+    <div id="no-models-selected" class="alert alert-warning" style="display: none;">
+        Prašome pasirinkti bent du modelius palyginimui.
+    </div>
+    
+    <!-- Krovimo indikatorius -->
+    <div id="loading-indicator" class="text-center my-4" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Kraunama...</span>
+        </div>
+        <p class="mt-2">Kraunami modelių duomenys...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/model_comparison.js') }}"></script>
+{% endblock %}

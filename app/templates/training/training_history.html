@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Treniravimo sesijų istorija - BTC Prekybos Sistema{% endblock %}
+
+{% block styles %}
+<style>
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    
+    .session-card {
+        margin-bottom: 10px;
+        border-left: 4px solid #007bff;
+    }
+    
+    .session-card.completed {
+        border-left-color: #28a745;
+    }
+    
+    .session-card.failed {
+        border-left-color: #dc3545;
+    }
+    
+    .session-card.canceled {
+        border-left-color: #ffc107;
+    }
+    
+    .session-card:hover {
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .session-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .session-title h5 {
+        margin-bottom: 0;
+    }
+    
+    .tag {
+        font-size: 0.8rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-right: 5px;
+    }
+    
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+    
+    .status-badge.completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-badge.failed {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-badge.canceled {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-badge.in-progress {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    .metric-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    .metric-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .dates {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-card {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .stats-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .best-model-card {
+        background-color: #f8f9fa;
+        border-left: 4px solid #28a745;
+    }
+    
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    
+    .no-sessions {
+        padding: 30px;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    
+    .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>Treniravimo sesijų istorija</h1>
+            <p class="text-muted">Visų modelio treniravimo sesijų istorija ir statistika</p>
+        </div>
+    </div>
+    
+    <!-- Statistikos apžvalga -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="stats-value">{{ stats.total }}</div>
+                    <div class="stats-label">Viso sesijų</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="stats-value text-success">{{ stats.completed }}</div>
+                    <div class="stats-label">Sėkmingai baigta</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="stats-value text-danger">{{ stats.failed }}</div>
+                    <div class="stats-label">Nepavykusios</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="stats-value text-warning">{{ stats.canceled }}</div>
+                    <div class="stats-label">Atšauktos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Geriausias modelis -->
+    {% if stats.best_model %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card best-model-card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>Geriausias modelis</h5>
+                            <h4>{{ stats.best_model.name }}</h4>
+                            <p class="text-muted">Mažiausia validavimo MAE: <strong>{{ stats.best_model.val_mae|round(6) }}</strong></p>
+                        </div>
+                        <div class="col-md-4 text-end d-flex align-items-center justify-content-end">
+                            <a href="{{ url_for('training.model_details', filename=stats.best_model.model_path) }}" class="btn btn-primary">
+                                Peržiūrėti modelį
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Treniravimo statistikos grafikas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Treniravimų statistika laike</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="trainingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Filtrai -->
+        <div class="col-md-3">
+            <div class="filter-section">
+                <h5>Filtrai</h5>
+                <form id="filtersForm">
+                    <div class="mb-3">
+                        <label for="dateFrom" class="form-label">Data nuo:</label>
+                        <input type="date" class="form-control" id="dateFrom" name="date_from" value="{{ filters.date_from }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="dateTo" class="form-label">Data iki:</label>
+                        <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ filters.date_to }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Modelio tipas:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="LSTM" id="typeLSTM" name="model_types" {% if 'LSTM' in filters.model_types %}checked{% endif %}>
+                            <label class="form-check-label" for="typeLSTM">LSTM</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="GRU" id="typeGRU" name="model_types" {% if 'GRU' in filters.model_types %}checked{% endif %}>
+                            <label class="form-check-label" for="typeGRU">GRU</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="CNN" id="typeCNN" name="model_types" {% if 'CNN' in filters.model_types %}checked{% endif %}>
+                            <label class="form-check-label" for="typeCNN">CNN</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Būsena:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="Completed" id="statusCompleted" name="statuses" {% if 'Completed' in filters.statuses %}checked{% endif %}>
+                            <label class="form-check-label" for="statusCompleted">Baigti</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="Failed" id="statusFailed" name="statuses" {% if 'Failed' in filters.statuses %}checked{% endif %}>
+                            <label class="form-check-label" for="statusFailed">Nepavykę</label>
+                        </div>
+                        <div class="form-check">
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center">Nėra treniravimo sesijų istorijos</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Funkcija rikiuoti lentelę
+    function sortTable(field) {
+        // Gauname dabartinius parametrus
+        const currentSortBy = document.getElementById('sort_by').value;
+        const currentSortOrder = document.getElementById('sort_order').value;
+        
+        // Nustatome naujus parametrus
+        let newSortOrder = 'asc';
+        if (currentSortBy === field && currentSortOrder === 'asc') {
+            newSortOrder = 'desc';
+        }
+        
+        // Atnaujiname paslėptus laukus
+        document.getElementById('sort_by').value = field;
+        document.getElementById('sort_order').value = newSortOrder;
+        
+        // Pateikiame formą
+        document.getElementById('filterForm').submit();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}Treniravimo istorija{% endblock %}
+
+{% block styles %}
+<style>
+    .history-card {
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .history-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .metrics-container {
+        margin-top: 15px;
+    }
+    
+    .metric-badge {
+        font-size: 0.9rem;
+        padding: 0.4em 0.7em;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Treniravimo sesijų istorija</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('training.train') }}" class="btn btn-outline-primary">Naujas treniravimas</a>
+                <a href="{{ url_for('models.model_visualization') }}" class="btn btn-outline-info">Modelių vizualizacija</a>
+                <a href="{{ url_for('models.model_comparison') }}" class="btn btn-outline-success">Modelių palyginimas</a>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Ieškoti sesijų..." id="session-search">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Čia bus pridėta treniravimo sesijų istorija iš duomenų bazės -->
+    <div id="history-container">
+        <!-- Pavyzdinė sesija -->
+        <div class="card history-card">
+            <div class="card-header bg-light session-header">
+                <h5 class="card-title mb-0">LSTM modelio treniravimas 2023-04-15</h5>
+                <span class="badge bg-success">Užbaigta</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <p><strong>Modelis:</strong> LSTM su 3 sluoksniais</p>
+                        <p><strong>Pradėta:</strong> 2023-04-15 09:25:30</p>
+                        <p><strong>Trukmė:</strong> 1h 23min</p>
+                        <p><strong>Parametrų skaičius:</strong> 124,532</p>
+                        
+                        <div class="metrics-container">
+                            <span class="badge bg-primary metric-badge">Tikslumas: 0.92</span>
+                            <span class="badge bg-info metric-badge">Nuostoliai: 0.18</span>
+                            <span class="badge bg-warning metric-badge">Epochos: 50</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <canvas class="history-chart" height="150"></canvas>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <a href="#" class="btn btn-sm btn-outline-primary">Peržiūrėti detales</a>
+                    <a href="#" class="btn btn-sm btn-outline-success">Eksportuoti rezultatus</a>
+                    <a href="#" class="btn btn-sm btn-outline-info">Pakartoti treniravimą</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dar viena pavyzdinė sesija -->
+        <div class="card history-card">
+            <div class="card-header bg-light session-header">
+                <h5 class="card-title mb-0">CNN modelio treniravimas 2023-04-10</h5>
+                <span class="badge bg-danger">Nutraukta</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <p><strong>Modelis:</strong> CNN su 2 konvoliuciniais sluoksniais</p>
+                        <p><strong>Pradėta:</strong> 2023-04-10 14:12:45</p>
+                        <p><strong>Trukmė:</strong> 32min (nutraukta)</p>
+                        <p><strong>Parametrų skaičius:</strong> 86,224</p>
+                        
+                        <div class="metrics-container">
+                            <span class="badge bg-primary metric-badge">Tikslumas: 0.78</span>
+                            <span class="badge bg-info metric-badge">Nuostoliai: 0.42</span>
+                            <span class="badge bg-warning metric-badge">Epochos: 12/50</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <canvas class="history-chart" height="150"></canvas>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <a href="#" class="btn btn-sm btn-outline-primary">Peržiūrėti detales</a>
+                    <a href="#" class="btn btn-sm btn-outline-info">Pakartoti treniravimą</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tuščias rezultatas -->
+    <div id="no-results" class="alert alert-info text-center" style="display: none;">
+        <i class="fas fa-info-circle me-2"></i> Nerasta treniravimo sesijų, atitinkančių paiešką.
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Paieškos funkcionalumas
+        const searchInput = document.getElementById('session-search');
+        const historyContainer = document.getElementById('history-container');
+        const noResults = document.getElementById('no-results');
+        
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let resultsFound = false;
+            
+            // Ieškoti visuose istorijos įrašuose
+            const historyCards = historyContainer.querySelectorAll('.history-card');
+            
+            historyCards.forEach(card => {
+                const cardText = card.textContent.toLowerCase();
+                if (cardText.includes(searchTerm)) {
+                    card.style.display = 'block';
+                    resultsFound = true;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Rodyti/slėpti "nėra rezultatų" pranešimą
+            noResults.style.display = resultsFound ? 'none' : 'block';
+        });
+        
+        // Grafikai
+        const charts = document.querySelectorAll('.history-chart');
+        
+        charts.forEach((canvas, index) => {
+            const ctx = canvas.getContext('2d');
+            
+            // Sugeneruoti pavyzdinius duomenis
+            const accuracy = [];
+            const loss = [];
+            
+            // Pirmam grafikui didėjantis tikslumas, mažėjantys nuostoliai
+            if (index === 0) {
+                for (let i = 0; i < 50; i++) {
+                    accuracy.push(Math.min(0.6 + i * 0.008, 0.92));
+                    loss.push(Math.max(0.8 - i * 0.013, 0.18));
+                }
+            } 
+            // Antram grafikui nestabilus mokymasis
+            else {
+                for (let i = 0; i < 12; i++) {
+                    accuracy.push(0.5 + Math.random() * 0.3);
+                    loss.push(0.8 - Math.random() * 0.4);
+                }
+            }
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: accuracy.length }, (_, i) => i + 1),
+                    datasets: [
+                        {
+                            label: 'Tikslumas',
+                            data: accuracy,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Nuostoliai',
+                            data: loss,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

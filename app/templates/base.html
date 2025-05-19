@@ -11,6 +11,8 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block styles %}{% endblock %}
+    <!-- Įtraukite šią eilutę į <head> sekciją po kitų CSS failų -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
 </head>
 <body>
     <!-- Navigacijos juosta -->
@@ -48,6 +50,60 @@
                         <a class="nav-link" href="{{ url_for('trading.simulate') }}">
                             <i class="fas fa-vial me-1"></i>Simuliacija
                         </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('model_training.view_history') }}">
+                            <i class="fas fa-history"></i> Treniravimo istorija
+                        </a>
+                    </li>
+                    <!-- Pridėti naują meniu elementą -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('model_training.checkpoints') }}">
+                            <i class="fas fa-save"></i> Tarpiniai modeliai
+                        </a>
+                    </li>
+                    <!-- Pridėti naują meniu elementą, jei jo dar nėra -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('model_training.optimize') }}">
+                            <i class="fas fa-sliders-h"></i> Optimizuoti parametrus
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('model_training.compare_models') }}">
+                            <i class="fas fa-balance-scale"></i> Modelių palyginimas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('model_training.model_architectures') }}">
+                            <i class="fas fa-project-diagram"></i> Modelio architektūra
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('model_training.model_weights') }}">
+                            <i class="fas fa-chart-bar"></i> Modelio svoriai
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('model_training.validation_graph') }}">
+                            <i class="fas fa-chart-line"></i> Validavimo grafikas
+                        </a>
+                    </li>
+                    <!-- Pridėti treniravimo planavimo meniu -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="schedulerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-calendar-alt"></i> Treniravimo planavimas
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="schedulerDropdown">
+                            <a class="nav-link" href="{{ url_for('scheduler.calendar_view') }}">
+                                <i class="fas fa-calendar"></i> Kalendorius
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('scheduler.task_queue') }}">
+                                <i class="fas fa-tasks"></i> Užduočių eilė
+                            </a>
+                            <a class="dropdown-item" href="{{ url_for('scheduler.new_task') }}">
+                                <i class="fas fa-plus"></i> Nauja užduotis
+                            </a>
+                        </div>
                     </li>
                 </ul>
                 <div class="d-flex text-light align-items-center">

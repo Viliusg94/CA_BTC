@@ -9,6 +9,12 @@ import os
 from datetime import datetime
 from flask import Flask
 
+# Importuojame WebSocket managerį
+from app.services.websocket_manager import WebSocketManager
+
+# Sukuriame WebSocket managerio objektą
+websocket_manager = WebSocketManager()
+
 def create_app():
     """
     Sukuria ir sukonfigūruoja Flask aplikaciją
@@ -22,12 +28,22 @@ def create_app():
     # Nustatome slaptą raktą, naudojamą formų apsaugai ir sesijai
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'paslaptis_123456789')
     
+    # Inicializuojame WebSocket managerį su mūsų aplikacija
+    websocket_manager.init_app(app)
+    
     # Importuojame ir registruojame blueprint'us
     from app.dashboard.routes import dashboard
-    from app.trading.routes import trading
+    from app.trading.routes import trading, trading_scheduler
+    from app.training.training_routes import model_training
+    from app.routes.scheduler import scheduler
+    from app.routes.models import models
     
     app.register_blueprint(dashboard)
     app.register_blueprint(trading)
+    app.register_blueprint(trading_scheduler, url_prefix='/trading/scheduler')
+    app.register_blueprint(model_training, url_prefix='/training')
+    app.register_blueprint(scheduler, url_prefix='/scheduler')
+    app.register_blueprint(models, url_prefix='/models')
     
     # Registruojame klaidų apdorojimo funkcijas
     register_error_handlers(app)

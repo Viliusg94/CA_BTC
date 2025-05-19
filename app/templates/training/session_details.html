@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block title %}Treniravimo sesijos detalės - BTC Prekybos Sistema{% endblock %}
+
+{% block styles %}
+<style>
+    .session-header {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .session-status {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 5px 15px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    
+    .session-status.completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .session-status.failed {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .session-status.canceled {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .session-status.in-progress {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    .session-model {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .session-dates {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .session-duration {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #495057;
+        margin-top: 10px;
+    }
+    
+    .chart-container {
+        height: 400px;
+        margin-bottom: 20px;
+    }
+    
+    .metric-card {
+        text-align: center;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
+    
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .param-table {
+        font-size: 0.9rem;
+    }
+    
+    .param-table th {
+        width: 40%;
+    }
+    
+    .system-resources-chart {
+        height: 200px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('training.history') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Grįžti į istoriją
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="session-header">
+                <div class="session-status {{ session.status.lower() }}">{{ session.status }}</div>
+                <div class="session-model">{{ session.model_name }}</div>
+                <div class="session-dates">
+                    Pradėta: {{ session.start_time }}<br>
+                    Baigta: {{ session.end_time }}
+                </div>
+                <div class="session-duration">
+                    Trukmė: {{ session.duration }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Pagrindiniai metrikos -->
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="metric-value">{{ session.epochs }}</div>
+                <div class="metric-label">Epochos</div>
+            </div>
+            
+            {% if session.val_loss is not none %}
+            <div class="card metric-card">
+                <div class="metric-value">{{ session.val_loss|round(6) }}</div>
+                <div class="metric-label">Validavimo klaida</div>
+            </div>
+            {% endif %}
+            
+            {% if session.val_mae is not none %}
+            <div class="card metric-card">
+                <div class="metric-value">{{ session.val_mae|round(6) }}</div>
+                <div class="metric-label">Validavimo MAE</div>
+            </div>
+            {% endif %}
+            
+            {% if session.model_path %}
+            <div class="card">
+                <div class="card-body text-center">
+                    <p class="mb-2">Sukurtas modelis</p>
+                    <a href="{{ url_for('training.model_details', filename=session.model_path) }}" class="btn btn-primary w-100">
+                        Peržiūrėti modelį
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Metrikų grafikas -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Treniravimo metrikos</h5>
+                </div>
+                <div class="card-body">
+                    {% if session_metrics and session_metrics.epochs %}
+                    <div class="chart-container">
+                        <canvas id="metricsChart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Šiai sesijai nėra išsaugotų metrikų duomenų.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <!-- Sistemos resursų naudojimas -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Sistemos resursų naudojimas</h5>
+                </div>
+                <div class="card-body">
+                    {% if system_resources and system_resources.timestamps %}
+                    <div class="system-resources-chart">
+                        <canvas id="resourcesChart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Šiai sesijai nėra išsaugotų resursų naudojimo duomenų.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modelio parametrai -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Modelio parametrai</h5>
+                </div>
+                <div class="card-body">
+                    {% if model_params %}
+                    <table class="table table-sm param-table">
+                        <tbody>
+                            {% for key, value in model_params.items() %}
+                            <tr>
+                                <th>{{ key }}</th>
+                                <td>{{ value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Šiai sesijai nėra išsaugotų modelio parametrų.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+                    </div>
+                    
+                    <div class="parameter-row d-flex justify-content-between">
+                        <span class="parameter-name">Neuronai sluoksnyje</span>
+                        <span class="parameter-value">{{ session.parameters.units|default(64) }}</span>
+                    </div>
+                    
+                    <div class="parameter-row d-flex justify-content-between">
+                        <span class="parameter-name">Dropout</span>
+                        <span class="parameter-value">{{ session.parameters.dropout|default(0.2) }}</span>
+                    </div>
+                    
+                    <!-- Treniravimo parametrai -->
+                    <h6 class="card-subtitle mb-3 mt-4">Treniravimas</h6>
+                    
+                    <div class="parameter-row d-flex justify-content-between">
+                        <span class="parameter-name">Epochos</span>
+                        <span class="parameter-value">{{ session.parameters.epochs|default(50) }}</span>
+                    </div>
+                    
+                    <div class="parameter-row d-flex justify-content-between">
+                        <span class="parameter-name">Batch dydis</span>
+                        <span class="parameter-value">{{ session.parameters.batch_size|default(32) }}</span>
+                    </div>
+                    
+                    <div class="parameter-row d-flex justify-content-between">
+                        <span class="parameter-name">Mokymosi greitis</span>
+                        <span class="parameter-value">{{ session.parameters.learning_rate|default('0.001') }}</span>
+                    </div>
+                    
+                    <!-- Duomenų parametrai -->
+                    <h6 class="card-subtitle mb-3 mt-4">Duomenys</h6>
+                    
+                    <div class="parameter-row d-flex justify-content-between">
+                        <span class="parameter-name">Sekos ilgis</span>
+                        <span class="parameter-value">{{ session.parameters.sequence_length|default(60) }}</span>
+                    </div>
+                    
+                    <div class="parameter-row d-flex justify-content-between">
+                        <span class="parameter-name">Tikslo dienos</span>
+                        <span class="parameter-value">{{ session.parameters.prediction_days|default(1) }}</span>
+                    </div>
+                    
+                    <div class="parameter-row d-flex justify-content-between">
+                        <span class="parameter-name">Testavimo dalis</span>
+                        <span class="parameter-value">{{ session.parameters.test_size|default('0.2') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Metrikų grafikai -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Treniravimo metrikos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="metrics-container">
+                                <canvas id="lossChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metrics-container">
+                                <canvas id="maeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tarpiniai modeliai -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tarpiniai modeliai (kontroliniai taškai)</h5>
+                </div>
+                <div class="card-body">
+                    {% if checkpoints %}
+                        <div class="row">
+                            {% for checkpoint in checkpoints %}
+                            <div class="col-md-6">
+                                <div class="card checkpoint-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Epocha {{ checkpoint.epoch }}</h6>
+                                        <div class="epoch-info mb-2">
+                                            Val. nuostolis: {{ '%.4f'|format(checkpoint.val_loss) }} | Val. MAE: {{ '%.4f'|format(checkpoint.val_mae) }}
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between">
+                                            <a href="{{ url_for('training.restore_checkpoint', checkpoint_id=checkpoint.checkpoint_id) }}" class="btn btn-sm btn-outline-primary">
+                                                Atkurti šį modelį
+                                            </a>
+                                            <form method="post" action="{{ url_for('training.delete_checkpoint') }}">
+                                                <input type="hidden" name="checkpoint_id" value="{{ checkpoint.checkpoint_id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Ištrinti</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Šiai sesijai nerasta tarpinių modelių.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Sesijos žurnalas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Sesijos žurnalas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="logs-container">
+                        {% if logs %}
+                            {% for log in logs %}
+                                <div class="log-entry 
+                                           {% if 'error' in log.level|lower %}log-error
+                                           {% elif 'warning' in log.level|lower %}log-warning
+                                           {% elif 'info' in log.level|lower %}log-info{% endif %}">
+                                    <span class="log-timestamp">{{ log.timestamp }}</span>
+                                    <span>{{ log.message }}</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info">
+                                Šiai sesijai nerasta žurnalo įrašų.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('training.sessions') }}" class="btn btn-primary">
+                Grįžti į sesijų sąrašą
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Metrikų duomenys
+        const lossData = {{ session.metrics.loss|tojson }};
+        const valLossData = {{ session.metrics.val_loss|tojson }};
+        const maeData = {{ session.metrics.mae|tojson }};
+        const valMaeData = {{ session.metrics.val_mae|tojson }};
+        
+        // Grafiko etiketės (epochų skaičiai)
+        const epochs = Array.from({ length: lossData.length }, (_, i) => i + 1);
+        
+        // Inicializuojame Loss grafiką
+        const lossCtx = document.getElementById('lossChart').getContext('2d');
+        new Chart(lossCtx, {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    {
+                        label: 'Treniravimo nuostolis',
+                        data: lossData,
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    },
+                    {
+                        label: 'Validavimo nuostolis',
+                        data: valLossData,
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Nuostolio funkcija'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Epocha'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Nuostolis'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Inicializuojame MAE grafiką
+        const maeCtx = document.getElementById('maeChart').getContext('2d');
+        new Chart(maeCtx, {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    {
+                        label: 'Treniravimo MAE',
+                        data: maeData,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    },
+                    {
+                        label: 'Validavimo MAE',
+                        data: valMaeData,
+                        borderColor: 'rgb(255, 159, 64)',
+                        backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Vidutinė absoliuti paklaida (MAE)'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Epocha'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'MAE'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Modelių palyginimas{% endblock %}
+
+{% block styles %}
+<style>
+    .comparison-card {
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .comparison-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .metrics-container {
+        margin-top: 15px;
+    }
+    
+    .chart-container {
+        height: 300px;
+        width: 100%;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Modelių palyginimas</h1>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> Šis puslapis yra kūrimo stadijoje.
+    </div>
+    
+    <div class="card comparison-card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Modelių palyginimo langas</h5>
+        </div>
+        <div class="card-body">
+            <p>Šiame puslapyje galėsite palyginti skirtingus treniruotus modelius.</p>
+            
+            <div class="chart-container">
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-bar fa-3x mb-3 text-muted"></i>
+                    <p class="text-muted">Čia bus rodomi modelių palyginimo grafikai.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

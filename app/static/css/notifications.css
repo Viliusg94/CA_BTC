@@ -1,0 +1,35 @@
+/* Stiliai pranešimų sistemai */
+
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 350px;
+}
+
+.toast {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.toast.fade-out {
+    opacity: 0;
+}
+
+.toast .toast-header {
+    border-bottom: none;
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 0.5rem 0.75rem;
+}
+
+.toast .toast-body {
+    padding: 0.75rem;
+    background-color: white;
+}
+
+/* Spalvos skirtingoms pranešimų būsenoms */
+.toast.bg-light {
+    background-color: white !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}

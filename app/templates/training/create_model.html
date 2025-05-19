@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+
+{% block title %}Naujas modelis - BTC Prekybos Sistema{% endblock %}
+
+{% block styles %}
+<style>
+    .form-section {
+        margin-bottom: 30px;
+    }
+    
+    .form-section-title {
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .param-description {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .range-value {
+        font-weight: bold;
+        min-width: 40px;
+        text-align: center;
+    }
+    
+    .hidden {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Naujas modelis</h1>
+            <div>
+                <a href="{{ url_for('training.models') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Atgal į modelius
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Modelio parametrai</h5>
+            </div>
+            <div class="card-body">
+                <form id="modelForm" action="{{ url_for('training.start_training') }}" method="POST">
+                    <!-- Pagrindiniai parametrai -->
+                    <div class="form-section">
+                        <h4 class="form-section-title">Pagrindiniai parametrai</h4>
+                        
+                        <div class="mb-3">
+                            <label for="modelName" class="form-label">Modelio pavadinimas</label>
+                            <input type="text" class="form-control" id="modelName" name="model_name" required>
+                            <div class="param-description">Unikalus modelio pavadinimas</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="modelType" class="form-label">Modelio tipas</label>
+                            <select class="form-select" id="modelType" name="model_type" required>
+                                <option value="lstm">LSTM</option>
+                                <option value="gru">GRU</option>
+                                <option value="cnn">1D CNN</option>
+                                <option value="mlp">MLP (Dense)</option>
+                            </select>
+                            <div class="param-description">Neuroninio tinklo architektūros tipas</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Duomenų parametrai -->
+                    <div class="form-section">
+                        <h4 class="form-section-title">Duomenų parametrai</h4>
+                        
+                        <div class="mb-3">
+                            <label for="timeframe" class="form-label">Laiko rėžis</label>
+                            <select class="form-select" id="timeframe" name="timeframe" required>
+                                <option value="1m">1 minutė</option>
+                                <option value="5m">5 minutės</option>
+                                <option value="15m">15 minučių</option>
+                                <option value="30m">30 minučių</option>
+                                <option value="1h" selected>1 valanda</option>
+                                <option value="4h">4 valandos</option>
+                                <option value="1d">1 diena</option>
+                            </select>
+                            <div class="param-description">Kainų duomenų laiko intervalas</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="historyLength" class="form-label">Istorijos ilgis</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1" id="historyLength" name="history_length" min="10" max="100" step="5" value="30">
+                                <span class="range-value ms-2" id="historyLengthValue">30</span>
+                            </div>
+                            <div class="param-description">Kiek praeities duomenų taškų naudoti prognozei (įvesties seka)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="trainTestSplit" class="form-label">Train/Test santykis</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1" id="trainTestSplit" name="train_test_split" min="0.5" max="0.9" step="0.05" value="0.8">
+                                <span class="range-value ms-2" id="trainTestSplitValue">0.8</span>
+                            </div>
+                            <div class="param-description">Mokymo duomenų dalis (0.8 = 80% mokymo, 20% testavimo)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="predictionHorizon" class="form-label">Prognozės horizontas</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1" id="predictionHorizon" name="prediction_horizon" min="1" max="24" step="1" value="1">
+                                <span class="range-value ms-2" id="predictionHorizonValue">1</span>
+                            </div>
+                            <div class="param-description">Kiek laiko žingsnių į priekį prognozuoti</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modelio hiperparametrai -->
+                    <div class="form-section">
+                        <h4 class="form-section-title">Modelio hiperparametrai</h4>
+                        
+                        <div class="mb-3">
+                            <label for="layers" class="form-label">Sluoksnių skaičius</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1" id="layers" name="layers" min="1" max="5" step="1" value="2">
+                                <span class="range-value ms-2" id="layersValue">2</span>
+                            </div>
+                            <div class="param-description">Modelio sluoksnių skaičius</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="units" class="form-label">Vienetų skaičius</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1" id="units" name="units" min="16" max="256" step="16" value="64">
+                                <span class="range-value ms-2" id="unitsValue">64</span>
+                            </div>
+                            <div class="param-description">Neuronų skaičius viename sluoksnyje</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="dropout" class="form-label">Dropout</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1" id="dropout" name="dropout" min="0" max="0.5" step="0.05" value="0.2">
+                                <span class="range-value ms-2" id="dropoutValue">0.2</span>
+                            </div>
+                            <div class="param-description">Dropout dalis, skirta pertekliaus mažinimui</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="activation" class="form-label">Aktyvacijos funkcija</label>
+                            <select class="form-select" id="activation" name="activation">
+                                <option value="relu" selected>ReLU</option>
+                                <option value="tanh">Tanh</option>
+                                <option value="sigmoid">Sigmoid</option>
+                                <option value="leaky_relu">Leaky ReLU</option>
+                            </select>
+                            <div class="param-description">Neuronų aktyvacijos funkcija</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Treniravimo parametrai -->
+                    <div class="form-section">
+                        <h4 class="form-section-title">Treniravimo parametrai</h4>
+                        
+                        <div class="mb-3">
+                            <label for="epochs" class="form-label">Epochų skaičius</label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1" id="epochs" name="epochs" min="10" max="200" step="10" value="50">
+                                <span class="range-value ms-2" id="epochsValue">50</span>
+                            </div>
+                            <div class="param-description">Kiek kartų modelis pereina per visus mokymo duomenis</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="batchSize" class="form-label">Batch dydis</label>
+                            <select class="form-select" id="batchSize" name="batch_size">
+                                <option value="16">16</option>
+                                <option value="32" selected>32</option>
+                                <option value="64">64</option>
+                                <option value="128">128</option>
+                            </select>
+                            <div class="param-description">Pavyzdžių skaičius viename mokymo žingsnyje</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="learningRate" class="form-label">Mokymosi greitis</label>
+                            <select class="form-select" id="learningRate" name="learning_rate">
+                                <option value="0.01">0.01</option>
+                                <option value="0.005">0.005</option>
+                                <option value="0.001" selected>0.001</option>
+                                <option value="0.0005">0.0005</option>
+                                <option value="0.0001">0.0001</option>
+                            </select>
+                            <div class="param-description">Optimizavimo algoritmo žingsnis</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="optimizer" class="form-label">Optimizatorius</label>
+                            <select class="form-select" id="optimizer" name="optimizer">
+                                <option value="adam" selected>Adam</option>
+                                <option value="sgd">SGD</option>
+                                <option value="rmsprop">RMSprop</option>
+                                <option value="adagrad">Adagrad</option>
+                            </select>
+                            <div class="param-description">Optimizavimo algoritmas</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="earlyStopping" name="early_stopping" checked>
+                            <label class="form-check-label" for="earlyStopping">Ankstyvasis sustojimas</label>
+                            <div class="param-description">Sustabdyti treniravimą, kai nebėra progreso</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="useValidation" name="use_validation" checked>
+                            <label class="form-check-label" for="useValidation">Naudoti validacijos rinkinį</label>
+                            <div class="param-description">Dalis mokymo duomenų skiriama validacijai treniravimo metu</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Patvirtinimo mygtukas -->
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play-circle me-1"></i>Pradėti treniravimą
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">Parametrų apžvalga</h5>
+            </div>
+            <div class="card-body">
+                <div id="paramSummary">
+                    <!-- Čia JavaScript įrašys parametrų suvestinę -->
+                    <p class="text-center text-muted">Pildykite formą kairėje, kad matytumėte parametrų apžvalgą.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Modelių šablonai</h5>
+            </div>
+            <div class="card-body">
+                <p>Pasirinkite vieną iš šių šablonų greito pradžiai:</p>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" id="templateBasicLSTM">
+                        <i class="fas fa-brain me-1"></i>Paprastas LSTM
+                    </button>
+                    <button class="btn btn-outline-primary" id="templateDeepGRU">
+                        <i class="fas fa-network-wired me-1"></i>Gilus GRU
+                    </button>
+                    <button class="btn btn-outline-primary" id="templateCNN">
+                        <i class="fas fa-filter me-1"></i>Konvoliucinis 1D CNN
+                    </button>
+                    <button class="btn btn-outline-primary" id="templateFastMLP">
+                        <i class="fas fa-bolt me-1"></i>Greitas MLP
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Rankinių sliderių sujungimas su reikšmių rodmenimis
+        const rangeInputs = {
+            'historyLength': document.getElementById('historyLengthValue'),
+            'trainTestSplit': document.getElementById('trainTestSplitValue'),
+            'predictionHorizon': document.getElementById('predictionHorizonValue'),
+            'layers': document.getElementById('layersValue'),
+            'units': document.getElementById('unitsValue'),
+            'dropout': document.getElementById('dropoutValue'),
+            'epochs': document.getElementById('epochsValue')
+        };
+        
+        // Susieti visus range laukus su jų reikšmių rodmenimis
+        for (const [inputId, valueElement] of Object.entries(rangeInputs)) {
+            const inputElement = document.getElementById(inputId);
+            
+            // Pradinis nustatymas
+            valueElement.textContent = inputElement.value;
+            
+            // Atnaujiname rodmenis, kai keičiasi range reikšmė
+            inputElement.addEventListener('input', function() {
+                valueElement.textContent = this.value;
+                updateParamSummary();
+            });
+        }
+        
+        // Select elementų pakeitimų klausymas
+        const selectElements = document.querySelectorAll('select');
+        selectElements.forEach(select => {
+            select.addEventListener('change', updateParamSummary);
+        });
+        
+        // Checkbox elementų pakeitimų klausymas
+        const checkboxElements = document.querySelectorAll('input[type="checkbox"]');
+        checkboxElements.forEach(checkbox => {
+            checkbox.addEventListener('change', updateParamSummary);
+        });
+        
+        // Modelio pavadinimo pakeitimų klausymas
+        document.getElementById('modelName').addEventListener('input', updateParamSummary);
+        
+        // Parametrų suvestinės atnaujinimas
+        function updateParamSummary() {
+            const summary = document.getElementById('paramSummary');
+            
+            // Paimame visas reikšmes iš formos
+            const modelName = document.getElementById('modelName').value || '[Nenurodyta]';
+            const modelType = document.getElementById('modelType').value;
+            const timeframe = document.getElementById('timeframe').value;
+            const historyLength = document.getElementById('historyLength').value;
+            const predictionHorizon = document.getElementById('predictionHorizon').value;
+            const layers = document.getElementById('layers').value;
+            const units = document.getElementById('units').value;
+            const dropout = document.getElementById('dropout').value;
+            const activation = document.getElementById('activation').value;
+            const epochs = document.getElementById('epochs').value;
+            const batchSize = document.getElementById('batchSize').value;
+            const learningRate = document.getElementById('learningRate').value;
+            const optimizer = document.getElementById('optimizer').value;
+            const earlyStopping = document.getElementById('earlyStopping').checked;
+            const useValidation = document.getElementById('useValidation').checked;
+            
+            // Sukuriame HTML turinį
+            let html = `
+                <h6>Pagrindiniai parametrai</h6>
+                <p><strong>Pavadinimas:</strong> ${modelName}</p>
+                <p><strong>Tipas:</strong> ${modelType.toUpperCase()}</p>
+                
+                <h6 class="mt-3">Duomenų parametrai</h6>
+                <p><strong>Laiko rėžis:</strong> ${timeframe}</p>
+                <p><strong>Istorijos ilgis:</strong> ${historyLength}</p>
+                <p><strong>Prognozės horizontas:</strong> ${predictionHorizon}</p>
+                
+                <h6 class="mt-3">Modelio hiperparametrai</h6>
+                <p><strong>Sluoksnių skaičius:</strong> ${layers}</p>
+                <p><strong>Vienetų skaičius:</strong> ${units}</p>
+                <p><strong>Dropout:</strong> ${dropout}</p>
+                <p><strong>Aktyvacijos funkcija:</strong> ${activation}</p>
+                
+                <h6 class="mt-3">Treniravimo parametrai</h6>
+                <p><strong>Epochų skaičius:</strong> ${epochs}</p>
+                <p><strong>Batch dydis:</strong> ${batchSize}</p>
+                <p><strong>Mokymosi greitis:</strong> ${learningRate}</p>
+                <p><strong>Optimizatorius:</strong> ${optimizer}</p>
+                <p><strong>Ankstyvasis sustojimas:</strong> ${earlyStopping ? 'Taip' : 'Ne'}</p>
+                <p><strong>Validacijos rinkinys:</strong> ${useValidation ? 'Taip' : 'Ne'}</p>
+            `;
+            
+            summary.innerHTML = html;
+        }
+        
+        // Šablonų mygtukų funkcijos
+        document.getElementById('templateBasicLSTM').addEventListener('click', function() {
+            setTemplateValues({
+                modelType: 'lstm',
+                historyLength: 30,
+                layers: 2,
+                units: 64,
+                dropout: 0.2,
+                activation: 'relu',
+                epochs: 50,
+                batchSize: '32',
+                learningRate: '0.001',
+                optimizer: 'adam'
+            });
+        });
+        
+        document.getElementById('templateDeepGRU').addEventListener('click', function() {
+            setTemplateValues({
+                modelType: 'gru',
+                historyLength: 50,
+                layers: 4,
+                units: 128,
+                dropout: 0.3,
+                activation: 'tanh',
+                epochs: 100,
+                batchSize: '64',
+                learningRate: '0.0005',
+                optimizer: 'adam'
+            });
+        });
+        
+        document.getElementById('templateCNN').addEventListener('click', function() {
+            setTemplateValues({
+                modelType: 'cnn',
+                historyLength: 60,
+                layers: 3,
+                units: 64,
+                dropout: 0.25,
+                activation: 'relu',
+                epochs: 70,
+                batchSize: '32',
+                learningRate: '0.001',
+                optimizer: 'adam'
+            });
+        });
+        
+        document.getElementById('templateFastMLP').addEventListener('click', function() {
+            setTemplateValues({
+                modelType: 'mlp',
+                historyLength: 20,
+                layers: 2,
+                units: 32,
+                dropout: 0.1,
+                activation: 'relu',
+                epochs: 30,
+                batchSize: '64',
+                learningRate: '0.01',
+                optimizer: 'rmsprop'
+            });
+        });
+        
+        // Funkcija šablono reikšmių nustatymui
+        function setTemplateValues(values) {
+            // Nustatome pasirinktą modelio tipą
+            document.getElementById('modelType').value = values.modelType;
+            
+            // Nustatome slankiklio reikšmes
+            document.getElementById('historyLength').value = values.historyLength;
+            document.getElementById('historyLengthValue').textContent = values.historyLength;
+            
+            document.getElementById('layers').value = values.layers;
+            document.getElementById('layersValue').textContent = values.layers;
+            
+            document.getElementById('units').value = values.units;
+            document.getElementById('unitsValue').textContent = values.units;
+            
+            document.getElementById('dropout').value = values.dropout;
+            document.getElementById('dropoutValue').textContent = values.dropout;
+            
+            document.getElementById('epochs').value = values.epochs;
+            document.getElementById('epochsValue').textContent = values.epochs;
+            
+            // Nustatome pasirinkimų reikšmes
+            document.getElementById('activation').value = values.activation;
+            document.getElementById('batchSize').value = values.batchSize;
+            document.getElementById('learningRate').value = values.learningRate;
+            document.getElementById('optimizer').value = values.optimizer;
+            
+            // Atnaujiname suvestinę
+            updateParamSummary();
+        }
+        
+        // Tikriname, ar reikia užkrauti klonuoto modelio parametrus
+        const clonedParams = localStorage.getItem('clonedModelParameters');
+        if (clonedParams) {
+            try {
+                const params = JSON.parse(clonedParams);
+                
+                // Nustatome pasirinktą modelio tipą
+                document.getElementById('modelType').value = params.model_type;
+                
+                // Nustatome slankiklio reikšmes
+                document.getElementById('historyLength').value = params.history_length;
+                document.getElementById('historyLengthValue').textContent = params.history_length;
+                
+                document.getElementById('trainTestSplit').value = params.train_test_split;
+                document.getElementById('trainTestSplitValue').textContent = params.train_test_split;
+                
+                document.getElementById('predictionHorizon').value = params.prediction_horizon;
+                document.getElementById('predictionHorizonValue').textContent = params.prediction_horizon;
+                
+                document.getElementById('layers').value = params.layers;
+                document.getElementById('layersValue').textContent = params.layers;
+                
+                document.getElementById('units').value = params.units;
+                document.getElementById('unitsValue').textContent = params.units;
+                
+                document.getElementById('dropout').value = params.dropout;
+                document.getElementById('dropoutValue').textContent = params.dropout;
+                
+                document.getElementById('epochs').value = params.epochs;
+                document.getElementById('epochsValue').textContent = params.epochs;
+                
+                // Nustatome pasirinkimų reikšmes
+                document.getElementById('timeframe').value = params.timeframe;
+                document.getElementById('activation').value = params.activation;
+                document.getElementById('batchSize').value = params.batch_size;
+                document.getElementById('learningRate').value = params.learning_rate;
+                document.getElementById('optimizer').value = params.optimizer;
+                
+                // Nustatome checkboxes
+                document.getElementById('earlyStopping').checked = params.early_stopping;
+                document.getElementById('useValidation').checked = params.use_validation;
+                
+                // Siūlome pavadinimą su "clone" priesaga
+                document.getElementById('modelName').value = params.model_name ? params.model_name + "_clone" : "";
+                
+                // Atnaujiname suvestinę
+                updateParamSummary();
+                
+                // Išvalome localStorage
+                localStorage.removeItem('clonedModelParameters');
+            } catch (error) {
+                console.error('Klaida užkraunant klonuoto modelio parametrus:', error);
+            }
+        }
+        
+        // Pradinis parametrų suvestinės atnaujinimas
+        updateParamSummary();
+    });
+</script>
+{% endblock %}

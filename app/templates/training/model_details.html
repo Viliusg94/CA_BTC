@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}{{ model.name }} - BTC Prekybos Sistema{% endblock %}
+
+{% block styles %}
+<style>
+    .metrics-container {
+        height: 300px;
+    }
+    
+    .parameter-card {
+        height: 100%;
+    }
+    
+    .parameter-row {
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .parameter-row:last-child {
+        border-bottom: none;
+    }
+    
+    .parameter-name {
+        font-weight: 500;
+    }
+    
+    .parameter-value {
+        text-align: right;
+    }
+    
+    .metric-card {
+        margin-bottom: 20px;
+    }
+    
+    .actions-card {
+        margin-bottom: 20px;
+    }
+    
+    .metric-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Modelio detalės: {{ model.name }}</h1>
+        <p class="text-muted">Sukurtas: {{ model.created_at }}</p>
+        
+        <!-- Greitos veiksmų kortelės -->
+        <div class="card actions-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between flex-wrap">
+                    <div>
+                        <h5 class="card-title mb-3">Veiksmai su modeliu</h5>
+                    </div>
+                    <div class="btn-group">
+                        <a href="{{ url_for('training.train', retrain=model.filename) }}" class="btn btn-primary">
+                            <i class="fas fa-sync-alt me-1"></i>Mokytis iš naujo
+                        </a>
+                        <button class="btn btn-success" id="exportModelBtn" data-filename="{{ model.filename }}">
+                            <i class="fas fa-file-export me-1"></i>Eksportuoti
+                        </button>
+                        <button class="btn btn-info" id="copyParamsBtn" data-params="{{ model.parameters|tojson }}">
+                            <i class="fas fa-copy me-1"></i>Kopijuoti parametrus
+                        </button>
+                        <button class="btn btn-danger" id="deleteModelBtn" data-filename="{{ model.filename }}">
+                            <i class="fas fa-trash-alt me-1"></i>Ištrinti
+                        </button>
+                        <a href="{{ url_for('training.optimize') }}" class="btn btn-warning mb-2">
+                            <i class="fas fa-sliders-h"></i> Optimizuoti parametrus
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Modelio parametrai -->
+    <div class="col-md-4">
+        <div class="card parameter-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Modelio parametrai</h5>
+            </div>
+            <div class="card-body">
+                <!-- Modelio architektūros parametrai -->
+                <h6 class="card-subtitle mb-3">Architektūra</h6>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Modelio tipas</span>
+                    <span class="parameter-value">{{ model.parameters.model_type|default('LSTM') }}</span>
+                </div>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Sluoksnių skaičius</span>
+                    <span class="parameter-value">{{ model.parameters.layers|default(2) }}</span>
+                </div>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Neuronai sluoksnyje</span>
+                    <span class="parameter-value">{{ model.parameters.units|default(64) }}</span>
+                </div>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Dropout</span>
+                    <span class="parameter-value">{{ model.parameters.dropout|default(0.2) }}</span>
+                </div>
+                
+                <!-- Treniravimo parametrai -->
+                <h6 class="card-subtitle mb-3 mt-4">Treniravimas</h6>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Epochos</span>
+                    <span class="parameter-value">{{ model.parameters.epochs|default(50) }}</span>
+                </div>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Batch dydis</span>
+                    <span class="parameter-value">{{ model.parameters.batch_size|default(32) }}</span>
+                </div>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Mokymosi greitis</span>
+                    <span class="parameter-value">{{ model.parameters.learning_rate|default('0.001') }}</span>
+                </div>
+                
+                <!-- Duomenų parametrai -->
+                <h6 class="card-subtitle mb-3 mt-4">Duomenys</h6>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Sekos ilgis</span>
+                    <span class="parameter-value">{{ model.parameters.sequence_length|default(60) }}</span>
+                </div>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Tikslo dienos</span>
+                    <span class="parameter-value">{{ model.parameters.prediction_days|default(1) }}</span>
+                </div>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Testavimo dalis</span>
+                    <span class="parameter-value">{{ model.parameters.test_size|default('0.2') }}</span>
+                </div>
+                
+                <div class="parameter-row d-flex justify-content-between">
+                    <span class="parameter-name">Požymių normalizacija</span>
+                    <span class="parameter-value">{{ 'Taip' if model.parameters.normalization|default(true) else 'Ne' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Metrikų apžvalga -->
+    <div class="col-md-8">
+        <div class="row">
+            <!-- Pagrindinės metrikos -->
+            <div class="col-6">
+                <div class="card metric-card bg-light border-0">
+                    <div class="card-body text-center">
+                        <p class="metric-label mb-1">Galutinis nuostolis (validavimo)</p>
+                        <p class="metric-value text-primary mb-0">{{ '%0.4f'|format(model.final_metrics.val_loss|default(0)) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card metric-card bg-light border-0">
+                    <div class="card-body text-center">
+                        <p class="metric-label mb-1">Vidutinė absoliuti paklaida (validavimo)</p>
+                        <p class="metric-value text-success mb-0">{{ '%0.4f'|format(model.final_metrics.val_mae|default(0)) }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Metrikų grafikai -->
+            <div class="col-12">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Mokymo metrikos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="metrics-container">
+                                    <canvas id="lossChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="metrics-container">
+                                    <canvas id="maeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Pagrindinis modelio panaudojimas</h5>
+            </div>
+            <div class="card-body">
+                <h6>Kaip naudoti šį modelį:</h6>
+                <ol>
+                    <li>Navigacijos juostoje pasirinkite <strong>Prekyba</strong></li>
+                    <li>Modelių pasirinkimo meniu pasirinkite <strong>{{ model.name }}</strong></li>
+                    <li>Nustatykite prekybos parametrus ir pradėkite prekybą</li>
+                </ol>
+                <p>Arba galite:</p>
+                <ul>
+                    <li>Eksportuoti modelį ir naudoti jį kituose projektuose</li>
+                    <li>Perbandyti su kitais parametrais, naudojant "Mokytis iš naujo" mygtuką</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Validavimo grafiko mygtukas -->
+<a href="{{ url_for('training.model_validation', filename=model.filename) }}" class="btn btn-info mb-2">
+    <i class="fas fa-chart-line"></i> Validavimo grafikas
+</a>
+
+<!-- Tarpiniai modeliai mygtukas -->
+<a href="{{ url_for('training.checkpoints') }}?training_id={{ model.training_id if model.training_id else '' }}" class="btn btn-success mb-2">
+    <i class="fas fa-save"></i> Tarpiniai modeliai
+</a>
+
+<!-- Modelio architektūra mygtukas -->
+<a href="{{ url_for('training.model_architecture', filename=model.filename) }}" class="btn btn-primary mb-2">
+    <i class="fas fa-project-diagram"></i> Modelio architektūra
+</a>
+
+<!-- Palyginimo su kitais modeliais mygtukas -->
+<a href="{{ url_for('training.compare_models') }}?select={{ model.filename }}" class="btn btn-info mb-2">
+    <i class="fas fa-balance-scale"></i> Palyginti su kitais
+</a>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Metrikų duomenys
+        const lossData = {{ model.metrics.loss|tojson }};
+        const valLossData = {{ model.metrics.val_loss|tojson }};
+        const maeData = {{ model.metrics.mae|tojson }};
+        const valMaeData = {{ model.metrics.val_mae|tojson }};
+        
+        // Grafiko etiketės (epochų skaičiai)
+        const epochs = Array.from({ length: lossData.length }, (_, i) => i + 1);
+        
+        // Inicializuojame Loss grafiką
+        const lossCtx = document.getElementById('lossChart').getContext('2d');
+        new Chart(lossCtx, {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    {
+                        label: 'Treniravimo nuostolis',
+                        data: lossData,
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    },
+                    {
+                        label: 'Validavimo nuostolis',
+                        data: valLossData,
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Nuostolio funkcija'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Epocha'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Nuostolis'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Inicializuojame MAE grafiką
+        const maeCtx = document.getElementById('maeChart').getContext('2d');
+        new Chart(maeCtx, {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    {
+                        label: 'Treniravimo MAE',
+                        data: maeData,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    },
+                    {
+                        label: 'Validavimo MAE',
+                        data: valMaeData,
+                        borderColor: 'rgb(255, 159, 64)',
+                        backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Vidutinė absoliuti paklaida (MAE)'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Epocha'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'MAE'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Kopijuoti parametrus mygtuko funkcija
+        document.getElementById('copyParamsBtn').addEventListener('click', function() {
+            const paramsJson = this.getAttribute('data-params');
+            
+            // Kopijuojame į iškarpinę
+            navigator.clipboard.writeText(paramsJson).then(function() {
+                alert('Parametrai nukopijuoti į iškarpinę!');
+            }, function() {
+                alert('Nepavyko nukopijuoti parametrų.');
+            });
+        });
+        
+        // Ištrinti modelio mygtuko funkcija
+        document.getElementById('deleteModelBtn').addEventListener('click', function() {
+            if (confirm('Ar tikrai norite ištrinti šį modelį?')) {
+                const filename = this.getAttribute('data-filename');
+                
+                // Siųsti užklausą į serverį
+                fetch('/training/api/delete_model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: filename
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Sėkmingai ištrintas, grįžtame į modelių sąrašą
+                        window.location.href = '/training/models';
+                    } else {
+                        alert('Klaida trinant modelį: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida:', error);
+                    alert('Įvyko klaida trinant modelį.');
+                });
+            }
+        });
+        
+        // Eksportuoti modelio mygtuko funkcija
+        document.getElementById('exportModelBtn').addEventListener('click', function() {
+            const filename = this.getAttribute('data-filename');
+            window.location.href = '/training/api/export_model/' + filename;
+        });
+    });
+</script>
+{% endblock %}
