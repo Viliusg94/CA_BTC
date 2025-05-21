@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelio Mokymas - Bitcoin Prognozavimo Platforma</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigacija -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fab fa-bitcoin text-warning me-2"></i>Bitcoin Prognozavimo Platforma
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Pradžia</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/models"><i class="fas fa-chart-line me-1"></i>Modeliai</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/train"><i class="fas fa-cogs me-1"></i>Mokymas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/predict"><i class="fas fa-crystal-ball me-1"></i>Prognozė</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/ensemble"><i class="fas fa-layer-group me-1"></i>Ansamblis</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Pagrindinis turinys -->
+    <div class="container mt-5 pt-4">
+        <h1 class="mb-4"><i class="fas fa-cogs me-2"></i>Modelio Mokymas</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Mokymo Nustatymai</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="training-form" method="POST" action="/train">
+                            <!-- Modelio tipas -->
+                            <div class="mb-3">
+                                <label for="model_type" class="form-label">Modelio tipas</label>
+                                <select class="form-select" id="model_type" name="model_type" required>
+                                    <option value="" selected disabled>Pasirinkite modelio tipą</option>
+                                    <option value="lstm" {% if request.args.get('model') == 'lstm' %}selected{% endif %}>LSTM</option>
+                                    <option value="gru" {% if request.args.get('model') == 'gru' %}selected{% endif %}>GRU</option>
+                                    <option value="transformer" {% if request.args.get('model') == 'transformer' %}selected{% endif %}>Transformer</option>
+                                    <option value="cnn" {% if request.args.get('model') == 'cnn' %}selected{% endif %}>CNN</option>
+                                    <option value="cnn_lstm" {% if request.args.get('model') == 'cnn_lstm' %}selected{% endif %}>CNN-LSTM</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Epochų skaičius -->
+                            <div class="mb-3">
+                                <label for="epochs" class="form-label">Epochų skaičius</label>
+                                <input type="number" class="form-control" id="epochs" name="epochs" value="50" min="1" max="200" required>
+                                <div class="form-text">Rekomenduojama reikšmė: 50-100</div>
+                            </div>
+                            
+                            <!-- Batch dydis -->
+                            <div class="mb-3">
+                                <label for="batch_size" class="form-label">Batch dydis</label>
+                                <input type="number" class="form-control" id="batch_size" name="batch_size" value="32" min="8" max="256" required>
+                                <div class="form-text">Rekomenduojama reikšmė: 32 arba 64</div>
+                            </div>
+                            
+                            <!-- Sekos ilgis -->
+                            <div class="mb-3">
+                                <label for="sequence_length" class="form-label">Sekos ilgis</label>
+                                <input type="number" class="form-control" id="sequence_length" name="sequence_length" value="24" min="1" max="96" required>
+                                <div class="form-text">Laiko žingsnių skaičius prognozės sekoje (24 = 6 valandos)</div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="submit-button">
+                                    <i class="fas fa-play me-2"></i>Pradėti mokymą
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Apie modelių mokymą</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info" role="alert">
+                            <h5><i class="fas fa-exclamation-circle me-2"></i>Svarbu!</h5>
+                            <p>Modelių mokymas gali užtrukti nuo kelių minučių iki kelių valandų, priklausomai nuo modelio tipo, epochų skaičiaus ir jūsų kompiuterio galios.</p>
+                        </div>
+                        
+                        <h5>Modelių tipai:</h5>
+                        <ul>
+                            <li><strong>LSTM</strong> - Long Short-Term Memory tinklai, efektyvūs laiko eilutėms.</li>
+                            <li><strong>GRU</strong> - Gated Recurrent Unit, paprastesnis ir greitesnis LSTM variantas.</li>
+                            <li><strong>Transformer</strong> - Modelis su savęs dėmesio mechanizmu, efektyvus ilgoms sekoms.</li>
+                            <li><strong>CNN</strong> - Konvoliucinis neuroninis tinklas, geras lokalių požymių išskyrimui.</li>
+                            <li><strong>CNN-LSTM</strong> - CNN ir LSTM hibridinis modelis, apjungiantis abiejų privalumus.</li>
+                        </ul>
+                        
+                        <h5>Patarimai:</h5>
+                        <ul>
+                            <li>Pradėkite nuo mažesnio epochų skaičiaus (50), kad greičiau gautumėte rezultatus.</li>
+                            <li>Eksperimentuokite su skirtingais sekos ilgiais (16, 24, 32, 48).</li>
+                            <li>GRU modeliai paprastai mokosi greičiau nei LSTM.</li>
+                            <li>Transformer modeliai geriausiai veikia su ilgesnėmis sekomis (48+).</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Aktyvūs mokymai</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="active-training-container">
+                            <!-- Čia bus įkeliami aktyvūs mokymai -->
+                            <div class="text-center p-3">
+                                <p class="text-muted mb-0">Įkeliama...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Bitcoin Prognozavimo Platforma</h5>
+                    <p class="text-muted">Magistro projektas, taikantis mašininio mokymosi metodus Bitcoin kainų prognozavimui.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">&copy; 2023. Visos teisės saugomos.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Periodiškai atnaujiname aktyvių mokymų sąrašą
+            updateActiveTrainingJobs();
+            setInterval(updateActiveTrainingJobs, 5000);
+            
+            // Formos pateikimo apdorojimas
+            const form = document.getElementById('training-form');
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                // Atnaujinti mygtuką
+                const submitButton = document.getElementById('submit-button');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Inicijuojamas mokymas...';
+                
+                // Siunčiame formą asynchroniškai
+                fetch('/train', {
+                    method: 'POST',
+                    body: new FormData(form)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Nukreipiame į mokymo būsenos puslapį
+                        window.location.href = `/training_status/${data.job_id}`;
+                    } else {
+                        alert('Klaida pradedant mokymą: ' + (data.error || 'Nežinoma klaida'));
+                        // Atstatome mygtuką
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '<i class="fas fa-play me-2"></i>Pradėti mokymą';
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida:', error);
+                    alert('Klaida pradedant mokymą. Žr. konsolę.');
+                    // Atstatome mygtuką
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-play me-2"></i>Pradėti mokymą';
+                });
+            });
+        });
+        
+        // Funkcija aktyvių mokymų atnaujinimui
+        function updateActiveTrainingJobs() {
+            fetch('/api/active_training_jobs')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('active-training-container');
+                    
+                    if (data.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center p-3">
+                                <p class="text-muted mb-0">Šiuo metu nėra aktyvių mokymų.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    let html = '<ul class="list-group list-group-flush">';
+                    
+                    data.forEach(job => {
+                        html += `
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>${job.model_type.toUpperCase()}</span>
+                                    <small class="text-muted">${formatTime(job.start_time)}</small>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small>${job.status}</small>
+                                    <small>${job.progress}%</small>
+                                </div>
+                                <div class="progress mt-2" style="height: 5px;">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: ${job.progress}%;" 
+                                         aria-valuenow="${job.progress}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="mt-2 text-end">
+                                    <a href="/training_status/${job.job_id}" class="btn btn-sm btn-outline-primary">Detalės</a>
+                                </div>
+                            </li>
+                        `;
+                    });
+                    
+                    html += '</ul>';
+                    container.innerHTML = html;
+                });
+        }
+        
+        // Laiko formatavimo funkcija
+        function formatTime(isoTime) {
+            const date = new Date(isoTime);
+            return date.toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' });
+        }
+    </script>
+</body>
+</html>

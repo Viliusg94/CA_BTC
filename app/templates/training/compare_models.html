@@ -1,197 +1,349 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Modelių palyginimas{% endblock %}
+{% block title %}Treniruotų modelių istorija{% endblock %}
 
 {% block styles %}
 <style>
-    .comparison-card {
+    /* Filtravimo kortelės stilius */
+    .filter-card {
         margin-bottom: 20px;
-        transition: transform 0.2s;
-        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        border-left: 4px solid #007bff;
     }
     
-    .comparison-card:hover {
-        transform: translateY(-5px);
+    /* Modelio statuso žymės stiliai */
+    .status-badge {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.5rem;
     }
     
-    .model-selection {
-        padding: 15px;
+    /* Modelio eilutės stilius */
+    .model-row:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    /* Modelio pavadinimo stilius */
+    .model-name {
+        font-weight: 500;
+        color: #0056b3;
+    }
+    
+    /* Rūšiavimo stiliai */
+    .sort-arrow {
+        display: inline-block;
+        margin-left: 5px;
+    }
+    
+    /* Metrikų eilutės stilius */
+    .metrics-row {
+        font-size: 0.85rem;
+    }
+    
+    /* Metrikų progreso juostos stilius */
+    .metrics-progress {
+        height: 6px;
+    }
+    
+    /* Akcijų mygtukų grupė */
+    .action-buttons .btn {
+        margin-right: 5px;
+    }
+    
+    /* Lentelės antraštės stilius */
+    .table-header {
         background-color: #f8f9fa;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-    
-    .chart-container {
-        height: 300px;
-        width: 100%;
-        margin-top: 20px;
-    }
-    
-    .best-value {
-        font-weight: bold;
-        color: green;
-    }
-    
-    .worst-value {
-        color: red;
-    }
-    
-    .model-filter {
-        margin-bottom: 20px;
-    }
-    
-    .filter-options {
-        background-color: #fff;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1 class="my-4">Modelių palyginimas</h1>
-    
-    <!-- Modelių filtravimas -->
-    <div class="model-filter">
-        <div class="card">
-            <div class="card-header bg-light">
+<div class="container mt-4">
+    <!-- Navigacijos kelias -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.index') }}">Pagrindinis</a></li>
+            <li class="breadcrumb-item active">Modelių istorija</li>
+        </ol>
+    </nav>
+
+    <!-- Puslapio antraštė -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Treniruotų modelių istorija</h1>
+        <a href="{{ url_for('model_training.create_model') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i>Sukurti naują modelį
+        </a>
+    </div>
+
+    <!-- Filtravimo ir rūšiavimo kortelė -->
+    <div class="card filter-card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtrai ir rūšiavimas</h5>
+        </div>
+        <div class="card-body">
+            <form id="filter-form" method="get" action="{{ url_for('model_training.model_history') }}">
+                <div class="row">
+                    <!-- Modelio tipo filtras -->
+                    <div class="col-md-3 mb-3">
+                        <label for="model-type" class="form-label">Modelio tipas</label>
+                        <select class="form-select" id="model-type" name="type">
+                            <option value="">Visi tipai</option>
+                            <option value="lstm" {% if request.args.get('type') == 'lstm' %}selected{% endif %}>LSTM</option>
+                            <option value="gru" {% if request.args.get('type') == 'gru' %}selected{% endif %}>GRU</option>
+                            <option value="cnn" {% if request.args.get('type') == 'cnn' %}selected{% endif %}>CNN</option>
+                            <option value="rnn" {% if request.args.get('type') == 'rnn' %}selected{% endif %}>RNN</option>
+                        </select>
+                    </div>
+
+                    <!-- Datos filtras -->
+                    <div class="col-md-3 mb-3">
+                        <label for="date-range" class="form-label">Sukūrimo data</label>
+                        <select class="form-select" id="date-range" name="date_range">
+                            <option value="">Bet kuri data</option>
+                            <option value="today" {% if request.args.get('date_range') == 'today' %}selected{% endif %}>Šiandien</option>
+                            <option value="week" {% if request.args.get('date_range') == 'week' %}selected{% endif %}>Šią savaitę</option>
+                            <option value="month" {% if request.args.get('date_range') == 'month' %}selected{% endif %}>Šį mėnesį</option>
+                            <option value="year" {% if request.args.get('date_range') == 'year' %}selected{% endif %}>Šiais metais</option>
+                        </select>
+                    </div>
+
+                    <!-- Tikslumo filtras -->
+                    <div class="col-md-3 mb-3">
+                        <label for="accuracy-threshold" class="form-label">Min. tikslumas</label>
+                        <select class="form-select" id="accuracy-threshold" name="accuracy">
+                            <option value="">Bet koks</option>
+                            <option value="0.5" {% if request.args.get('accuracy') == '0.5' %}selected{% endif %}>>=50%</option>
+                            <option value="0.7" {% if request.args.get('accuracy') == '0.7' %}selected{% endif %}>>=70%</option>
+                            <option value="0.8" {% if request.args.get('accuracy') == '0.8' %}selected{% endif %}>>=80%</option>
+                            <option value="0.9" {% if request.args.get('accuracy') == '0.9' %}selected{% endif %}>>=90%</option>
+                        </select>
+                    </div>
+
+                    <!-- Paieškos laukas -->
+                    <div class="col-md-3 mb-3">
+                        <label for="search" class="form-label">Paieška</label>
+                        <input type="text" class="form-control" id="search" name="search" placeholder="Modelio pavadinimas..." value="{{ request.args.get('search', '') }}">
+                    </div>
+                </div>
+
+                <div class="row align-items-end">
+                    <!-- Rūšiavimo laukai -->
+                    <div class="col-md-3 mb-3">
+                        <label for="sort-by" class="form-label">Rūšiuoti pagal</label>
+                        <select class="form-select" id="sort-by" name="sort_by">
+                            <option value="created_at" {% if request.args.get('sort_by') == 'created_at' %}selected{% endif %}>Sukūrimo datą</option>
+                            <option value="name" {% if request.args.get('sort_by') == 'name' %}selected{% endif %}>Pavadinimą</option>
+                            <option value="type" {% if request.args.get('sort_by') == 'type' %}selected{% endif %}>Tipą</option>
+                            <option value="accuracy" {% if request.args.get('sort_by') == 'accuracy' %}selected{% endif %}>Tikslumą</option>
+                            <option value="epoch_count" {% if request.args.get('sort_by') == 'epoch_count' %}selected{% endif %}>Epochų skaičių</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label for="sort-order" class="form-label">Tvarka</label>
+                        <select class="form-select" id="sort-order" name="sort_order"></select>
+                            <option value="desc" {% if request.args.get('sort_order') == 'desc' %}selected{% endif %}>Mažėjimo tvarka</option>
+                            <option value="asc" {% if request.args.get('sort_order') == 'asc' %}selected{% endif %}>Didėjimo tvarka</option>
+                        </select>
+                    </div>
+
+                    <!-- Mygtukai -->
+                    <div class="col-md-6 mb-3 text-end">
+                        <button type="button" class="btn btn-outline-secondary me-2" id="reset-filters">
+                            <i class="fas fa-times me-1"></i>Išvalyti filtrus
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i>Filtruoti
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Eksporto ir palyginimo kortelė -->
+    <div class="card mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <div class="form-check me-3">
+                    <input class="form-check-input" type="checkbox" id="select-all-models">
+                    <label class="form-check-label" for="select-all-models">Pasirinkti visus</label>
+                </div>
+                <span id="export-selected-info">Pasirinkite bent vieną modelį</span>
+            </div>
+            
+            <div>
+                <button type="button" class="btn btn-success me-2" id="export-selected-btn" disabled>
+                    <i class="fas fa-file-export me-1"></i>Eksportuoti pasirinktus
+                </button>
+                <button type="button" class="btn btn-info" id="compare-selected-btn" disabled>
+                    <i class="fas fa-chart-bar me-1"></i>Palyginti pasirinktus
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modelių sąrašo forma -->
+    <form id="export-form" action="{{ url_for('model_training.export_multiple_models') }}" method="post">
+        <div id="export-model-ids"></div>
+    </form>
+
+    <form id="compare-form" action="{{ url_for('model_training.compare_models') }}" method="post">
+        <div id="compare-model-ids"></div>
+    </form>
+
+    <!-- Modelių istorijos sąrašas -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
-                        <i class="fas fa-filter me-1"></i>Filtravimo parinktys
-                    </button>
+                    Modelių sąrašas 
+                    <span class="badge bg-secondary ms-2">{{ models|length }}</span>
                 </h5>
-            </div>
-            <div id="filterCollapse" class="collapse">
-                <div class="card-body filter-options">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="nameFilter" class="form-label">Modelio pavadinimas:</label>
-                                <input type="text" class="form-control" id="nameFilter" placeholder="Įveskite pavadinimą...">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="minAccuracy" class="form-label">Min. tikslumas:</label>
-                                <input type="number" class="form-control" id="minAccuracy" min="0" max="1" step="0.01" placeholder="0.0">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="dateFilter" class="form-label">Data nuo:</label>
-                                <input type="date" class="form-control" id="dateFilter">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <button id="applyFilters" class="btn btn-primary me-2">
-                            <i class="fas fa-check me-1"></i>Taikyti filtrus
-                        </button>
-                        <button id="resetFilters" class="btn btn-secondary">
-                            <i class="fas fa-undo me-1"></i>Atstatyti
-                        </button>
-                    </div>
+                <div>
+                    <span class="small text-muted me-2">Rūšiuota pagal:</span>
+                    <span class="fw-bold small" id="sort-by-text">{{ 'Sukūrimo datą' if request.args.get('sort_by') == 'created_at' or not request.args.get('sort_by') else 
+                                                                    'Pavadinimą' if request.args.get('sort_by') == 'name' else 
+                                                                    'Tipą' if request.args.get('sort_by') == 'type' else 
+                                                                    'Tikslumą' if request.args.get('sort_by') == 'accuracy' else 
+                                                                    'Epochų skaičių' if request.args.get('sort_by') == 'epoch_count' else 
+                                                                    'Sukūrimo datą' }}</span>
+                    <span class="sort-arrow" id="sort-order-arrow">
+                        {{ '&#9660;' if request.args.get('sort_order') == 'desc' or not request.args.get('sort_order') else '&#9650;' }}
+                    </span>
                 </div>
             </div>
+        </div>
+        <div class="card-body p-0">
+            {% if models %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-header">
+                        <tr>
+                            <th width="50">
+                                <!-- Pasirinkimo stulpelis -->
+                            </th>
+                            <th>Modelis</th>
+                            <th>Tipas</th>
+                            <th>Metrikos</th>
+                            <th>Sukūrimo data</th>
+                            <th>Veiksmai</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in models %}
+                        <tr class="model-row">
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input model-checkbox" type="checkbox" 
+                                           id="model-{{ model.training_id }}" 
+                                           value="{{ model.training_id }}">
+                                    <label class="form-check-label" for="model-{{ model.training_id }}"></label>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="model-name">{{ model.name|default('Modelis ' ~ model.training_id) }}</div>
+                                <div class="small text-muted">ID: {{ model.training_id }}</div>
+                                
+                                <!-- Modelio statusas -->
+                                {% if model.metrics and model.metrics|length > 0 %}
+                                    <span class="badge bg-success status-badge">Treniruotas</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark status-badge">Netreniruotas</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ model.type|upper }}</span>
+                            </td>
+                            <td>
+                                <!-- Metrikų informacija -->
+                                {% if model.metrics and model.metrics|length > 0 %}
+                                    <div class="metrics-row">
+                                        <div class="mb-1">
+                                            <span class="small">Tikslumas (val_accuracy):</span>
+                                            <span class="small fw-bold">{{ (model.metrics[-1].val_accuracy * 100)|round(2) }}%</span>
+                                        </div>
+                                        <div class="progress metrics-progress mb-2">
+                                            <div class="progress-bar" role="progressbar" 
+                                                style="width: {{ (model.metrics[-1].val_accuracy * 100)|round(0) }}%" 
+                                                aria-valuenow="{{ (model.metrics[-1].val_accuracy * 100)|round(0) }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="mb-1">
+                                            <span class="small">Klaida (val_loss):</span>
+                                            <span class="small fw-bold">{{ model.metrics[-1].val_loss|round(4) }}</span>
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="fas fa-history me-1"></i>
+                                            Epochų: {{ model.metrics|length }}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="small text-muted fst-italic">Nėra treniravimo duomenų</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>{{ model.created_at|default('Nenurodyta') }}</div>
+                                {% if model.last_training_date %}
+                                    <div class="small text-muted">
+                                        <i class="fas fa-sync me-1"></i>
+                                        Pask. treniravimas: {{ model.last_training_date }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('model_training.view_model', training_id=model.training_id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="Peržiūrėti">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('model_training.train_model', training_id=model.training_id) }}" 
+                                       class="btn btn-sm btn-outline-success" title="Treniruoti">
+                                        <i class="fas fa-play"></i>
+                                    </a>
+                                    <a href="{{ url_for('model_training.export_model', training_id=model.training_id) }}" 
+                                       class="btn btn-sm btn-outline-info" title="Eksportuoti">
+                                        <i class="fas fa-file-export"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-model-btn" 
+                                            data-model-id="{{ model.training_id }}" 
+                                            data-model-name="{{ model.name|default('Modelis ' ~ model.training_id) }}"
+                                            title="Ištrinti">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info m-3">
+                <i class="fas fa-info-circle me-2"></i>
+                Nerasta jokių modelių, atitinkančių pasirinktus filtrus. 
+                <a href="{{ url_for('model_training.create_model') }}" class="alert-link">Sukurkite naują modelį</a> arba pakeiskite filtravimo kriterijus.
+            </div>
+            {% endif %}
         </div>
     </div>
-    
-    <!-- Modelių pasirinkimas -->
-    <div class="model-selection">
-        <h5>Pasirinkite modelius palyginimui:</h5>
-        <form id="comparison-form">
-            <div class="row" id="model-checkboxes">
-                {% for model in models %}
-                <div class="col-md-4 mb-2 model-checkbox-container">
-                    <div class="form-check">
-                        <input class="form-check-input model-checkbox" type="checkbox" value="{{ model.model_id }}" 
-                               id="model-{{ model.model_id }}" name="selected_models">
-                        <label class="form-check-label" for="model-{{ model.model_id }}">
-                            {{ model.model_name }} ({{ model.date_created }})
-                        </label>
-                    </div>
+
+    <!-- Modelio ištrynimo patvirtinimo modalinis langas -->
+    <div class="modal fade" id="deleteModelModal" tabindex="-1" aria-labelledby="deleteModelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModelModalLabel">Patvirtinkite ištrynimą</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                {% endfor %}
-            </div>
-            <button type="submit" class="btn btn-primary mt-3">
-                <i class="fas fa-chart-bar me-1"></i>Palyginti modelius
-            </button>
-        </form>
-    </div>
-    
-    <!-- Palyginimo rezultatai, iš pradžių paslėpti -->
-    <div id="comparison-results" style="display: none;">
-        <!-- Tikslumo palyginimo grafikas -->
-        <div class="card comparison-card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Tikslumo palyginimas</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="accuracy-chart"></canvas>
+                <div class="modal-body">
+                    <p>Ar tikrai norite ištrinti modelį <span id="delete-model-name" class="fw-bold"></span>?</p>
+                    <p class="text-danger">Šio veiksmo negalima atšaukti. Visi modelio duomenys bus pašalinti visam laikui.</p>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Nuostolių palyginimo grafikas -->
-        <div class="card comparison-card">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">Nuostolių palyginimas</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="loss-chart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Epochų palyginimo grafikas -->
-        <div class="card comparison-card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Epochų palyginimas</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="epochs-chart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Metrikų palyginimo lentelė -->
-        <div class="card comparison-card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Metrikų palyginimo lentelė</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Modelis</th>
-                                <th>Tikslumas</th>
-                                <th>Valid. tikslumas</th>
-                                <th>Nuostoliai</th>
-                                <th>Valid. nuostoliai</th>
-                                <th>Epochos</th>
-                                <th>Sukūrimo data</th>
-                            </tr>
-                        </thead>
-                        <tbody id="comparison-table-body">
-                            <!-- Čia bus pridėti modelių duomenys -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Eksportavimo mygtukai -->
-                <div class="mt-3 text-center">
-                    <button id="export-csv" class="btn btn-outline-primary me-2">
-                        <i class="fas fa-file-csv me-1"></i>Eksportuoti kaip CSV
-                    </button>
-                    <button id="export-img" class="btn btn-outline-success">
-                        <i class="fas fa-file-image me-1"></i>Eksportuoti grafiką
-                    </button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                    <form id="delete-model-form" method="post">
+                        <button type="submit" class="btn btn-danger">Ištrinti</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -200,193 +352,206 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Globalūs kintamieji grafikams
-    let accuracyChart = null;
-    let lossChart = null;
-    let epochsChart = null;
+// Modelių istorijos puslapio JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementai
+    const selectAllCheckbox = document.getElementById('select-all-models');
+    const modelCheckboxes = document.querySelectorAll('.model-checkbox');
+    const exportSelectedBtn = document.getElementById('export-selected-btn');
+    const compareSelectedBtn = document.getElementById('compare-selected-btn');
+    const exportModelIds = document.getElementById('export-model-ids');
+    const compareModelIds = document.getElementById('compare-model-ids');
+    const exportForm = document.getElementById('export-form');
+    const compareForm = document.getElementById('compare-form');
+    const exportSelectedInfo = document.getElementById('export-selected-info');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    const sortBySelect = document.getElementById('sort-by');
+    const sortOrderSelect = document.getElementById('sort-order');
+    const sortByText = document.getElementById('sort-by-text');
+    const sortOrderArrow = document.getElementById('sort-order-arrow');
+    const deleteModelBtns = document.querySelectorAll('.delete-model-btn');
+    const deleteModelModal = document.getElementById('deleteModelModal');
+    const deleteModelName = document.getElementById('delete-model-name');
+    const deleteModelForm = document.getElementById('delete-model-form');
     
-    // Visi modeliai iš serverio
-    let allModels = [];
+    // "Pasirinkti visus" funkcionalumas
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            modelCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateButtonsState();
+        });
+    }
     
-    document.addEventListener('DOMContentLoaded', function() {
-        // Užkrauname visus modelius
-        allModels = [
-            {% for model in models %}
-            {
-                model_id: {{ model.model_id }},
-                model_name: "{{ model.model_name }}",
-                date_created: "{{ model.date_created }}",
-                accuracy: {{ model.accuracy }},
-                loss: {{ model.loss }},
-                val_accuracy: {{ model.val_accuracy }},
-                val_loss: {{ model.val_loss }},
-                epochs: {{ model.epochs }},
-                description: "{{ model.description }}"
-            }{% if not loop.last %},{% endif %}
-            {% endfor %}
-        ];
-        
-        // Modelių filtravimo logika
-        document.getElementById('applyFilters').addEventListener('click', function() {
-            filterModels();
-        });
-        
-        document.getElementById('resetFilters').addEventListener('click', function() {
-            // Atstatome filtravimo laukus
-            document.getElementById('nameFilter').value = '';
-            document.getElementById('minAccuracy').value = '';
-            document.getElementById('dateFilter').value = '';
+    // Modelių pasirinkimo įvykiai
+    modelCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateButtonsState();
             
-            // Rodome visus modelius
-            displayAllModels();
-        });
-        
-        // Modelių palyginimo forma
-        const comparisonForm = document.getElementById('comparison-form');
-        
-        comparisonForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Surenkame pasirinktus modelius
-            const checkboxes = document.querySelectorAll('.model-checkbox:checked');
-            if (checkboxes.length === 0) {
-                alert('Prašome pasirinkti bent vieną modelį palyginimui');
-                return;
+            // Tikriname, ar visi pažymėti, kad atnaujintume "Pasirinkti visus" būseną
+            if (selectAllCheckbox) {
+                const allChecked = Array.from(modelCheckboxes).every(c => c.checked);
+                const anyChecked = Array.from(modelCheckboxes).some(c => c.checked);
+                
+                selectAllCheckbox.checked = allChecked;
+                selectAllCheckbox.indeterminate = anyChecked && !allChecked;
             }
-            
-            const modelIds = Array.from(checkboxes).map(checkbox => parseInt(checkbox.value));
-            
-            // Filtruojame modelius
-            const selectedModels = allModels.filter(model => modelIds.includes(model.model_id));
-            
-            // Rodome palyginimo rezultatus
-            document.getElementById('comparison-results').style.display = 'block';
-            
-            // Sukuriame grafikus
-            createAccuracyChart(selectedModels);
-            createLossChart(selectedModels);
-            createEpochsChart(selectedModels);
-            populateComparisonTable(selectedModels);
-            
-            // Slenkame prie rezultatų
-            document.getElementById('comparison-results').scrollIntoView({ behavior: 'smooth' });
-        });
-        
-        // Eksportavimo mygtukai
-        document.getElementById('export-csv').addEventListener('click', function() {
-            exportTableAsCSV('model_comparison.csv');
-        });
-        
-        document.getElementById('export-img').addEventListener('click', function() {
-            // Parodome pranešimą
-            alert('Grafiką galite eksportuoti paspaudę dešinį pelės mygtuką ant jo ir pasirinkę "Išsaugoti paveikslėlį kaip..."');
         });
     });
     
-    // Filtruoja modelius pagal įvestus kriterijus
-    function filterModels() {
-        const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
-        const minAccuracy = parseFloat(document.getElementById('minAccuracy').value) || 0;
-        const dateFilter = document.getElementById('dateFilter').value;
-        
-        // Paslepiame visus modelių pasirinkimus
-        const containers = document.querySelectorAll('.model-checkbox-container');
-        containers.forEach(container => {
-            container.style.display = 'none';
-        });
-        
-        // Filtruojame ir rodome tik tinkamus modelius
-        allModels.forEach(model => {
-            // Tikriname ar modelis atitinka filtrus
-            const nameMatch = nameFilter === '' || model.model_name.toLowerCase().includes(nameFilter);
-            const accuracyMatch = model.accuracy >= minAccuracy;
-            const dateMatch = dateFilter === '' || new Date(model.date_created) >= new Date(dateFilter);
+    // Eksportavimo mygtuko paspaudimas
+    if (exportSelectedBtn) {
+        exportSelectedBtn.addEventListener('click', function() {
+            // Išvalome ankstesnius pasirinkimus
+            exportModelIds.innerHTML = '';
             
-            // Jei modelis atitinka visus filtrus, rodome jį
-            if (nameMatch && accuracyMatch && dateMatch) {
-                const container = document.querySelector(`#model-${model.model_id}`).closest('.model-checkbox-container');
-                container.style.display = 'block';
+            // Pridedame pasirinktus modelius kaip formos laukus
+            const selectedModelIds = Array.from(modelCheckboxes)
+                .filter(c => c.checked)
+                .map(c => c.value);
+            
+            // Sukuriame formos laukus kiekvienam pasirinktam modeliui
+            selectedModelIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'model_ids';
+                input.value = id;
+                exportModelIds.appendChild(input);
+            });
+            
+            // Pateikiame formą
+            exportForm.submit();
+        });
+    }
+    
+    // Palyginimo mygtuko paspaudimas
+    if (compareSelectedBtn) {
+        compareSelectedBtn.addEventListener('click', function() {
+            // Išvalome ankstesnius pasirinkimus
+            compareModelIds.innerHTML = '';
+            
+            // Pridedame pasirinktus modelius kaip formos laukus
+            const selectedModelIds = Array.from(modelCheckboxes)
+                .filter(c => c.checked)
+                .map(c => c.value);
+            
+            // Sukuriame formos laukus kiekvienam pasirinktam modeliui
+            selectedModelIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'model_ids';
+                input.value = id;
+                compareModelIds.appendChild(input);
+            });
+            
+            // Pateikiame formą
+            compareForm.submit();
+        });
+    }
+    
+    // Atnaujina mygtukų būseną
+    function updateButtonsState() {
+        if (!exportSelectedBtn || !compareSelectedBtn) return;
+        
+        const selectedCount = Array.from(modelCheckboxes).filter(c => c.checked).length;
+        
+        // Eksporto mygtukas aktyvus, jei pasirinktas bent vienas modelis
+        exportSelectedBtn.disabled = selectedCount === 0;
+        
+        // Palyginimo mygtukas aktyvus, jei pasirinkti bent du modeliai
+        compareSelectedBtn.disabled = selectedCount < 2;
+        
+        // Atnaujiname informacinį tekstą
+        if (exportSelectedInfo) {
+            if (selectedCount === 0) {
+                exportSelectedInfo.textContent = 'Pasirinkite bent vieną modelį';
+            } else {
+                exportSelectedInfo.textContent = `Pasirinkta modelių: ${selectedCount}`;
             }
-        });
-    }
-    
-    // Rodo visus modelius
-    function displayAllModels() {
-        const containers = document.querySelectorAll('.model-checkbox-container');
-        containers.forEach(container => {
-            container.style.display = 'block';
-        });
-    }
-    
-    // Sukuria tikslumo grafiką
-    function createAccuracyChart(models) {
-        const ctx = document.getElementById('accuracy-chart').getContext('2d');
-        
-        // Sunaikina seną grafiką jei toks yra
-        if (accuracyChart) {
-            accuracyChart.destroy();
         }
-        
-        const labels = models.map(model => model.model_name);
-        const trainingData = models.map(model => model.accuracy);
-        const validationData = models.map(model => model.val_accuracy);
-        
-        accuracyChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Mokymo tikslumas',
-                        data: trainingData,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Validavimo tikslumas',
-                        data: validationData,
-                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: 0.5,
-                        max: 1.0
-                    }
+    }
+    
+    // Filtrų išvalymo funkcionalumas
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
+            // Gauname formos elementą
+            const filterForm = document.getElementById('filter-form');
+            
+            // Atstatome visų formų elementų reikšmes
+            const formElements = filterForm.elements;
+            for (let i = 0; i < formElements.length; i++) {
+                const element = formElements[i];
+                if (element.type === 'text' || element.type === 'search') {
+                    element.value = '';
+                } else if (element.type === 'select-one') {
+                    element.selectedIndex = 0;
                 }
             }
+            
+            // Nurodome numatytąsias rūšiavimo reikšmes
+            if (sortBySelect) sortBySelect.value = 'created_at';
+            if (sortOrderSelect) sortOrderSelect.value = 'desc';
+            
+            // Pateikiame formą su išvalytais filtrais
+            filterForm.submit();
         });
     }
     
-    // Sukuria nuostolių grafiką
-    function createLossChart(models) {
-        const ctx = document.getElementById('loss-chart').getContext('2d');
-        
-        // Sunaikina seną grafiką jei toks yra
-        if (lossChart) {
-            lossChart.destroy();
+    // Rūšiavimo informacijos atnaujinimas
+    function updateSortingInfo() {
+        // Nustatome teksto reikšmę pagal pasirinktą lauką
+        if (sortBySelect && sortByText) {
+            const selectedOption = sortBySelect.options[sortBySelect.selectedIndex];
+            sortByText.textContent = selectedOption.textContent;
         }
         
-        const labels = models.map(model => model.model_name);
-        const trainingData = models.map(model => model.loss);
-        const validationData = models.map(model => model.val_loss);
-        
-        lossChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Mokymo nuostoliai',
-                        data: trainingData,
-                        backgroundColor: 'rgba(75, 192, 192, 0
+        // Nustatome rodyklės kryptį pagal pasirinktą tvarką
+        if (sortOrderSelect && sortOrderArrow) {
+            if (sortOrderSelect.value === 'asc') {
+                sortOrderArrow.innerHTML = '&#9650;'; // Rodyklė į viršų
+            } else {
+                sortOrderArrow.innerHTML = '&#9660;'; // Rodyklė į apačią
+            }
+        }
+    }
+    
+    // Sekame rūšiavimo pasikeitimus
+    if (sortBySelect) {
+        sortBySelect.addEventListener('change', updateSortingInfo);
+    }
+    
+    if (sortOrderSelect) {
+        sortOrderSelect.addEventListener('change', updateSortingInfo);
+    }
+    
+    // Inicializuojame mygtukų būseną
+    updateButtonsState();
+    
+    // Modelio ištrynimo modalinio lango funkcionalumas
+    deleteModelBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modelId = this.dataset.modelId;
+            const modelName = this.dataset.modelName;
+            
+            // Nustatome modalinio lango informaciją
+            if (deleteModelName) {
+                deleteModelName.textContent = modelName;
+            }
+            
+            // Nustatome formos veiksmą
+            if (deleteModelForm) {
+                deleteModelForm.action = `/training/models/${modelId}/delete`;
+            }
+            
+            // Rodome modalinį langą
+            if (deleteModelModal) {
+                const modal = new bootstrap.Modal(deleteModelModal);
+                modal.show();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

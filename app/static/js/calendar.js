@@ -16,40 +16,63 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Lokalizacija (lietuvių kalba)
         locale: 'lt',
+        // Pranešimas, kai lokalizacija pritaikoma
+        localeChange: function(info) {
+            console.log('Kalendoriaus lokalizacija pakeista į: ' + info.locale);
+        },
         
         // Leisti spustelėti ant užduočių
         eventClick: function(info) {
             showTaskModal(info.event);
         },
         
-        // Gauti užduotis iš API
+        // Gauti užduotis iš API - ATNAUJINTAS ENDPOINT
         events: {
-            url: '/scheduler/api/calendar_events',
+            url: '/tasks/api/calendar_events', // Naujas teisingas endpoint'as
             method: 'GET',
             failure: function() {
                 alert('Klaida gaunant kalendoriaus duomenis!');
             }
         },
         
-        // Užduočių atvaizdavimas
+        // Kai užduotis užkraunama į kalendorių
         eventDidMount: function(info) {
-            // Nustatome spalvą pagal užduoties būseną
-            var status = info.event.extendedProps.status;
+            // Pridedame informacinį tekstą, kuris rodomas užvedus pelę
+            var tooltip = new Tooltip(info.el, {
+                title: info.event.title + ' (' + info.event.extendedProps.status + ')',
+                placement: 'top',
+                trigger: 'hover',
+                container: 'body'
+            });
             
-            if (status === 'pending') {
-                info.el.classList.add('task-pending');
-            } else if (status === 'running') {
-                info.el.classList.add('task-running');
-            } else if (status === 'completed') {
-                info.el.classList.add('task-completed');
-            } else if (status === 'failed') {
-                info.el.classList.add('task-failed');
+            // Pridedame papildomą klasę pagal būseną
+            if (info.event.extendedProps.status) {
+                info.el.classList.add('status-' + info.event.extendedProps.status);
             }
-        }
+        },
+        
+        // Kitos kalendoriaus nuostatos
+        editable: false, // Neleidžiame keisti per tempimą
+        dayMaxEvents: true, // Jei per daug įvykių dienoje, rodoma "daugiau" nuoroda
+        timeZone: 'local' // Naudojame vietinę laiko juostą
     });
     
-    // Atvaizduojame kalendorių
+    // Atkuriame kalendorių
     calendar.render();
+    
+    // Funkcija kalendoriaus atnaujinimui
+    function refreshCalendar() {
+        calendar.refetchEvents();
+    }
+    
+    // Atnaujinti kalendorių kas 30 sekundžių (jei reikia)
+    // setInterval(refreshCalendar, 30000);
+    
+    // Mygtuko priskyrimas atnaujinimui
+    var refreshButton = document.getElementById('refresh-calendar');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', refreshCalendar);
+    }
     
     // Funkcija, kuri atidaro modalinį langą su užduoties informacija
     function showTaskModal(event) {

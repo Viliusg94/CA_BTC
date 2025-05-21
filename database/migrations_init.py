@@ -1,0 +1,1 @@
+# Migracijos paketo inicializacijos failas

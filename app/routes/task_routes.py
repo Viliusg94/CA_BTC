@@ -1,21 +1,38 @@
 """
 Maršrutai užduočių valdymui
 """
+# Užduočių valdymo maršrutai - atsakingi už HTTP užklausų apdorojimą
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from datetime import datetime
+from datetime import datetime, date
 import traceback
 
 from app.services.task_service import TaskService
-from app.services.weights_service import WeightsService  # Importuojame modelių servisą
 from app.services.task_executor import task_executor
 from app.models.task import TaskStatus
 
-# Sukuriame Blueprint objektą
+# Sukuriame Blueprint
 task_routes = Blueprint('tasks', __name__, url_prefix='/tasks')
 
-# Inicializuojame serviso objektus
+# Inicializuojame serviso objektą
 task_service = TaskService()
-weights_service = WeightsService()
+
+# Nuoroda į modelių servisą (reikės pasirinkti modelį kuriant užduotį)
+# Jei serviso nėra, sukuriame laikinąjį objektą su pavyzdiniais duomenimis
+try:
+    from app.services.model_service import get_models, get_model_by_id
+except ImportError:
+    # Pavyzdinė funkcija, jei tikros nėra
+    def get_models():
+        return [
+            {"id": "model1", "name": "LSTM modelis"},
+            {"id": "model2", "name": "GRU modelis"}
+        ]
+    
+    def get_model_by_id(model_id):
+        for model in get_models():
+            if model["id"] == model_id:
+                return model
+        return None
 
 @task_routes.route('/')
 def task_list():
@@ -34,7 +51,7 @@ def task_list():
         )
     except Exception as e:
         flash(f"Klaida gaunant užduočių sąrašą: {str(e)}", "danger")
-        return render_template('error.html', error=str(e))
+        return redirect(url_for('index'))
 
 @task_routes.route('/create', methods=['GET', 'POST'])
 def create_task():
@@ -51,11 +68,10 @@ def create_task():
             # Validuojame duomenis
             if not name or not model_id or not scheduled_date or not scheduled_time:
                 flash("Visi privalomi laukai turi būti užpildyti", "danger")
-                # Grąžiname į formą su esamais duomenimis
                 return render_template(
                     'training/task_form.html',
-                    task=request.form,
-                    models=weights_service.get_models(),
+                    task=None,
+                    models=get_models(),
                     title="Sukurti užduotį"
                 )
             
@@ -93,7 +109,7 @@ def create_task():
             return render_template(
                 'training/task_form.html',
                 task=None,
-                models=weights_service.get_models(),
+                models=get_models(),
                 title="Sukurti užduotį"
             )
     except Exception as e:
@@ -130,7 +146,7 @@ def edit_task(task_id):
                 return render_template(
                     'training/task_form.html',
                     task=task,
-                    models=weights_service.get_models(),
+                    models=get_models(),
                     title="Redaguoti užduotį"
                 )
             
@@ -169,11 +185,35 @@ def edit_task(task_id):
             return render_template(
                 'training/task_form.html',
                 task=task,
-                models=weights_service.get_models(),
+                models=get_models(),
                 title="Redaguoti užduotį"
             )
     except Exception as e:
         flash(f"Klaida redaguojant užduotį: {str(e)}", "danger")
+        traceback.print_exc()
+        return redirect(url_for('tasks.task_list'))
+
+@task_routes.route('/details/<task_id>')
+def task_details(task_id):
+    """Rodo užduoties detalią informaciją"""
+    try:
+        # Gauname užduoties informaciją
+        task = task_service.get_task_by_id(task_id)
+        if not task:
+            flash("Užduotis nerasta", "danger")
+            return redirect(url_for('tasks.task_list'))
+        
+        # Gauname modelio informaciją
+        model = get_model_by_id(task.model_id)
+        
+        return render_template(
+            'training/task_details.html',
+            task=task,
+            model=model,
+            title=f"Užduoties '{task.name}' informacija"
+        )
+    except Exception as e:
+        flash(f"Klaida gaunant užduoties informaciją: {str(e)}", "danger")
         traceback.print_exc()
         return redirect(url_for('tasks.task_list'))
 
@@ -204,30 +244,6 @@ def delete_task(task_id):
         traceback.print_exc()
         return redirect(url_for('tasks.task_list'))
 
-@task_routes.route('/details/<task_id>')
-def task_details(task_id):
-    """Rodo užduoties detalią informaciją"""
-    try:
-        # Gauname užduoties informaciją
-        task = task_service.get_task_by_id(task_id)
-        if not task:
-            flash("Užduotis nerasta", "danger")
-            return redirect(url_for('tasks.task_list'))
-        
-        # Gauname modelio informaciją
-        model = weights_service.get_model_by_id(task.model_id)
-        
-        return render_template(
-            'training/task_details.html',
-            task=task,
-            model=model,
-            title=f"Užduoties '{task.name}' informacija"
-        )
-    except Exception as e:
-        flash(f"Klaida gaunant užduoties informaciją: {str(e)}", "danger")
-        traceback.print_exc()
-        return redirect(url_for('tasks.task_list'))
-
 @task_routes.route('/cancel/<task_id>', methods=['POST'])
 def cancel_task(task_id):
     """Atšaukia užduotį"""
@@ -247,13 +263,38 @@ def cancel_task(task_id):
         task_service.update_task_status(
             task_id,
             TaskStatus.CANCELED,
-            log_message=f"Užduotis atšaukta {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            log_message=f"Užduotis atšaukta vartotojo"
         )
         
         flash(f"Užduotis '{task.name}' sėkmingai atšaukta", "success")
         return redirect(url_for('tasks.task_list'))
     except Exception as e:
         flash(f"Klaida atšaukiant užduotį: {str(e)}", "danger")
+        traceback.print_exc()
+        return redirect(url_for('tasks.task_list'))
+
+@task_routes.route('/execute/<task_id>', methods=['POST'])
+def execute_task(task_id):
+    """Vykdo užduotį dabar"""
+    try:
+        # Gauname užduoties informaciją
+        task = task_service.get_task_by_id(task_id)
+        if not task:
+            flash("Užduotis nerasta", "danger")
+            return redirect(url_for('tasks.task_list'))
+        
+        # Tikriname, ar užduotis dar nepradėta vykdyti
+        if task.status != TaskStatus.PENDING:
+            flash("Galima vykdyti tik laukiančias vykdymo užduotis", "danger")
+            return redirect(url_for('tasks.task_details', task_id=task_id))
+        
+        # Vykdome užduotį
+        task_executor.execute_task_now(task_id)
+        
+        flash(f"Užduotis '{task.name}' pradėta vykdyti", "success")
+        return redirect(url_for('tasks.task_details', task_id=task_id))
+    except Exception as e:
+        flash(f"Klaida vykdant užduotį: {str(e)}", "danger")
         traceback.print_exc()
         return redirect(url_for('tasks.task_list'))
 
@@ -265,6 +306,8 @@ def calendar_view():
         title="Treniravimo kalendorius"
     )
 
+# API maršrutai
+
 @task_routes.route('/api/tasks', methods=['GET'])
 def api_get_tasks():
     """API: Grąžina visas užduotis JSON formatu"""
@@ -274,16 +317,53 @@ def api_get_tasks():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@task_routes.route('/api/tasks/<date>', methods=['GET'])
-def api_get_tasks_for_date(date):
+@task_routes.route('/api/tasks/<date_str>', methods=['GET'])
+def api_get_tasks_for_date(date_str):
     """API: Grąžina užduotis konkrečiai datai JSON formatu"""
     try:
         # Konvertuojame string į date objektą
-        target_date = datetime.strptime(date, '%Y-%m-%d').date()
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         
         # Gauname užduotis tai datai
         tasks = task_service.get_tasks_for_date(target_date)
         
         return jsonify([task.to_dict() for task in tasks])
+    except ValueError:
+        return jsonify({"error": "Neteisingas datos formatas. Naudokite YYYY-MM-DD"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@task_routes.route('/api/calendar_events', methods=['GET'])
+def api_calendar_events():
+    """API: Grąžina užduotis kalendoriaus formato duomenimis"""
+    try:
+        # Gauname visas užduotis
+        tasks = task_service.get_all_tasks()
+        
+        # Konvertuojame užduotis į kalendoriaus įvykių formatą
+        events = []
+        for task in tasks:
+            # Nustatome spalvą pagal užduoties būseną
+            color = {
+                TaskStatus.PENDING: "#6c757d",    # Pilka - laukianti
+                TaskStatus.RUNNING: "#007bff",    # Mėlyna - vykdoma
+                TaskStatus.COMPLETED: "#28a745",  # Žalia - įvykdyta
+                TaskStatus.FAILED: "#dc3545",     # Raudona - nepavyko
+                TaskStatus.CANCELED: "#ffc107"    # Geltona - atšaukta
+            }.get(task.status, "#6c757d")
+            
+            # Sukuriame įvykį
+            event = {
+                "id": task.id,
+                "title": task.name,
+                "start": task.scheduled_time.isoformat() if task.scheduled_time else None,
+                "description": task.description,
+                "color": color,
+                "status": task.status.value,
+                "model_id": task.model_id
+            }
+            events.append(event)
+        
+        return jsonify(events)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

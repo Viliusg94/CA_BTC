@@ -1,92 +1,43 @@
 {% extends "base.html" %}
 
-{% block title %}Modelio treniravimas - BTC Prekybos Sistema{% endblock %}
+{% block title %}Modelio treniravimas{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">Modelio treniravimas</h1>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">Treniravimo parinktys</h5>
-            </div>
-            <div class="card-body">
-                <p class="card-text">Treniruokite naują modelį arba peržiūrėkite jau išsaugotus rezultatus.</p>
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('training.train') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-cogs me-2"></i>Treniruoti naują modelį
-                    </a>
-                    <a href="{{ url_for('training.results') }}" class="btn btn-info btn-lg">
-                        <i class="fas fa-chart-line me-2"></i>Peržiūrėti rezultatus
-                    </a>
-                    <a href="{{ url_for('training.compare_models') }}" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-balance-scale me-2"></i>Palyginti modelius
-                    </a>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Modelio treniravimas</h1>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5>Pasirinkite norimą veiksmą</h5>
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <h5 class="card-title mb-0">Neseniai treniruoti modeliai</h5>
-            </div>
-            <div class="card-body">
-                {% if saved_models %}
-                <div class="list-group">
-                    {% for model in saved_models[:5] %}
-                    <a href="{{ url_for('training.view_result', model_name=model.name) }}" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">{{ model.name }}</h5>
-                            <small>{{ model.created }}</small>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('model_training.create_model') }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-plus-circle me-2"></i>Sukurti naują modelį
+                                </a>
+                                <p class="mt-2">Sukurkite naują modelį nustatydami hiperparametrus.</p>
+                            </div>
                         </div>
-                        <p class="mb-1">
-                            RMSE: {{ "%.4f"|format(model.metrics.rmse) }} | 
-                            R²: {{ "%.4f"|format(model.metrics.r2) }}
-                        </p>
-                    </a>
-                    {% endfor %}
+                        <div class="col-md-6">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('model_training.view_history') }}" class="btn btn-info btn-lg">
+                                    <i class="fas fa-history me-2"></i>Peržiūrėti treniravimo istoriją
+                                </a>
+                                <p class="mt-2">Peržiūrėkite ankstesnių modelių treniravimo istoriją ir rezultatus.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                {% else %}
-                <p class="card-text text-center">Nėra išsaugotų modelių.</p>
-                {% endif %}
             </div>
-        </div>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-light">
-                <h5 class="card-title mb-0">Modelių treniravimo informacija</h5>
-            </div>
-            <div class="card-body">
-                <p>Modelių treniravimas yra procesas, kai mašininio mokymosi algoritmai mokosi iš duomenų ir sukuria prognozavimo modelį.</p>
-                
-                <h5>Pagrindinės sąvokos:</h5>
-                <ul>
-                    <li><strong>Epocha (Epoch)</strong>: Vienas pilnas duomenų rinkinio apdorojimas treniravimo metu.</li>
-                    <li><strong>Batch dydis (Batch Size)</strong>: Pavyzdžių skaičius, apdorojamas per vieną treniravimo žingsnį.</li>
-                    <li><strong>Mokymosi tempas (Learning Rate)</strong>: Parametras, kuris kontroliuoja, kaip greitai modelis atnaujina savo svorius.</li>
-                    <li><strong>Dropout</strong>: Technika, padedanti išvengti modelio persimokymom, atsitiktinai išjungiant neuronus treniravimo metu.</li>
-                </ul>
-                
-                <h5>Proceso etapai:</h5>
-                <ol>
-                    <li>Duomenų paruošimas ir padalinimas į treniravimo/testavimo rinkinius.</li>
-                    <li>Modelio architektūros sukūrimas ir parametrų nustatymas.</li>
-                    <li>Modelio treniravimas naudojant treniravimo duomenis.</li>
-                    <li>Modelio vertinimas naudojant testavimo duomenis.</li>
-                    <li>Geriausio modelio išsaugojimas.</li>
-                </ol>
-            </div>
+            <!-- Pridėkite šią nuorodą į modelių sąrašo prie veiksmų mygtukų -->
+            <a href="{{ url_for('model_training.model_history') }}" class="btn btn-info me-2">
+                <i class="fas fa-history me-1"></i>Modelių istorija
+            </a>
         </div>
     </div>
 </div>

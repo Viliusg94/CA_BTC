@@ -1,0 +1,152 @@
+<!-- Kalendoriaus vaizdas treniravimo užduotims -->
+{% extends "base.html" %}
+
+{% block head %}
+<!-- FullCalendar biblioteka -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/locales/lt.js"></script>
+
+<!-- Įtraukiame mūsų lokalizacijos failą -->
+<script src="{{ url_for('static', filename='js/fullcalendar-lt.js') }}"></script>
+
+<!-- Įtraukiame mūsų kalendoriaus JavaScript -->
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+
+<style>
+/* Papildomi stiliai kalendoriui */
+#calendar {
+    margin-top: 20px;
+}
+.fc-event {
+    cursor: pointer;
+}
+/* Modalinio lango stiliai */
+.task-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+}
+.task-modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    width: 60%;
+    border-radius: 5px;
+}
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Puslapio antraštė -->
+    <h1>{{ title }}</h1>
+    
+    <!-- Viršutinė navigacija ir valdymo mygtukai -->
+    <div class="mb-4">
+        <a href="{{ url_for('tasks.task_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-list"></i> Užduočių sąrašas
+        </a>
+        <a href="{{ url_for('tasks.create_task') }}" class="btn btn-primary ml-2">
+            <i class="fas fa-plus"></i> Nauja užduotis
+        </a>
+    </div>
+    
+    <!-- Kalendoriaus konteineris -->
+    <div class="card">
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modalinis langas užduoties peržiūrai -->
+<div id="taskModal" class="task-modal">
+    <div class="task-modal-content">
+        <span class="close">&times;</span>
+        <h4 id="modal-title"></h4>
+        <p id="modal-time"></p>
+        <p id="modal-description"></p>
+        <p>Būsena: <span id="modal-status"></span></p>
+        <div id="modal-actions" class="mt-3">
+            <a id="modal-details-link" href="#" class="btn btn-info">
+                <i class="fas fa-eye"></i> Peržiūrėti detales
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funkcija užduoties modalinio lango rodymui
+function showTaskModal(event) {
+    // Užpildome modalinio lango informaciją
+    document.getElementById('modal-title').innerText = event.title;
+    document.getElementById('modal-time').innerText = 'Laikas: ' + new Date(event.start).toLocaleString('lt-LT');
+    document.getElementById('modal-description').innerText = event.extendedProps.description || 'Nėra aprašymo';
+    
+    // Nustatome būsenos tekstą pagal statusą
+    let statusText = '';
+    let statusClass = '';
+    
+    switch (event.extendedProps.status) {
+        case 'pending':
+            statusText = 'Laukianti';
+            statusClass = 'text-secondary';
+            break;
+        case 'running':
+            statusText = 'Vykdoma';
+            statusClass = 'text-primary';
+            break;
+        case 'completed':
+            statusText = 'Įvykdyta';
+            statusClass = 'text-success';
+            break;
+        case 'failed':
+            statusText = 'Nepavyko';
+            statusClass = 'text-danger';
+            break;
+        case 'canceled':
+            statusText = 'Atšaukta';
+            statusClass = 'text-warning';
+            break;
+        default:
+            statusText = 'Nežinoma';
+    }
+    
+    const statusElement = document.getElementById('modal-status');
+    statusElement.innerText = statusText;
+    statusElement.className = statusClass;
+    
+    // Nustatome nuorodą į detalių puslapį
+    document.getElementById('modal-details-link').href = '/tasks/details/' + event.id;
+    
+    // Rodome modalinį langą
+    document.getElementById('taskModal').style.display = 'block';
+}
+
+// Uždarome modalinį langą, kai spaudžiama X
+document.querySelector('.close').addEventListener('click', function() {
+    document.getElementById('taskModal').style.display = 'none';
+});
+
+// Uždarome modalinį langą, kai spaudžiama už jo ribų
+window.addEventListener('click', function(event) {
+    if (event.target == document.getElementById('taskModal')) {
+        document.getElementById('taskModal').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

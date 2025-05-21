@@ -1,0 +1,66 @@
+<!-- DUK (FAQ) šablonas -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Šoninė navigacija -->
+        <div class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{{ url_for('docs.index') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-arrow-left"></i> Grįžti į pagalbos centrą
+                </a>
+                
+                <!-- DUK kategorijos -->
+                <div class="list-group-item list-group-item-secondary">Kategorijos</div>
+                {% for category, items in categories.items() %}
+                <a href="#category-{{ category|lower|replace(' ', '-') }}" class="list-group-item list-group-item-action">
+                    {{ category }} <span class="badge bg-primary rounded-pill float-end">{{ items|length }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Pagrindinis turinys -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="mb-4">Dažniausiai užduodami klausimai (DUK)</h1>
+                    
+                    {% if categories %}
+                        {% for category, items in categories.items() %}
+                        <div id="category-{{ category|lower|replace(' ', '-') }}" class="mb-4">
+                            <h2 class="mb-3">{{ category }}</h2>
+                            
+                            <div class="accordion" id="accordion-{{ category|lower|replace(' ', '-') }}">
+                                {% for item in items %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading-{{ loop.index }}">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                data-bs-target="#collapse-{{ category|lower|replace(' ', '-') }}-{{ loop.index }}" 
+                                                aria-expanded="false" aria-controls="collapse-{{ category|lower|replace(' ', '-') }}-{{ loop.index }}">
+                                            {{ item.question }}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-{{ category|lower|replace(' ', '-') }}-{{ loop.index }}" class="accordion-collapse collapse" 
+                                         aria-labelledby="heading-{{ loop.index }}" data-bs-parent="#accordion-{{ category|lower|replace(' ', '-') }}">
+                                        <div class="accordion-body">
+                                            {{ item.answer|safe }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Šiuo metu DUK sąrašas neturi įrašų.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

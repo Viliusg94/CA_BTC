@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Prognozavimo Platforma</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigacija -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fab fa-bitcoin text-warning me-2"></i>Bitcoin Prognozavimo Platforma
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/"><i class="fas fa-home me-1"></i>Pradžia</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/models"><i class="fas fa-chart-line me-1"></i>Modeliai</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/train"><i class="fas fa-cogs me-1"></i>Mokymas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/predict"><i class="fas fa-magic me-1"></i>Prognozė</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/ensemble"><i class="fas fa-layer-group me-1"></i>Ansamblis</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Pagrindinis turinys -->
+    <div class="container-fluid mt-5 pt-4">
+        <div class="row">
+            <!-- Šoninė juosta su modelių statistika -->
+            <div class="col-md-3">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Bitcoin Kaina</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <h2 class="mb-0">
+                                ${{ "%.2f"|format(latest_price) }}
+                                {% if price_change.direction == 'up' %}
+                                <span class="text-success"><i class="fas fa-arrow-up"></i> {{ "%.2f"|format(price_change.change_percent) }}%</span>
+                                {% elif price_change.direction == 'down' %}
+                                <span class="text-danger"><i class="fas fa-arrow-down"></i> {{ "%.2f"|format(price_change.change_percent|abs) }}%</span>
+                                {% else %}
+                                <span class="text-secondary"><i class="fas fa-minus"></i> 0.00%</span>
+                                {% endif %}
+                            </h2>
+                            <p class="text-muted">24 val. pokytis</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Modelių Būsena</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            {% for model_type, model in models_info.items() %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ model_type.upper() }}
+                                {% if model.available %}
+                                <span class="badge bg-success rounded-pill">Aktyvus</span>
+                                {% else %}
+                                <span class="badge bg-secondary rounded-pill">Neaktyvus</span>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="card-footer text-center">
+                        <a href="/models" class="btn btn-sm btn-outline-primary">Peržiūrėti visus modelius</a>
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Aktyvūs Mokymai</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="active-training-container">
+                            {% if active_training_jobs %}
+                            <ul class="list-group list-group-flush">
+                                {% for job in active_training_jobs %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ job.model_type.upper() }}</span>
+                                        <small>{{ job.status }}</small>
+                                    </div>
+                                    <div class="progress mt-2" style="height: 5px;">
+                                        <div class="progress-bar bg-info" role="progressbar" 
+                                             aria-valuenow="{{ job.progress }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <div class="text-center p-3">
+                                <p class="text-muted mb-0">Šiuo metu nėra aktyvių mokymų.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer text-center">
+                        <a href="/train" class="btn btn-sm btn-outline-primary">Apmokyti naują modelį</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagrindinė turinio dalis -->
+            <div class="col-md-9">
+                <!-- Bitcoin kainos grafikas -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Bitcoin Kainos Istorija</h5>
+                        <div class="btn-group" role="group" aria-label="Laiko intervalas">
+                            <button type="button" class="btn btn-sm btn-outline-light active" onclick="updateChart(7, this)">7d</button>
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="updateChart(30, this)">30d</button>
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="updateChart(90, this)">90d</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="price-chart" style="height: 400px;"></div>
+                    </div>
+                </div>
+
+                <!-- Modelių metrikos ir palyginimas -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Modelių Palyginimas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="comparison-chart" style="height: 600px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Greitos prognozės -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Greita Prognozė</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <form action="/predict" method="post" class="mb-3">
+                                            <div class="input-group">
+                                                <select name="model_type" class="form-select" required>
+                                                    <option value="" selected disabled>Pasirinkite modelį</option>
+                                                    {% for model_type, model in models_info.items() %}
+                                                        {% if model.available %}
+                                                        <option value="{{ model_type }}">{{ model_type.upper() }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" class="btn btn-primary">Prognozuoti</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="col-md-6 text-md-end">
+                                        <a href="/predict" class="btn btn-outline-primary">Išsamesnė prognozė</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Bitcoin Prognozavimo Platforma</h5>
+                    <p class="text-muted">Magistro projektas, taikantis mašininio mokymosi metodus Bitcoin kainų prognozavimui.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">&copy; 2023. Visos teisės saugomos.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+    <!-- Perduodam kintamuosius per window objektą -->
+    <script>
+        // Grafikų duomenys, perduodami iš serverio
+        window.priceChartData = JSON.parse('{{ price_chart | tojson | safe }}');
+        window.comparisonChartData = JSON.parse('{{ comparison_chart | tojson | safe }}');
+    </script>
+
+    <!-- Įtraukiame naują JS failą -->
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>

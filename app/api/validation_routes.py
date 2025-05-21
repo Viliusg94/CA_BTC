@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, current_app
-from app.services.model_service import get_model_by_id
+from app.services.model_service import ModelService
 from app.services.evaluation_service import get_model_validation_data
 
 # Inicializuojame API maršrutus
@@ -17,8 +17,9 @@ def get_validation_data(model_id):
         dict: Validavimo duomenys JSON formatu
     """
     try:
+        model_service = ModelService()
         # Gauname modelį pagal ID
-        model = get_model_by_id(model_id)
+        model = model_service.get_model_config(model_id)
         
         if not model:
             return jsonify({'error': 'Modelis nerastas'}), 404

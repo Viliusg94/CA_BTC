@@ -1,1625 +1,957 @@
 import os
 import json
 import logging
-import psutil
-import threading
-import numpy as np
-import pandas as pd
-from datetime import datetime
-from tensorflow import keras
-from keras.models import Sequential, load_model
-from keras.layers import LSTM, Dense, Dropout, GRU, Conv1D, MaxPooling1D, Flatten
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import math
-import matplotlib.pyplot as plt
-import time
 import uuid
-import traceback
-from app import websocket_manager  # Importuojame websocket managerį
-import itertools
-import random
-from concurrent.futures import ThreadPoolExecutor
-from keras.callbacks import ModelCheckpoint
-from app.services.checkpoint_service import CheckpointService
-from app.models.model_checkpoint import ModelCheckpoint
-
-logger = logging.getLogger(__name__)
+import re
+import copy
+import datetime
+import csv
+from io import StringIO
 
 class ModelService:
     """
-    Serviso klasė, skirta modelių kūrimui, treniravimui ir valdymui
+    Servisas, atsakingas už modelio konfigūracijos, treniravimo rezultatų ir versijų valdymą.
     """
+    
     def __init__(self):
-        """Inicializuoja modelio servisą"""
-        # Kelias iki modelių direktorijos
-        self.models_dir = os.path.join('app', 'static', 'models')
-        os.makedirs(self.models_dir, exist_ok=True)
-        
-        # Treniravimo būsenos, laikomos atmintyje
-        self._trainings = {}
-        
-        # CPU profilaktika (threading limitas TensorFlow)
-        os.environ['TF_NUM_INTEROP_THREADS'] = '1'
-        os.environ['TF_NUM_INTRAOP_THREADS'] = '1'
-        
-        # Duomenų servisas duomenims gauti
-        from app.services.data_service import DataService
-        self.data_service = DataService()
-    
-        # Optimizavimo būsenos saugojimui
-        self._optimizations = {}
-    
-    def get_all_models(self):
         """
-        Gauna visų išsaugotų modelių sąrašą su papildoma informacija
+        Inicializuoja ModelService ir sukuria reikalingus aplankus.
+        """
+        # Nustatome kelią iki duomenų direktorijos
+        self.data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+        
+        # Sukuriame aplanką modelių konfigūracijoms
+        self.configs_dir = os.path.join(self.data_dir, 'configs')
+        os.makedirs(self.configs_dir, exist_ok=True)
+        
+        # Sukuriame aplanką modelių rezultatams
+        self.results_dir = os.path.join(self.data_dir, 'results')
+        os.makedirs(self.results_dir, exist_ok=True)
+        
+        # Sukuriame aplanką šablonams
+        self.templates_dir = os.path.join(self.data_dir, 'templates')
+        os.makedirs(self.templates_dir, exist_ok=True)
+        
+        # Šablonų failo kelias
+        self.templates_file = os.path.join(self.templates_dir, 'model_templates.json')
+        
+        # Sukuriame šablonų failą, jei jis neegzistuoja
+        if not os.path.exists(self.templates_file):
+            with open(self.templates_file, 'w', encoding='utf-8') as f:
+                json.dump({}, f)
+
+    # ===== Modelio konfigūracijos valdymas =====
+    
+    def get_model_config(self, training_id):
+        """
+        Gauna modelio konfigūraciją pagal ID
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            
+        Returns:
+            dict: Modelio konfigūracija arba None, jei nerasta
+        """
+        return self.load_model_config(training_id)
+    
+    def load_model_config(self, training_id):
+        """
+        Užkrauna modelio konfigūraciją iš failo
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            
+        Returns:
+            dict: Modelio konfigūracija arba None, jei nerasta
+        """
+        config_path = os.path.join(self.configs_dir, f"{training_id}.json")
+        
+        try:
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return None
+        except Exception as e:
+            logging.error(f"Klaida užkraunant modelio konfigūraciją: {str(e)}")
+            return None
+    
+    def save_model_config(self, training_id, config):
+        """
+        Išsaugo modelio konfigūraciją į failą
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            config (dict): Modelio konfigūracija
+            
+        Returns:
+            bool: True jei sėkmingai išsaugota, False jei klaida
+        """
+        config_path = os.path.join(self.configs_dir, f"{training_id}.json")
+        
+        try:
+            # Pridedame training_id į konfigūraciją
+            config['training_id'] = training_id
+            
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+            return True
+        except Exception as e:
+            logging.error(f"Klaida išsaugant modelio konfigūraciją: {str(e)}")
+            return False
+    
+    def delete_model(self, training_id):
+        """
+        Ištrina modelį ir visus susijusius failus
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            
+        Returns:
+            bool: True jei sėkmingai ištrinta, False jei klaida
+        """
+        try:
+            # Triname konfigūracijos failą
+            config_path = os.path.join(self.configs_dir, f"{training_id}.json")
+            if os.path.exists(config_path):
+                os.remove(config_path)
+            
+            # Triname rezultatų failą
+            results_path = os.path.join(self.results_dir, f"{training_id}.json")
+            if os.path.exists(results_path):
+                os.remove(results_path)
+            
+            # Triname modelio failą, jei jis egzistuoja
+            model_path = self.get_model_file_path(training_id)
+            if model_path and os.path.exists(model_path):
+                os.remove(model_path)
+            
+            return True
+        except Exception as e:
+            logging.error(f"Klaida trinant modelį: {str(e)}")
+            return False
+    
+    def get_model_file_path(self, training_id):
+        """
+        Gauna modelio failo kelią
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            
+        Returns:
+            str: Modelio failo kelias arba None, jei nėra
+        """
+        # Patikrinti ar yra SavedModel formato modelis
+        saved_model_dir = os.path.join(self.data_dir, 'models', training_id)
+        if os.path.exists(saved_model_dir):
+            return saved_model_dir
+        
+        # Patikrinti ar yra H5 formato modelis
+        h5_path = os.path.join(self.data_dir, 'models', f"{training_id}.h5")
+        if os.path.exists(h5_path):
+            return h5_path
+        
+        return None
+    
+    # ===== Modelio treniravimo valdymas =====
+    
+    def start_training(self, training_id, user_id=None):
+        """
+        Pradeda modelio treniravimą
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            user_id (int, optional): Vartotojo ID
+            
+        Returns:
+            bool: True jei treniravimas pradėtas, False jei klaida
+        """
+        try:
+            # Čia būtų realaus treniravimo logika
+            # Šiame šablone tik pakeičiame būseną į "training"
+            
+            status_path = os.path.join(self.data_dir, 'status', f"{training_id}.json")
+            os.makedirs(os.path.dirname(status_path), exist_ok=True)
+            
+            status = {
+                'status': 'training',
+                'started_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'user_id': user_id,
+                'progress': 0
+            }
+            
+            with open(status_path, 'w', encoding='utf-8') as f:
+                json.dump(status, f, indent=4, ensure_ascii=False)
+            
+            return True
+        except Exception as e:
+            logging.error(f"Klaida pradedant treniravimą: {str(e)}")
+            return False
+    
+    def stop_training(self, training_id, user_id=None):
+        """
+        Sustabdo modelio treniravimą
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            user_id (int, optional): Vartotojo ID
+            
+        Returns:
+            bool: True jei treniravimas sustabdytas, False jei klaida
+        """
+        try:
+            # Čia būtų realaus treniravimo sustabdymo logika
+            # Šiame šablone tik pakeičiame būseną į "stopped"
+            
+            status_path = os.path.join(self.data_dir, 'status', f"{training_id}.json")
+            
+            if os.path.exists(status_path):
+                with open(status_path, 'r', encoding='utf-8') as f:
+                    status = json.load(f)
+                
+                status['status'] = 'stopped'
+                status['stopped_at'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                status['stopped_by'] = user_id
+                
+                with open(status_path, 'w', encoding='utf-8') as f:
+                    json.dump(status, f, indent=4, ensure_ascii=False)
+            else:
+                return False
+            
+            return True
+        except Exception as e:
+            logging.error(f"Klaida sustabdant treniravimą: {str(e)}")
+            return False
+    
+    def get_training_status(self, training_id):
+        """
+        Gauna modelio treniravimo būseną
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            
+        Returns:
+            dict: Treniravimo būsena arba None, jei nerasta
+        """
+        status_path = os.path.join(self.data_dir, 'status', f"{training_id}.json")
+        
+        try:
+            if os.path.exists(status_path):
+                with open(status_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return None
+        except Exception as e:
+            logging.error(f"Klaida gaunant treniravimo būseną: {str(e)}")
+            return None
+    
+    # ===== Modelio rezultatų valdymas =====
+    
+    def save_model_results(self, training_id, metrics):
+        """
+        Išsaugo modelio treniravimo rezultatus
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            metrics (dict): Modelio metrikos
+            
+        Returns:
+            bool: True jei sėkmingai išsaugota, False jei klaida
+        """
+        results_path = os.path.join(self.results_dir, f"{training_id}.json")
+        
+        try:
+            with open(results_path, 'w', encoding='utf-8') as f:
+                json.dump(metrics, f, indent=4, ensure_ascii=False)
+            return True
+        except Exception as e:
+            logging.error(f"Klaida išsaugant modelio rezultatus: {str(e)}")
+            return False
+    
+    def get_model_metrics(self, training_id):
+        """
+        Gauna modelio treniravimo metrikas
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            
+        Returns:
+            list: Metrikų sąrašas arba None, jei nerasta
+        """
+        results_path = os.path.join(self.results_dir, f"{training_id}.json")
+        
+        try:
+            if os.path.exists(results_path):
+                with open(results_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return None
+        except Exception as e:
+            logging.error(f"Klaida gaunant modelio metrikas: {str(e)}")
+            return None
+    
+    def get_epoch_metrics(self, training_id, epoch):
+        """
+        Gauna konkrečios epochos metrikas
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            epoch (int): Epochos numeris
+            
+        Returns:
+            dict: Epochos metrikos arba None, jei nerasta
+        """
+        metrics = self.get_model_metrics(training_id)
+        
+        if not metrics:
+            return None
+        
+        # Ieškome nurodytos epochos metrikų
+        for epoch_metrics in metrics:
+            if epoch_metrics.get('epoch') == epoch:
+                return epoch_metrics
+        
+        return None
+    
+    def export_metrics_to_csv(self, training_id, include_changes=True):
+        """
+        Eksportuoja metrikas į CSV formatą
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            include_changes (bool, optional): Ar įtraukti pokyčius. Numatyta True.
+            
+        Returns:
+            str: CSV turinys arba None, jei klaida
+        """
+        try:
+            # Gauname modelio konfigūraciją ir metrikas
+            model_config = self.get_model_config(training_id)
+            metrics = self.get_model_metrics(training_id)
+            
+            if not model_config or not metrics:
+                return None
+            
+            # Sukuriame CSV failo turinį
+            output = StringIO()
+            csv_writer = csv.writer(output)
+            
+            # Pridedame modelio informaciją
+            csv_writer.writerow(['Modelio informacija'])
+            csv_writer.writerow(['Pavadinimas', model_config.get('name', 'Nenurodyta')])
+            csv_writer.writerow(['Tipas', model_config.get('type', 'Nenurodyta').upper()])
+            csv_writer.writerow(['ID', training_id])
+            csv_writer.writerow(['Sukurtas', model_config.get('created_at', 'Nenurodyta')])
+            csv_writer.writerow([])
+            
+            # Pridedame modelio parametrus
+            csv_writer.writerow(['Modelio parametrai'])
+            if 'parameters' in model_config:
+                for param, value in model_config['parameters'].items():
+                    if param != 'specific':
+                        csv_writer.writerow([param, value])
+                
+                if 'specific' in model_config['parameters']:
+                    for param, value in model_config['parameters']['specific'].items():
+                        csv_writer.writerow([param, value])
+            
+            csv_writer.writerow([])
+            
+            # Pridedame metrikų antraštes
+            csv_writer.writerow(['Epocha', 'Loss', 'Accuracy', 'Val Loss', 'Val Accuracy'])
+            
+            # Pridedame metrikas
+            for metric in metrics:
+                if isinstance(metric, dict) and 'epoch' in metric:
+                    csv_writer.writerow([
+                        metric.get('epoch', ''),
+                        metric.get('loss', ''),
+                        metric.get('accuracy', ''),
+                        metric.get('val_loss', ''),
+                        metric.get('val_accuracy', '')
+                    ])
+            
+            # Grąžiname CSV turinį
+            return output.getvalue()
+            
+        except Exception as e:
+            logging.error(f"Klaida eksportuojant metrikas į CSV: {str(e)}")
+            return None
+    
+    # ===== Modelių istorijos valdymas =====
+    
+    def get_all_training_history(self):
+        """
+        Gauna visų treniruotų modelių istoriją
         
         Returns:
-            list: Modelių informacijos sąrašas
+            list: Modelių sąrašas
         """
         models = []
         
         try:
-            # Patikriname, ar egzistuoja modelių katalogas
-            if not os.path.exists(self.models_dir):
-                logger.warning(f"Modelių katalogas nerastas: {self.models_dir}")
-                return models
-            
-            # Randame visus .h5 failus
-            for filename in os.listdir(self.models_dir):
-                if filename.endswith(".h5"):
-                    # Gauname modelio informaciją
-                    model_info = self.get_model_info(filename)
+            # Pereiname per visus konfigūracijos failus
+            for filename in os.listdir(self.configs_dir):
+                if filename.endswith('.json'):
+                    training_id = filename[:-5]  # Pašaliname '.json' galūnę
                     
-                    if model_info:
-                        # Papildomi duomenys apie modelį
-                        try:
-                            # Bandome įkelti modelį, kad gautume daugiau informacijos
-                            model = self.load_model(filename)
-                            if model:
-                                # Pridedame papildomą informaciją
-                                model_info['layers_count'] = len(model.layers)
-                                model_info['params_count'] = model.count_params()
-                            else:
-                                model_info['layers_count'] = "Nežinomas"
-                                model_info['params_count'] = "Nežinomas"
-                        except Exception as inner_e:
-                            logger.error(f"Klaida gaunant išsamią modelio informaciją: {inner_e}")
-                            model_info['layers_count'] = "Klaida"
-                            model_info['params_count'] = "Klaida"
+                    # Gauname modelio konfigūraciją
+                    model_config = self.get_model_config(training_id)
+                    
+                    if model_config:
+                        # Tikriname, ar yra treniravimo rezultatai
+                        has_results = os.path.exists(os.path.join(self.results_dir, f"{training_id}.json"))
                         
-                        # Įtraukiame failo pavadinimą
-                        model_info['filename'] = filename
-                        
-                        # Pridedame modelio informaciją į sąrašą
-                        models.append(model_info)
+                        # Pridedame modelį į sąrašą
+                        models.append({
+                            'training_id': training_id,
+                            'name': model_config.get('name', 'Nenurodyta'),
+                            'type': model_config.get('type', 'Nenurodyta'),
+                            'created_at': model_config.get('created_at', 'Nenurodyta'),
+                            'has_results': has_results
+                        })
             
-            # Surikiuojame modelius pagal sukūrimo datą (naujausi pirmi)
+            # Rūšiuojame pagal sukūrimo datą (naujausi viršuje)
             models.sort(key=lambda x: x.get('created_at', ''), reverse=True)
             
+            return models
         except Exception as e:
-            logger.error(f"Klaida gaunant modelių sąrašą: {e}")
-            traceback.print_exc()
-        
-        return models
-    
-    def get_model_details(self, filename):
-        """Gauna konkretaus modelio detalią informaciją"""
-        return self._read_model_info(filename)
-    
-    def get_model_path(self, filename):
-        """Gauna kelią iki modelio failo"""
-        base_filename = os.path.splitext(filename)[0]
-        model_path = os.path.join(self.models_dir, f"{base_filename}.h5")
-        return model_path if os.path.exists(model_path) else None
-    
-    def delete_model(self, filename):
-        """Ištrina modelį"""
-        try:
-            base_filename = os.path.splitext(filename)[0]
-            
-            # Ištriname info failą
-            info_path = os.path.join(self.models_dir, f"{base_filename}.json")
-            if os.path.exists(info_path):
-                os.remove(info_path)
-            
-            # Ištriname modelio failą
-            model_path = os.path.join(self.models_dir, f"{base_filename}.h5")
-            if os.path.exists(model_path):
-                os.remove(model_path)
-            
-            # Ištriname grafikų failą, jei yra
-            plot_path = os.path.join(self.models_dir, f"{base_filename}_plot.png")
-            if os.path.exists(plot_path):
-                os.remove(plot_path)
-            
-            return True
-        except Exception as e:
-            logger.error(f"Klaida trinant modelį: {e}")
-            return False
-    
-    def start_training(self, training_id, params, checkpoint_path=None):
-        """
-        Pradeda modelio treniravimo procesą
-        
-        Args:
-            training_id (str): Treniravimo sesijos ID
-            params (dict): Treniravimo parametrai
-            checkpoint_path (str, optional): Tarpinio modelio kelias, jei pratęsiame treniravimą
-        
-        Returns:
-            str: Treniravimo sesijos ID
-        """
-        # Išsaugome treniravimo būseną
-        self._trainings[training_id] = {
-            'model_name': params['model_name'],
-            'parameters': params,
-            'start_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'status': 'Initializing',
-            'is_training': True,
-            'current_epoch': params.get('initial_epoch', 0),  # Pradedame nuo nulio arba tarpinio modelio epochos
-            'metrics': {
-                'loss': [],
-                'val_loss': [],
-                'mae': [],
-                'val_mae': []
-            },
-            'current_metrics': {},
-            'final_metrics': {},
-            'model_filename': '',
-            'checkpoint_path': checkpoint_path,  # Išsaugome tarpinio modelio kelią
-            'system_resources': {
-                'cpu_usage': 0,
-                'ram_usage': 0,
-                'gpu_usage': 0
-            }
-        }
-        
-        # Paleidžiame treniravimą atskirame thread
-        training_thread = threading.Thread(
-            target=self._train_model_thread,
-            args=(training_id, params, checkpoint_path)
-        )
-        training_thread.daemon = True
-        training_thread.start()
-        
-        return training_id
-    
-    def get_training_status(self, training_id):
-        """Gauna treniravimo būsenos informaciją"""
-        return self._trainings.get(training_id)
-    
-    def cancel_training(self, training_id):
-        """Atšaukia treniravimo procesą"""
-        if training_id not in self._trainings:
-            return False
-        
-        self._trainings[training_id]['is_training'] = False
-        self._trainings[training_id]['status'] = 'Canceled'
-        
-        # Išsaugome treniravimo istoriją kaip atšauktą
-        self.save_training_history(training_id, "Canceled")
-        
-        return True
-    
-    def _read_model_info(self, filename):
-        """Skaito modelio informaciją iš JSON failo"""
-        try:
-            base_filename = os.path.splitext(filename)[0]
-            info_path = os.path.join(self.models_dir, f"{base_filename}.json")
-            
-            if not os.path.exists(info_path):
-                return None
-            
-            with open(info_path, 'r') as f:
-                info = json.load(f)
-            
-            # Pridedame failų pavadinimus
-            info['filename'] = base_filename + '.json'
-            info['model_file'] = base_filename + '.h5'
-            
-            return info
-        except Exception as e:
-            logger.error(f"Klaida skaitant modelio informaciją: {e}")
-            return None
-    
-    def _save_model_info(self, filename, info):
-        """Išsaugo modelio informaciją į JSON failą"""
-        try:
-            with open(filename, 'w') as f:
-                json.dump(info, f, indent=4)
-            return True
-        except Exception as e:
-            logger.error(f"Klaida išsaugant modelio informaciją: {e}")
-            return False
-    
-    def _update_system_resources(self, training_id):
-        """Atnaujina sistemos resursų naudojimo informaciją"""
-        try:
-            # CPU naudojimas
-            cpu_usage = psutil.cpu_percent()
-            
-            # RAM naudojimas
-            memory = psutil.virtual_memory()
-            ram_usage = memory.percent
-            
-            # GPU naudojimas (jei yra)
-            gpu_usage = 0
-            
-            # Išsaugome informaciją
-            self._trainings[training_id]['system_resources'] = {
-                'cpu_usage': cpu_usage,
-                'ram_usage': ram_usage,
-                'gpu_usage': gpu_usage
-            }
-        except Exception as e:
-            logger.error(f"Klaida gaunant sistemos resursų informaciją: {e}")
-    
-    def _train_model_thread(self, training_id, params, checkpoint_path=None):
-        """Treniruoja modelį atskirame thread"""
-        # Atnaujinti būseną
-        self._trainings[training_id]['status'] = 'Loading data'
-        
-        try:
-            # Gauname duomenis
-            data = self.data_service.get_data_from_database()
-            
-            if data.empty:
-                self._trainings[training_id]['status'] = 'Error: No data'
-                self._trainings[training_id]['is_training'] = False
-                return
-            
-            # Paruošiame duomenis LSTM modeliui
-            X_train, X_test, y_train, y_test, scaler = self._prepare_data_for_lstm(
-                data, 
-                seq_length=params['sequence_length'],
-                pred_days=params['prediction_days'],
-                test_size=params['test_size']
-            )
-            
-            # Kuriame modelį
-            if checkpoint_path and os.path.exists(checkpoint_path):
-                self._trainings[training_id]['status'] = 'Loading checkpoint'
-                model = load_model(checkpoint_path)
-                logger.info(f"Modelis užkrautas iš tarpinio failo: {checkpoint_path}")
-            else:
-                self._trainings[training_id]['status'] = 'Building model'
-                model = self._build_model(params)
-            
-            # Callback funkcija, kuri bus iškviečiama po kiekvienos epochos
-            class TrainingCallback(keras.callbacks.Callback):
-                def __init__(self, training_service, training_id):
-                    self.training_service = training_service
-                    self.training_id = training_id
-                
-                def on_epoch_begin(self, epoch, logs=None):
-                    """Iškviečiamas prieš kiekvieną epochą"""
-                    # Siunčiame pranešimą apie epochos pradžią
-                    update_data = {
-                        'status': 'Training',
-                        'message': f'Pradedama epocha {epoch+1}/{self.model.params["epochs"]}',
-                        'current_epoch': epoch+1,
-                        'total_epochs': self.model.params["epochs"],
-                        'progress': int((epoch+1) / self.model.params["epochs"] * 100)
-                    }
-                    websocket_manager.send_update(self.training_id, update_data)
-                
-                def on_epoch_end(self, epoch, logs=None):
-                    """Iškviečiamas po kiekvienos epochos"""
-                    # Patikriname, ar treniravimas nebuvo atšauktas
-                    if not self.training_service._trainings[self.training_id]['is_training']:
-                        self.model.stop_training = True
-                        return
-                    
-                    # Atnaujinti metrikos
-                    self.training_service._trainings[self.training_id]['current_epoch'] = epoch + 1
-                    self.training_service._trainings[self.training_id]['metrics']['loss'].append(logs['loss'])
-                    self.training_service._trainings[self.training_id]['metrics']['val_loss'].append(logs['val_loss'])
-                    self.training_service._trainings[self.training_id]['metrics']['mae'].append(logs['mae'])
-                    self.training_service._trainings[self.training_id]['metrics']['val_mae'].append(logs['val_mae'])
-                    
-                    self.training_service._trainings[self.training_id]['current_metrics'] = {
-                        'train_loss': logs['loss'],
-                        'val_loss': logs['val_loss'],
-                        'train_mae': logs['mae'],
-                        'val_mae': logs['val_mae']
-                    }
-                    
-                    # Atnaujinti resursų informaciją
-                    self.training_service._update_system_resources(self.training_id)
-                    
-                    # Siunčiame realaus laiko atnaujinimą per WebSocket
-                    progress = int((epoch+1) / self.model.params["epochs"] * 100)
-                    update_data = {
-                        'status': 'Training',
-                        'current_epoch': epoch+1,
-                        'total_epochs': self.model.params["epochs"],
-                        'progress': progress,
-                        'metrics': {
-                            'loss': float(logs['loss']),
-                            'val_loss': float(logs['val_loss']),
-                            'mae': float(logs['mae']),
-                            'val_mae': float(logs['val_mae'])
-                        },
-                        'history': {
-                            'loss': [float(x) for x in self.training_service._trainings[self.training_id]['metrics']['loss']],
-                            'val_loss': [float(x) for x in self.training_service._trainings[self.training_id]['metrics']['val_loss']],
-                            'mae': [float(x) for x in self.training_service._trainings[self.training_id]['metrics']['mae']],
-                            'val_mae': [float(x) for x in self.training_service._trainings[self.training_id]['metrics']['val_mae']]
-                        },
-                        'system_resources': self.training_service._trainings[self.training_id]['system_resources']
-                    }
-                    websocket_manager.send_update(self.training_id, update_data)
-                
-                def on_train_begin(self, logs=None):
-                    """Iškviečiamas prieš pradedant treniravimą"""
-                    update_data = {
-                        'status': 'Started',
-                        'message': 'Treniravimas pradėtas'
-                    }
-                    websocket_manager.send_update(self.training_id, update_data)
-                
-                def on_train_end(self, logs=None):
-                    """Iškviečiamas baigus treniravimą"""
-                    update_data = {
-                        'status': 'Completed',
-                        'message': 'Treniravimas baigtas'
-                    }
-                    websocket_manager.send_update(self.training_id, update_data)
-            
-            # Treniruojame modelį
-            self._trainings[training_id]['status'] = 'Training'
-            
-            # Resursų monitoringo thread
-            def monitor_resources():
-                while self._trainings[training_id]['is_training']:
-                    self._update_system_resources(training_id)
-                    time.sleep(1)
-            
-            # Paleidžiame resursų monitoringą
-            resources_thread = threading.Thread(target=monitor_resources)
-            resources_thread.daemon = True
-            resources_thread.start()
-            
-            # Sukuriame ModelCheckpoint callback
-            checkpoint_callback = keras.callbacks.LambdaCallback(
-                on_epoch_end=lambda epoch, logs: self.save_checkpoint(training_id, epoch + 1, model)
-            )
-            
-            # Pradinis epochos indeksas
-            initial_epoch = params.get('initial_epoch', 0)
-            
-            # Treniruojame modelį su checkpoint callback
-            history = model.fit(
-                X_train, y_train,
-                epochs=params['epochs'],
-                batch_size=params['batch_size'],
-                validation_data=(X_test, y_test),
-                callbacks=[TrainingCallback(self, training_id), checkpoint_callback],
-                verbose=0,
-                initial_epoch=initial_epoch  # Pradedame nuo nurodytos epochos
-            )
-            
-            # Jei treniravimas buvo atšauktas, neišsaugome modelio
-            if not self._trainings[training_id]['is_training']:
-                self._trainings[training_id]['status'] = 'Canceled'
-                return
-            
-            # Apskaičiuojame galutinius rezultatus
-            y_pred = model.predict(X_test)
-            
-            # Atstatomos originalios reikšmės (jei buvo normalizuota)
-            if params['normalization']:
-                # Sukuriame dummy masyvą su reikiamomis dimensijomis
-                dummy = np.zeros((len(y_test), data.shape[1]))
-                # Įdedame prognozes į teisingą vietą (pirmas stulpelis - Close)
-                dummy[:, 0] = y_pred.flatten()
-                # Inversuojame normalizaciją
-                y_pred_inv = scaler.inverse_transform(dummy)[:, 0]
-                
-                # Tas pats originaliai y_test
-                dummy = np.zeros((len(y_test), data.shape[1]))
-                dummy[:, 0] = y_test
-                y_test_inv = scaler.inverse_transform(dummy)[:, 0]
-            else:
-                y_pred_inv = y_pred
-                y_test_inv = y_test
-            
-            # Apskaičiuojame MAE
-            test_mae = mean_absolute_error(y_test_inv, y_pred_inv)
-            
-            # Išsaugome galutines metrikas
-            final_metrics = {
-                'loss': float(history.history['loss'][-1]),
-                'val_loss': float(history.history['val_loss'][-1]),
-                'mae': float(history.history['mae'][-1]),
-                'val_mae': float(history.history['val_mae'][-1]),
-                'test_mae': float(test_mae)
-            }
-            
-            self._trainings[training_id]['final_metrics'] = final_metrics
-            
-            # Išsaugome modelį
-            model_filename = f"{params['model_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            model_filename = model_filename.replace(' ', '_')
-            model_path = os.path.join(self.models_dir, f"{model_filename}.h5")
-            model.save(model_path)
-            
-            # Išsaugome modelio informaciją
-            model_info = {
-                'name': params['model_name'],
-                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'parameters': params,
-                'metrics': {
-                    'loss': [float(x) for x in history.history['loss']],
-                    'val_loss': [float(x) for x in history.history['val_loss']],
-                    'mae': [float(x) for x in history.history['mae']],
-                    'val_mae': [float(x) for x in history.history['val_mae']]
-                },
-                'final_metrics': final_metrics
-            }
-            
-            info_path = os.path.join(self.models_dir, f"{model_filename}.json")
-            self._save_model_info(info_path, model_info)
-            
-            # Atnaujinti būseną
-            self._trainings[training_id]['status'] = 'Completed'
-            self._trainings[training_id]['is_training'] = False
-            self._trainings[training_id]['model_filename'] = model_filename
-            
-            # Siunčiame pranešimą apie treniravimo pabaigą
-            update_data = {
-                'status': 'Completed',
-                'message': 'Treniravimas baigtas',
-                'model_filename': model_filename
-            }
-            websocket_manager.send_update(training_id, update_data)
-        except Exception as e:
-            logger.error(f"Klaida treniruojant modelį: {e}")
-            self._trainings[training_id]['status'] = f"Error: {str(e)}"
-            self._trainings[training_id]['is_training'] = False
-            
-            # Siunčiame pranešimą apie klaidą
-            update_data = {
-                'status': 'Error',
-                'message': str(e)
-            }
-            websocket_manager.send_update(training_id, update_data)
-        
-        # Išsaugome treniravimo istoriją
-        self.save_training_history(training_id, "Completed")
-    
-    def _prepare_data_for_lstm(self, data, seq_length, pred_days, test_size):
-        """Paruošia duomenis LSTM modeliui"""
-        # Normalizuojame duomenis
-        scaler = MinMaxScaler(feature_range=(0, 1))
-        scaled_data = scaler.fit_transform(data)
-        
-        # Sukuriame sekų duomenis
-        X, y = [], []
-        for i in range(len(scaled_data) - seq_length - pred_days + 1):
-            X.append(scaled_data[i:i+seq_length])
-            y.append(scaled_data[i+seq_length+pred_days-1][0])  # Prognozuojame 'Close' reikšmę
-        
-        X = np.array(X)
-        y = np.array(y)
-        
-        # Padalijame į treniravimo ir testavimo duomenis
-        split_idx = int(len(X) * (1 - test_size))
-        X_train, X_test = X[:split_idx], X[split_idx:]
-        y_train, y_test = y[:split_idx], y[split_idx:]
-        
-        return X_train, X_test, y_train, y_test, scaler
-    
-    def _build_model(self, params):
-        """Kuria LSTM modelį pagal nurodytus parametrus"""
-        model = Sequential()
-        model.add(LSTM(params['lstm_units'], return_sequences=True, input_shape=(None, 1)))
-        model.add(Dropout(params['dropout']))
-        model.add(LSTM(params['lstm_units']))
-        model.add(Dropout(params['dropout']))
-        model.add(Dense(1))
-        
-        model.compile(optimizer=params['optimizer'], loss='mean_squared_error', metrics=['mae'])
-        return model
-
-    # Pridėti naują metodą, kuris grąžina modelio architektūros informaciją vizualizavimui
-    def get_model_architecture(self, model_filename):
-    """
-    Gauna modelio architektūros informaciją
-    
-    Args:
-        model_filename (str): Modelio failo pavadinimas
-    
-    Returns:
-        dict: Modelio architektūros informacija
-    """
-    try:
-        # Patikriname, ar modelis egzistuoja
-        model_path = os.path.join(self.models_dir, model_filename)
-        if not os.path.exists(model_path):
-            logger.error(f"Modelio failas nerastas: {model_path}")
-            return None
-        
-        # Įkraunama modelį
-        model = self.load_model(model_filename)
-        
-        if model is None:
-            logger.error(f"Nepavyko įkrauti modelio: {model_filename}")
-            return None
-        
-        # Gauname modelio konfigūraciją
-        model_config = model.get_config()
-        
-        # Sukuriame architektūros informacijos žodyną
-        architecture = {
-            'input_shape': str(model.input_shape),
-            'output_shape': str(model.output_shape),
-            'total_params': model.count_params(),
-            'layers': []
-        }
-        
-        # Gauname informaciją apie kiekvieną sluoksnį
-        for layer in model.layers:
-            layer_info = {
-                'name': layer.name,
-                'type': layer.__class__.__name__,
-                'config': {},
-                'params': layer.count_params()
-            }
-            
-            # Išgauname sluoksnio konfigūraciją
-            layer_config = layer.get_config()
-            
-            # Išsaugome tik svarbius konfigūracijos parametrus
-            important_configs = ['units', 'activation', 'rate', 'filters', 'kernel_size', 'strides', 'padding']
-            
-            for key in important_configs:
-                if key in layer_config:
-                    layer_info['config'][key] = layer_config[key]
-            
-            # Pridedame sluoksnio informaciją į sąrašą
-            architecture['layers'].append(layer_info)
-        
-        return architecture
-        
-    except Exception as e:
-        logger.error(f"Klaida gaunant modelio architektūrą: {e}")
-        traceback.print_exc()
-        return None
-    
-    # Pridėti naują metodą, kuris analizuoja modelio svorius
-    def get_model_weights_analysis(self, filename):
-        """
-        Analizuoja modelio svorius ir grąžina detalią informaciją
-        
-        Args:
-            filename (str): Modelio failo pavadinimas
-            
-        Returns:
-            dict: Modelio svorių analizės duomenys arba None, jei nepavyko
-        """
-        try:
-            # Gauname modelio failo kelią
-            model_path = self.get_model_path(filename)
-            if not model_path:
-                return None
-            
-            # Užkrauname modelį
-            model = self.load_model(filename)
-            
-            if model is None:
-                return None
-            
-            # Paruošiame rezultatų struktūrą
-            from tensorflow.keras import backend as K
-            
-            results = {
-                'total_params': model.count_params(),
-                'trainable_params': sum([K.count_params(w) for w in model.trainable_weights]),
-                'non_trainable_params': sum([K.count_params(w) for w in model.non_trainable_weights]),
-                'layer_count': len(model.layers),
-                'model_size_mb': os.path.getsize(model_path) / (1024 * 1024),  # Dydis megabaitais
-                'layers': []
-            }
-            
-            # Einame per kiekvieną sluoksnį ir analizuojame jo svorius
-            for layer in model.layers:
-                # Jei sluoksnis neturi svorių, tęsiame
-                if not layer.weights:
-                    continue
-                
-                # Analizuojame sluoksnio svorius
-                layer_info = {
-                    'name': layer.name,
-                    'type': layer.__class__.__name__,
-                    'params': layer.count_params(),
-                    'shape': [str(w.shape.as_list()) for w in layer.weights],
-                    'stats': {},
-                    'histogram': {'bins': [], 'counts': []}
-                }
-                
-                # Gauname svorių statistiką
-                weights_flat = []
-                for w in layer.weights:
-                    # Gauname svorių reikšmes
-                    w_values = K.batch_get_value([w])[0]
-                    # Suplostiname masyvą
-                    w_flat = w_values.flatten()
-                    weights_flat.extend(w_flat)
-                
-                # Paverčiame į NumPy masyvą
-                weights_np = np.array(weights_flat)
-                
-                # Apskaičiuojame statistikas
-                layer_info['stats'] = {
-                    'min': float(np.min(weights_np)),
-                    'max': float(np.max(weights_np)),
-                    'mean': float(np.mean(weights_np)),
-                    'std': float(np.std(weights_np))
-                }
-                
-                # Sukuriame histogramą (20 stulpelių)
-                hist, bin_edges = np.histogram(weights_np, bins=20)
-                layer_info['histogram'] = {
-                    'bins': [float(x) for x in bin_edges[:-1]],  # Paskutinį praleidžiame
-                    'counts': [int(x) for x in hist]
-                }
-                
-                # Pridedame sluoksnio informaciją
-                results['layers'].append(layer_info)
-            
-            return results
-        except Exception as e:
-            logger.error(f"Klaida analizuojant modelio svorius: {e}")
-            traceback.print_exc()
-            return None
-    
-    # Pridėti metodą, kuris grąžina treniravimo sesijų istoriją
-    def get_training_history(self, filters=None):
-        """
-        Grąžina treniravimo sesijų istoriją su filtravimu
-        
-        Args:
-            filters (dict): Filtravimo parametrai
-                - date_from (str): Data nuo
-                - date_to (str): Data iki
-                - model_types (list): Modelių tipai
-                - statuses (list): Sesijų būsenos
-                - sort_by (str): Rikiavimo laukas
-                - sort_order (str): Rikiavimo tvarka (asc, desc)
-        
-        Returns:
-            list: Treniravimo sesijų sąrašas
-        """
-        try:
-            # Istorijos failo kelias
-            history_file = os.path.join(self.models_dir, 'training_history.json')
-            
-            # Jei failo nėra, grąžiname tuščią sąrašą
-            if not os.path.exists(history_file):
-                return []
-            
-            # Skaitome istorijos duomenis
-            with open(history_file, 'r') as f:
-                history = json.load(f)
-            
-            # Jei nėra filtrų, grąžiname visą istoriją
-            if not filters:
-                return history
-            
-            # Filtruojame pagal datą
-            filtered_history = history
-            if filters.get('date_from'):
-                date_from = datetime.strptime(filters['date_from'], '%Y-%m-%d')
-                filtered_history = [
-                    session for session in filtered_history 
-                    if datetime.strptime(session['start_time'].split()[0], '%Y-%m-%d') >= date_from
-                ]
-            
-            if filters.get('date_to'):
-                date_to = datetime.strptime(filters['date_to'], '%Y-%m-%d')
-                filtered_history = [
-                    session for session in filtered_history 
-                    if datetime.strptime(session['start_time'].split()[0], '%Y-%m-%d') <= date_to
-                ]
-            
-            # Filtruojame pagal modelio tipą
-            if filters.get('model_types'):
-                filtered_history = [
-                    session for session in filtered_history 
-                    if session['model_type'] in filters['model_types']
-                ]
-            
-            # Filtruojame pagal būseną
-            if filters.get('statuses'):
-                filtered_history = [
-                    session for session in filtered_history 
-                    if session['status'] in filters['statuses']
-                ]
-            
-            # Rikiuojame rezultatus
-            sort_by = filters.get('sort_by', 'date')
-            sort_order = filters.get('sort_order', 'desc')
-            
-            if sort_by == 'date':
-                filtered_history.sort(key=lambda x: x['start_time'], reverse=(sort_order == 'desc'))
-            elif sort_by == 'val_loss':
-                # Ignoruojame sesijas be val_loss
-                with_val_loss = [s for s in filtered_history if s.get('val_loss') is not None]
-                without_val_loss = [s for s in filtered_history if s.get('val_loss') is None]
-                
-                with_val_loss.sort(key=lambda x: x['val_loss'], reverse=(sort_order == 'desc'))
-                filtered_history = with_val_loss + without_val_loss if sort_order == 'asc' else without_val_loss + with_val_loss
-            elif sort_by == 'val_mae':
-                # Ignoruojame sesijas be val_mae
-                with_val_mae = [s for s in filtered_history if s.get('val_mae') is not None]
-                without_val_mae = [s for s in filtered_history if s.get('val_mae') is None]
-                
-                with_val_mae.sort(key=lambda x: x['val_mae'], reverse=(sort_order == 'desc'))
-                filtered_history = with_val_mae + without_val_mae if sort_order == 'asc' else without_val_mae + with_val_mae
-            elif sort_by == 'duration':
-                # Ignoruojame sesijas be trukmės
-                with_duration = [s for s in filtered_history if s.get('duration') is not None]
-                without_duration = [s for s in filtered_history if s.get('duration') is None]
-                
-                with_duration.sort(key=lambda x: x['duration_seconds'], reverse=(sort_order == 'desc'))
-                filtered_history = with_duration + without_duration if sort_order == 'asc' else without_duration + with_duration
-            
-            return filtered_history
-        
-        except Exception as e:
-            logger.error(f"Klaida gaunant treniravimo istoriją: {e}")
-            traceback.print_exc()
+            logging.error(f"Klaida gaunant modelių istoriją: {str(e)}")
             return []
-
-    # Pridėti metodą, kuris išsaugo treniravimo sesijos informaciją istorijoje
-    def save_to_training_history(self, training_id):
+    
+    # ===== Modelių šablonų valdymas =====
+    
+    def save_model_template(self, template_name, template_data):
         """
-        Išsaugo treniravimo sesijos informaciją istorijos faile
+        Išsaugo modelio parametrų šabloną
         
         Args:
-            training_id (str): Treniravimo sesijos ID
-        
+            template_name (str): Šablono pavadinimas
+            template_data (dict): Šablono duomenys
+            
         Returns:
-            bool: Ar pavyko išsaugoti
+            bool: True jei sėkmingai išsaugota, False jei klaida
         """
         try:
-            # Gauname sesijos informaciją
-            session = self._trainings.get(training_id)
-            if not session:
-                logger.error(f"Nerasta treniravimo sesija su ID: {training_id}")
+            # Užkrauname esamus šablonus
+            templates = self._load_templates()
+            
+            # Pridedame arba atnaujiname šabloną
+            templates[template_name] = template_data
+            
+            # Išsaugome šablonus
+            with open(self.templates_file, 'w', encoding='utf-8') as f:
+                json.dump(templates, f, indent=4, ensure_ascii=False)
+            
+            return True
+        except Exception as e:
+            logging.error(f"Klaida išsaugant modelio šabloną: {str(e)}")
+            return False
+    
+    def get_model_templates(self):
+        """
+        Gauna visus modelio parametrų šablonus
+        
+        Returns:
+            dict: Šablonų žodynas
+        """
+        return self._load_templates()
+    
+    def delete_model_template(self, template_name):
+        """
+        Ištrina modelio parametrų šabloną
+        
+        Args:
+            template_name (str): Šablono pavadinimas
+            
+        Returns:
+            bool: True jei sėkmingai ištrinta, False jei klaida
+        """
+        try:
+            # Užkrauname esamus šablonus
+            templates = self._load_templates()
+            
+            # Patikriname, ar šablonas egzistuoja
+            if template_name not in templates:
                 return False
             
-            # Istorijos failo kelias
-            history_file = os.path.join(self.models_dir, 'training_history.json')
+            # Pašaliname šabloną
+            del templates[template_name]
             
-            # Skaitome esamą istoriją
-            history = []
-            if os.path.exists(history_file):
-                with open(history_file, 'r') as f:
-                    history = json.load(f)
-            
-            # Apskaičiuojame treniravimo trukmę
-            start_time = datetime.strptime(session['start_time'], '%Y-%m-%d %H:%M:%S')
-            end_time = datetime.now()
-            duration_seconds = (end_time - start_time).total_seconds()
-            
-            # Formatuojame trukmę
-            hours, remainder = divmod(duration_seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            duration = f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
-            
-            # Sukuriame sesijos informaciją
-            session_info = {
-                'id': training_id,
-                'model_name': session['model_name'],
-                'model_type': session['parameters']['model_type'],
-                'start_time': session['start_time'],
-                'end_time': end_time.strftime('%Y-%m-%d %H:%M:%S'),
-                'duration': duration,
-                'duration_seconds': int(duration_seconds),
-                'status': session['status'],
-                'epochs': session['parameters']['epochs'],
-                'completed_epochs': session['current_epoch'],
-                'model_path': session.get('model_filename', None)
-            }
-            
-            # Pridedame metrikos, jei yra
-            if session.get('final_metrics'):
-                session_info['val_loss'] = session['final_metrics'].get('val_loss')
-                session_info['val_mae'] = session['final_metrics'].get('val_mae')
-            
-            # Pridedame sesijos informaciją į istoriją
-            history.append(session_info)
-            
-            # Išsaugome istoriją
-            with open(history_file, 'w') as f:
-                json.dump(history, f, indent=4)
+            # Išsaugome šablonus
+            with open(self.templates_file, 'w', encoding='utf-8') as f:
+                json.dump(templates, f, indent=4, ensure_ascii=False)
             
             return True
-        
         except Exception as e:
-            logger.error(f"Klaida išsaugant treniravimo sesiją istorijoje: {e}")
-            traceback.print_exc()
+            logging.error(f"Klaida trinant modelio šabloną: {str(e)}")
             return False
-
-    # Pridėti metodą, kuris grąžina treniravimo statistiką
-    def get_training_statistics(self):
+    
+    def _load_templates(self):
         """
-        Grąžina treniravimo sesijų statistiką
+        Užkrauna visus modelio parametrų šablonus
         
         Returns:
-            dict: Statistikos duomenys
+            dict: Šablonų žodynas
         """
         try:
-            # Gauname visą istoriją
-            history = self.get_training_history()
-            
-            # Inicializuojame statistiką
-            stats = {
-                'total': len(history),
-                'completed': 0,
-                'failed': 0,
-                'canceled': 0,
-                'in_progress': 0,
-                'best_model': None
-            }
-            
-            # Skaičiuojame statistiką
-            best_val_mae = float('inf')
-            
-            for session in history:
-                if session['status'] == 'Completed':
-                    stats['completed'] += 1
-                elif session['status'] == 'Failed':
-                    stats['failed'] += 1
-                elif session['status'] == 'Canceled':
-                    stats['canceled'] += 1
-                elif session['status'] == 'In Progress':
-                    stats['in_progress'] += 1
-                
-                # Tikriname, ar šis modelis geresnis už dabartinius geriausius
-                if session.get('val_mae') and session['status'] == 'Completed':
-                    if session['val_mae'] < best_val_mae:
-                        best_val_mae = session['val_mae']
-                        stats['best_model'] = {
-                            'name': session['model_name'],
-                            'val_mae': session['val_mae'],
-                            'model_path': session['model_path']
-                        }
-            
-            return stats
-        
+            if os.path.exists(self.templates_file):
+                with open(self.templates_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return {}
         except Exception as e:
-            logger.error(f"Klaida gaunant treniravimo statistiką: {e}")
-            traceback.print_exc()
-            return {
-                'total': 0,
-                'completed': 0,
-                'failed': 0,
-                'canceled': 0,
-                'in_progress': 0,
-                'best_model': None
-            }
-
-# Papildykime _train_model_thread metodą, kad išsaugotų istoriją kai treniravimas baigiasi
-# Pakeitimas: Prieš grąžinant iš _train_model_thread metodo, išsaugome sesiją istorijoje
-
-# Senoje kodo vietoje:
-self._trainings[training_id]['model_filename'] = f"{model_filename}.json"
-# Po to pridedame:
-self.save_to_training_history(training_id)
-
-    # Pridėti hiperparametrų optimizavimo metodus
-
-    def start_optimization(self, optimization_id, params):
-    """
-    Pradeda hiperparametrų optimizavimo procesą
+            logging.error(f"Klaida užkraunant modelio šablonus: {str(e)}")
+            return {}
     
-    Args:
-        optimization_id (str): Optimizavimo sesijos ID
-        params (dict): Optimizavimo parametrai
-        
-    Returns:
-        bool: Ar pavyko pradėti optimizavimą
-    """
-    try:
-        # Išgauname parametrus
-        model_name = params.get('model_name', 'Optimizuotas modelis')
-        optimization_method = params.get('optimization_method', 'grid')
-        max_trials = params.get('max_trials', 10)
-        epochs_per_trial = params.get('epochs_per_trial', 20)
-        optimization_metric = params.get('optimization_metric', 'val_loss')
-        parameter_values = params.get('parameter_values', {})
-        fixed_parameters = params.get('fixed_parameters', {})
-        
-        # Sukuriame visas parametrų kombinacijas pagal pasirinktą metodą
-        parameter_combinations = []
-        
-        if optimization_method == 'grid':
-            # Grid search - visos galimos kombinacijos
-            parameter_names = list(parameter_values.keys())
-            parameter_values_list = [parameter_values[name] for name in parameter_names]
-            
-            for combination in itertools.product(*parameter_values_list):
-                params_dict = {name: value for name, value in zip(parameter_names, combination)}
-                parameter_combinations.append(params_dict)
-        else:
-            # Random search - atsitiktinės kombinacijos
-            for _ in range(max_trials):
-                params_dict = {}
-                for name, values in parameter_values.items():
-                    params_dict[name] = random.choice(values)
-                parameter_combinations.append(params_dict)
-        
-        # Jei kombinacijų per daug, ribojame iki max_trials
-        if len(parameter_combinations) > max_trials:
-            parameter_combinations = random.sample(parameter_combinations, max_trials)
-        
-        # Išsaugome optimizavimo būseną
-        self._optimizations[optimization_id] = {
-            'optimization_id': optimization_id,
-            'model_name': model_name,
-            'start_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'status': 'Initializing',
-            'optimization_method': optimization_method,
-            'max_trials': len(parameter_combinations),
-            'completed_trials': 0,
-            'epochs_per_trial': epochs_per_trial,
-            'optimization_metric': optimization_metric,
-            'parameter_values': parameter_values,
-            'fixed_parameters': fixed_parameters,
-            'parameter_combinations': parameter_combinations,
-            'trials': [],
-            'best_trial_index': -1,
-            'best_value': float('inf') if optimization_metric == 'val_loss' else -float('inf'),
-            'is_running': True
-        }
-        
-        # Paleidžiame optimizavimą atskirame thread
-        optimization_thread = threading.Thread(
-            target=self._run_optimization_thread,
-            args=(optimization_id,)
-        )
-        optimization_thread.daemon = True
-        optimization_thread.start()
-        
-        return True
-    except Exception as e:
-        logger.error(f"Klaida pradedant optimizavimą: {e}")
-        traceback.print_exc()
-        return False
-
-def _run_optimization_thread(self, optimization_id):
-    """
-    Vykdo optimizavimą atskirame thread
+    # ===== Modelių versijų valdymas =====
     
-    Args:
-        optimization_id (str): Optimizavimo sesijos ID
-    """
-    try:
-        # Gauname optimizavimo būseną
-        optimization = self._optimizations.get(optimization_id)
-        if not optimization:
-            logger.error(f"Negalima vykdyti optimizavimo: nerasta sesija {optimization_id}")
-            return
+    def create_model_version(self, parent_id, version_data):
+        """
+        Sukuria naują modelio versiją su nurodytais parametrais
         
-        # Atnaujiname būseną
-        optimization['status'] = 'Running'
-        
-        # Gauname parametrus
-        model_name = optimization['model_name']
-        epochs_per_trial = optimization['epochs_per_trial']
-        parameter_combinations = optimization['parameter_combinations']
-        fixed_parameters = optimization['fixed_parameters']
-        optimization_metric = optimization['optimization_metric']
-        
-        # Vykdome bandymus
-        for i, params_combination in enumerate(parameter_combinations):
-            # Tikriname, ar optimizavimas nebuvo nutrauktas
-            if not optimization['is_running']:
-                optimization['status'] = 'Canceled'
-                return
+        Args:
+            parent_id (str): Tėvinio modelio ID
+            version_data (dict): Naujos versijos duomenys (pvz., name, parameters)
             
-            # Paruošiame modelio parametrus
-            model_params = {**params_combination, **fixed_parameters}
-            model_params['epochs'] = epochs_per_trial
-            model_params['model_name'] = f"{model_name} (Trial {i+1})"
+        Returns:
+            str: Naujos versijos ID arba None, jei nepavyko sukurti
+        """
+        try:
+            # Gauname tėvinio modelio konfigūraciją
+            parent_config = self.load_model_config(parent_id)
+            if not parent_config:
+                logging.error(f"Tėvinis modelis {parent_id} nerastas")
+                return None
             
-            # Paleidžiame treniravimą su šiais parametrais
-            try:
-                # Sukurti naują treniravimo sesiją
-                training_id = str(uuid.uuid4())
-                
-                # Pradedame treniravimą
-                self.start_training(training_id, model_params)
-                
-                # Laukiame, kol baigsis treniravimas
-                while self._trainings.get(training_id, {}).get('is_training', False):
-                    time.sleep(1)
-                
-                # Gauname treniravimo rezultatus
-                training_result = self._trainings.get(training_id, {})
-                final_metrics = training_result.get('final_metrics', {})
-                
-                # Išsaugome bandymo rezultatus
-                trial_result = {
-                    'trial_num': i + 1,
-                    'parameters': params_combination,
-                    'metrics': final_metrics,
-                    'training_id': training_id
-                }
-                
-                # Tikriname, ar tai geriausias rezultatas
-                current_value = final_metrics.get(optimization_metric)
-                if current_value is not None:
-                    if optimization_metric == 'val_loss':
-                        if current_value < optimization['best_value']:
-                            optimization['best_value'] = current_value
-                            optimization['best_trial_index'] = i
-                    else:  # 'val_mae'
-                        if current_value > optimization['best_value']:
-                            optimization['best_value'] = current_value
-                            optimization['best_trial_index'] = i
-                
-                # Pridedame rezultatą į sąrašą
-                optimization['trials'].append(trial_result)
-                
-                # Atnaujiname baigtų bandymų skaičių
-                optimization['completed_trials'] += 1
-                
-                # Siunčiame atnaujinimą per WebSocket
-                self._send_optimization_update(optimization_id)
-                
-            except Exception as e:
-                logger.error(f"Klaida vykdant bandymą {i+1}: {e}")
-                traceback.print_exc()
-        
-        # Optimizavimas sėkmingai baigtas
-        optimization['status'] = 'Completed'
-        
-        # Siunčiame galutinį atnaujinimą
-        self._send_optimization_update(optimization_id)
-        
-    except Exception as e:
-        # Klaida vykdant optimizavimą
-        logger.error(f"Klaida vykdant optimizavimą: {e}")
-        traceback.print_exc()
-        
-        # Atnaujiname būseną
-        if optimization_id in self._optimizations:
-            self._optimizations[optimization_id]['status'] = 'Failed'
-            self._send_optimization_update(optimization_id)
-
-def _send_optimization_update(self, optimization_id):
-    """
-    Siunčia optimizavimo būsenos atnaujinimą per WebSocket
-    
-    Args:
-        optimization_id (str): Optimizavimo sesijos ID
-    """
-    try:
-        optimization = self._optimizations.get(optimization_id)
-        if not optimization:
-            return
-        
-        # Paruošiame duomenis siuntimui
-        update_data = {
-            'type': 'optimization_update',
-            'optimization_id': optimization_id,
-            'status': optimization['status'],
-            'completed_trials': optimization['completed_trials'],
-            'max_trials': optimization['max_trials'],
-            'trials': optimization['trials']
-        }
-        
-        # Siunčiame per WebSocket
-        websocket_manager.emit('optimization_update', update_data)
-    except Exception as e:
-        logger.error(f"Klaida siunčiant optimizavimo atnaujinimą: {e}")
-
-def get_optimization_status(self, optimization_id):
-    """
-    Gauna optimizavimo būseną
-    
-    Args:
-        optimization_id (str): Optimizavimo sesijos ID
-        
-    Returns:
-        dict: Optimizavimo būsenos žodynas arba None, jei nerasta
-    """
-    return self._optimizations.get(optimization_id)
-
-def cancel_optimization(self, optimization_id):
-    """
-    Nutraukia optimizavimo procesą
-    
-    Args:
-        optimization_id (str): Optimizavimo sesijos ID
-        
-    Returns:
-        bool: Ar pavyko nutraukti optimizavimą
-    """
-    try:
-        optimization = self._optimizations.get(optimization_id)
-        if not optimization:
-            return False
-        
-        # Nustatome, kad optimizavimas nebevyksta
-        optimization['is_running'] = False
-        
-        # Grąžiname sėkmės statusą
-        return True
-    except Exception as e:
-        logger.error(f"Klaida nutraukiant optimizavimą: {e}")
-        traceback.print_exc()
-        return False
-    
-    # Pridėti naują metodą modelių palyginimui
-def compare_models(self, model_ids, days=30, price_column='close'):
-    """
-    Palygina kelis modelius pagal jų prognozavimo tikslumą
-    
-    Args:
-        model_ids (list): Modelių ID sąrašas palyginimui
-        days (int): Dienų skaičius palyginimui (pastarųjų dienų)
-        price_column (str): Kainos stulpelis (close, high, low)
-    
-    Returns:
-        dict: Modelių palyginimo rezultatai
-    """
-    try:
-        # Gauname duomenis iš duomenų bazės
-        df = self.data_service.get_data_from_database()
-        
-        # Patikriname, ar turime pakankamai duomenų
-        if len(df) < days:
-            raise ValueError(f"Nepakankamai duomenų. Prašoma {days} dienų, bet turima tik {len(df)}")
-        
-        # Apribojame duomenis paskutinėms X dienų
-        df = df.tail(days).reset_index(drop=True)
-        
-        # Saugosime kiekvieno modelio prognozes ir metrikas
-        results = {
-            'models': [],
-            'predictions': [],
-            'dates': df['date'].tolist(),
-            'actual_prices': df[price_column].tolist(),
-            'model_predictions': [],
-            'model_errors': [],
-            'days_count': days
-        }
-        
-        # Sukuriame sąrašą modelių metrikoms saugoti
-        model_metrics = []
-        
-        # Ciklas per kiekvieną modelį
-        for model_id in model_ids:
-            # Gauname modelio informaciją
-            model_info = self.get_model_info(model_id)
+            # Sukuriame naujos versijos ID
+            new_version_id = str(uuid.uuid4())
             
-            if not model_info:
-                continue
+            # Paruošiame naujos versijos konfigūraciją
+            new_config = copy.deepcopy(parent_config)
             
-            # Gauname modelį
-            model = self.load_model(model_id)
-            
-            if model is None:
-                continue
-            
-            # Paruošiame duomenis modeliui
-            X_test, y_test, scaler = self._prepare_prediction_data(df, model_info['parameters'])
-            
-            # Atliekame prognozes
-            predictions = model.predict(X_test)
-            
-            # Apdorojame prognozes (pašaliname papildomas dimensijas)
-            if predictions.ndim > 1:
-                predictions = predictions.reshape(-1)
-            
-            # Grąžiname prognozes į pradinę skalę (undo normalization)
-            if hasattr(scaler, 'inverse_transform'):
-                # Jei y_test ir predictions yra vektoriai, juos paverčiame į matricą
-                if len(y_test.shape) == 1:
-                    y_test = y_test.reshape(-1, 1)
-                if len(predictions.shape) == 1:
-                    predictions = predictions.reshape(-1, 1)
+            # Jei naujas pavadinimas nepateiktas, sugeneruojame
+            if not version_data.get('name'):
+                # Sugeneruojame pavadinimą pagal tėvinį modelį ir versiją
+                # Pirma tikriname, ar tėvinis modelis jau turi versijos numerį
+                parent_name = parent_config.get('name', f"Modelis {parent_id[:8]}")
+                version_match = re.search(r'v(\d+)$', parent_name)
                 
-                # Invertuojame normalizavimą
-                y_test = scaler.inverse_transform(y_test)
-                predictions = scaler.inverse_transform(predictions)
+                if version_match:
+                    # Jei turi versiją, padidiname ją vienetu
+                    current_version = int(version_match.group(1))
+                    new_version = current_version + 1
+                    base_name = parent_name[:version_match.start()]
+                    new_name = f"{base_name}v{new_version}"
+                else:
+                    # Jei neturi versijos, pridedame v2 (nes tėvinis yra v1)
+                    new_name = f"{parent_name} v2"
                 
-                # Vėl paverčiame į vektorius
-                y_test = y_test.flatten()
-                predictions = predictions.flatten()
+                version_data['name'] = new_name
             
-            # Apskaičiuojame metrikas
-            mae = float(np.mean(np.abs(y_test - predictions)))
-            rmse = float(np.sqrt(np.mean((y_test - predictions) ** 2)))
-            r2 = float(1 - np.sum((y_test - predictions) ** 2) / np.sum((y_test - np.mean(y_test)) ** 2))
+            # Atnaujiname konfigūraciją pagal versijos duomenis
+            new_config['name'] = version_data.get('name')
+            if 'description' in version_data:
+                new_config['description'] = version_data.get('description')
             
-            # Pridedame modelio metrikas
-            model_metrics.append({
-                'name': model_info['name'],
-                'metrics': {
-                    'mae': mae,
-                    'rmse': rmse,
-                    'r2': r2
-                }
+            # Atnaujiname parametrus, jei jie pateikti
+            if 'parameters' in version_data and version_data['parameters']:
+                # Išsaugome originalius parametrus
+                original_params = new_config.get('parameters', {})
+                
+                # Atnaujiname parametrus, išsaugodami nemodifikuotus
+                for key, value in version_data['parameters'].items():
+                    if key in original_params:
+                        original_params[key] = value
+            
+            # Pridedame versijos informaciją
+            if 'versions' not in new_config:
+                new_config['versions'] = []
+            
+            # Pridedame tėvinį modelį kaip priklausomybę
+            new_config['parent_id'] = parent_id
+            
+            # Pridedame sukūrimo datą
+            new_config['created_at'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Išsaugome naują versiją
+            success = self.save_model_config(new_version_id, new_config)
+            
+            if not success:
+                logging.error(f"Nepavyko išsaugoti naujos versijos konfigūracijos")
+                return None
+            
+            # Pridedame naują versiją į tėvinio modelio versijų sąrašą
+            parent_versions = parent_config.get('versions', [])
+            parent_versions.append({
+                'id': new_version_id,
+                'name': new_config['name'],
+                'created_at': new_config['created_at']
             })
+            parent_config['versions'] = parent_versions;
             
-            # Saugome prognozes
-            results['model_predictions'].append(predictions.tolist())
+            # Atnaujiname tėvinio modelio konfigūraciją
+            self.save_model_config(parent_id, parent_config)
             
-            # Apskaičiuojame klaidas (skirtumas tarp prognozės ir tikros reikšmės)
-            errors = predictions - y_test
-            results['model_errors'].append(errors.tolist())
-        
-        # Surandame geriausias metrikas
-        best_mae_idx = np.argmin([m['metrics']['mae'] for m in model_metrics])
-        best_rmse_idx = np.argmin([m['metrics']['rmse'] for m in model_metrics])
-        best_r2_idx = np.argmax([m['metrics']['r2'] for m in model_metrics])
-        
-        # Pažymime geriausius modelius
-        for i, model_metric in enumerate(model_metrics):
-            model_metric['is_best_mae'] = (i == best_mae_idx)
-            model_metric['is_best_rmse'] = (i == best_rmse_idx)
-            model_metric['is_best_r2'] = (i == best_r2_idx)
+            return new_version_id
             
-            results['models'].append(model_metric)
+        except Exception as e:
+            logging.error(f"Klaida kuriant modelio versiją: {str(e)}")
+            return None
+    
+    def get_model_versions(self, model_id):
+        """
+        Gauna visas modelio versijas
         
-        # Paruošiame detalius prognozių duomenis lentelei
-        for i in range(len(df)):
-            row = {
-                'date': df['date'].iloc[i],
-                'actual': float(df[price_column].iloc[i]),
-                'model_predictions': []
+        Args:
+            model_id (str): Modelio ID
+            
+        Returns:
+            list: Versijų sąrašas
+        """
+        try:
+            # Gauname modelio konfigūraciją
+            model_config = self.load_model_config(model_id)
+            if not model_config:
+                return []
+            
+            # Gauname versijų sąrašą
+            versions = model_config.get('versions', [])
+            
+            # Jei modelis turi tėvinį modelį, gauname ir jo informaciją
+            parent_id = model_config.get('parent_id')
+            
+            if parent_id:
+                # Gauname tėvinio modelio konfigūraciją
+                parent_config = self.load_model_config(parent_id)
+                
+                if parent_config:
+                    # Sukuriame "šeimos medį"
+                    family_tree = []
+                    
+                    # Pirma įtraukiame tėvinį modelį
+                    family_tree.append({
+                        'id': parent_id,
+                        'name': parent_config.get('name', f"Modelis {parent_id[:8]}"),
+                        'created_at': parent_config.get('created_at'),
+                        'is_parent': True
+                    })
+                    
+                    # Tada įtraukiame "brolius ir seseris" (kitas versijas)
+                    for version in parent_config.get('versions', []):
+                        if version['id'] != model_id:  # Neįtraukiame dabartinio modelio
+                            version['is_sibling'] = True
+                            family_tree.append(version)
+                    
+                    return {
+                        'current': {
+                            'id': model_id,
+                            'name': model_config.get('name', f"Modelis {model_id[:8]}"),
+                            'created_at': model_config.get('created_at')
+                        },
+                        'family_tree': family_tree,
+                        'children': versions
+                    }
+            
+            # Jei modelis neturi tėvinio modelio, grąžiname tik jo versijas
+            return {
+                'current': {
+                    'id': model_id,
+                    'name': model_config.get('name', f"Modelis {model_id[:8]}"),
+                    'created_at': model_config.get('created_at')
+                },
+                'family_tree': [],
+                'children': versions
             }
             
-            for j, model_id in enumerate(model_ids):
-                if j < len(results['model_predictions']):
-                    row['model_predictions'].append({
-                        'predicted': float(results['model_predictions'][j][i]),
-                        'error': float(results['model_errors'][j][i])
-                    })
+        except Exception as e:
+            logging.error(f"Klaida gaunant modelio versijas: {str(e)}")
+            return {
+                'current': {
+                    'id': model_id,
+                    'name': f"Modelis {model_id[:8]}",
+                    'created_at': 'Nežinoma'
+                },
+                'family_tree': [],
+                'children': []
+            }
+    
+    def generate_model_name(self, model_type=None, purpose=None):
+        """
+        Sugeneruoja automatinį modelio pavadinimą
+        
+        Args:
+            model_type (str, optional): Modelio tipas (pvz., LSTM, GRU)
+            purpose (str, optional): Modelio paskirtis
             
-            results['predictions'].append(row)
-        
-        return results
-    
-    except Exception as e:
-        logger.error(f"Klaida lyginant modelius: {e}")
-        traceback.print_exc()
-        raise
-
-def _prepare_prediction_data(self, df, model_params):
-    """
-    Paruošia duomenis modelio prognozėms
-    
-    Args:
-        df (DataFrame): Duomenų rinkinys
-        model_params (dict): Modelio parametrai
-    
-    Returns:
-        tuple: (X_test, y_test, scaler) - paruošti duomenys
-    """
-    # Nukopijuojame duomenis, kad nemodifikuotume originalių
-    data = df.copy()
-    
-    # Gauname parametrus
-    seq_length = model_params.get('sequence_length', 60)
-    pred_days = model_params.get('prediction_days', 1)
-    
-    # Pasirenkame tik kainos stulpelį
-    price_data = data[['close']].values
-    
-    # Sukuriame scaler objektą normalizavimui
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    scaled_data = scaler.fit_transform(price_data)
-    
-    # Paruošiame X ir y duomenis
-    X, y = [], []
-    
-    for i in range(seq_length, len(scaled_data) - pred_days + 1):
-        X.append(scaled_data[i-seq_length:i])
-        y.append(scaled_data[i + pred_days - 1])
-    
-    # Konvertuojame į numpy masyvus
-    X, y = np.array(X), np.array(y)
-    
-    return X, y, scaler
-
-def get_model_validation_metrics(self, model_id):
-    """
-    Gauna modelio validavimo metrikas
-    
-    Args:
-        model_id (str): Modelio ID
-    
-    Returns:
-        dict: Modelio validavimo metrikos
-    """
-    try:
-        # Gauname modelio informaciją
-        model_info = self.get_model_info(model_id)
-        
-        if not model_info:
-            return None
-        
-        # Gauname modelio metrikas
-        metrics = model_info.get('metrics', {})
-        
-        # Patikriname, ar turime visas reikalingas metrikas
-        required_metrics = ['loss', 'val_loss', 'mae', 'val_mae']
-        for metric in required_metrics:
-            if metric not in metrics or not metrics[metric]:
-                metrics[metric] = [0.0]  # Numatytoji reikšmė, jei metrika neegzistuoja
-        
-        return metrics
-    
-    except Exception as e:
-        logger.error(f"Klaida gaunant modelio validavimo metrikas: {e}")
-        traceback.print_exc()
-        return None
-    
-def schedule_training(self, params):
-    """
-    Suplanuoja modelio treniravimą
-    
-    Args:
-        params (dict): Modelio parametrai
-    
-    Returns:
-        str: Treniravimo ID arba None, jei įvyko klaida
-    """
-    try:
-        # Sukuriame treniravimo ID
-        training_id = str(uuid.uuid4())
-        
-        # Pradedame treniravimą
-        self.start_training(training_id, params)
-        
-        # Grąžiname treniravimo ID
-        return training_id
-    except Exception as e:
-        logger.error(f"Klaida planuojant treniravimą: {e}")
-        traceback.print_exc()
-        return None
-
-def is_training(self, training_id):
-    """
-    Patikrina, ar vyksta treniravimas
-    
-    Args:
-        training_id (str): Treniravimo ID
-    
-    Returns:
-        bool: True, jei treniravimas vyksta, False kitu atveju
-    """
-    try:
-        # Gauname treniravimo būseną
-        training = self._trainings.get(training_id)
-        
-        # Jei treniravimas nerastas, grąžiname False
-        if not training:
-            return False
-        
-        # Grąžiname, ar treniravimas vyksta
-        return training.get('is_training', False)
-    except Exception as e:
-        logger.error(f"Klaida tikrinant treniravimo būseną: {e}")
-        traceback.print_exc()
-        return False
-
-def train_model(model, X_train, y_train, epochs=100, batch_size=32, validation_split=0.2, 
-                early_stopping=True, verbose=1, model_id=None, parameters=None, 
-                enable_checkpoints=True, checkpoint_frequency=5):
-    """
-    Apmoko modelį su išsaugojimų valdymu
-    
-    Args:
-        model: Modelio objektas
-        X_train: Treniravimo duomenys (įvestis)
-        y_train: Treniravimo duomenys (išvestis)
-        epochs (int): Epochų skaičius
-        batch_size (int): Batch dydis
-        validation_split (float): Validacijos duomenų dalis
-        early_stopping (bool): Ar naudoti ankstyvą sustabdymą
-        verbose (int): Išsamumo lygis treniravimo metu
-        model_id (str): Modelio ID išsaugojimams
-        parameters (dict): Modelio parametrai
-        enable_checkpoints (bool): Ar įgalinti išsaugojimus
-        checkpoint_frequency (int): Kas kiek epochų išsaugoti modelį
-    
-    Returns:
-        dict: Treniravimo rezultatai
-    """
-    # Sukuriame išsaugojimų konfigūraciją
-    checkpoint_config = CheckpointConfig(
-        enable_checkpoints=enable_checkpoints,
-        save_frequency=checkpoint_frequency,
-        max_checkpoints=10,
-        save_best_only=False
-    )
-    
-    # Inicializuojame callbacks sąrašą
-    callbacks = []
-    
-    # Pridedame early stopping, jei reikia
-    if early_stopping:
-        es_callback = tf.keras.callbacks.EarlyStopping(
-            monitor='val_loss',
-            patience=10,
-            restore_best_weights=True
-        )
-        callbacks.append(es_callback)
-    
-    # Modelio mokymo metu saugome tarpinius išsaugojimus
-    if enable_checkpoints and model_id:
-        # Sukuriame Keras callback funkciją, kuri bus iškviečiama po kiekvienos epochos
-        class CheckpointCallback(tf.keras.callbacks.Callback):
-            def on_epoch_end(self, epoch, logs=None):
-                # Epoch yra 0-indeksuojamas, todėl pridedame 1 geresniam žmogaus skaitomumui
-                actual_epoch = epoch + 1  
-                
-                # Tikriname, ar reikia sukurti išsaugojimą šioje epochoje
-                if checkpoint_config.should_save_checkpoint(actual_epoch):
-                    # Gauname dabartines metrikas
-                    metrics = {
-                        'loss': float(logs.get('loss', 0)),
-                        'val_loss': float(logs.get('val_loss', 0)),
-                        'accuracy': float(logs.get('accuracy', 0)),
-                        'val_accuracy': float(logs.get('val_accuracy', 0))
-                    }
-                    
-                    # Išsaugome tarpinį modelį
-                    save_model_checkpoint(
-                        model=model,
-                        model_id=model_id,
-                        epoch=actual_epoch,
-                        metrics=metrics,
-                        parameters=parameters,
-                        config=checkpoint_config
-                    )
-        
-        # Pridedame išsaugojimų callback į mokymo callback sąrašą
-        callbacks.append(CheckpointCallback())
-    
-    # Padalijame duomenis į mokymosi ir validavimo rinkinius, jei validation_split > 0
-    if validation_split > 0:
-        # Apskaičiuojame, kiek duomenų skirti validavimui
-        val_samples = int(len(X_train) * validation_split)
-        X_val = X_train[-val_samples:]
-        y_val = y_train[-val_samples:]
-        X_train = X_train[:-val_samples]
-        y_train = y_train[:-val_samples]
-        
-        # Apmokymo istorija
-        history = model.fit(
-            X_train, y_train,
-            epochs=epochs,
-            batch_size=batch_size,
-            validation_data=(X_val, y_val),
-            callbacks=callbacks,
-            verbose=verbose
-        )
-    else:
-        # Apmokymo istorija be validavimo
-        history = model.fit(
-            X_train, y_train,
-            epochs=epochs,
-            batch_size=batch_size,
-            callbacks=callbacks,
-            verbose=verbose
-        )
-    
-    # Sukuriame rezultatų žodyną
-    results = {
-        'history': history.history,
-        'epochs_completed': len(history.history['loss']),
-        'model_id': model_id,
-        'parameters': parameters
-    }
-    
-    return results
-
-def save_model_checkpoint(model, model_id, epoch, metrics, parameters=None, config=None):
-    """
-    Išsaugo modelio tarpinį tašką treniravimo metu
-    
-    Args:
-        model: Modelio objektas
-        model_id (str): Modelio ID
-        epoch (int): Dabartinė epocha
-        metrics (dict): Metrikos reikšmės
-        parameters (dict): Modelio parametrai
-        config (CheckpointConfig): Išsaugojimų konfigūracija
-    
-    Returns:
-        str: Išsaugojimo kelias arba None, jei įvyko klaida
-    """
-    try:
-        # Jei išsaugojimai išjungti, grąžiname None
-        if not config or not config.enable_checkpoints:
-            return None
-        
-        # Sukuriame išsaugojimų katalogą, jei jo nėra
-        checkpoints_dir = os.path.join('data', 'checkpoints')
-        os.makedirs(checkpoints_dir, exist_ok=True)
-        
-        # Sukuriame katalogą šiam modeliui
-        model_dir = os.path.join(checkpoints_dir, model_id)
-        os.makedirs(model_dir, exist_ok=True)
-        
-        # Sukuriame išsaugojimo failo pavadinimą
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        checkpoint_filename = f"checkpoint_epoch_{epoch}_{timestamp}.h5"
-        checkpoint_path = os.path.join(model_dir, checkpoint_filename)
-        
-        # Išsaugome modelį
-        model.save(checkpoint_path)
-        
-        # Išsaugome metrikos informaciją
-        metrics_filename = f"checkpoint_epoch_{epoch}_{timestamp}_metrics.json"
-        metrics_path = os.path.join(model_dir, metrics_filename)
-        
-        metrics_data = {
-            'epoch': epoch,
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'metrics': metrics,
-            'parameters': parameters
+        Returns:
+            str: Sugeneruotas pavadinimas
+        """
+        # Modelių tipų aprašymų žodynas lietuvių kalba
+        type_descriptions = {
+            'lstm': 'LSTM',
+            'gru': 'GRU',
+            'cnn': 'CNN',
+            'rnn': 'RNN'
         }
         
-        with open(metrics_path, 'w') as f:
-            json.dump(metrics_data, f, indent=4)
+        # Paskirčių aprašymai
+        purpose_descriptions = {
+            'prediction': 'Prognozei',
+            'analysis': 'Analizei',
+            'classification': 'Klasifikavimui'
+        }
         
-        # Atnaujiname išsaugojimų sąrašą, kad pašalintume senus išsaugojimus, jei viršija maksimumą
-        cleanup_old_checkpoints(model_dir, config.max_checkpoints)
+        # Generuojame pagrindinę dalį
+        parts = []
         
-        logger.info(f"Modelio tarpinis taškas išsaugotas: {checkpoint_path}")
+        # Pridedame modelio tipą
+        if model_type and model_type.lower() in type_descriptions:
+            parts.append(type_descriptions[model_type.lower()])
+        else:
+            parts.append("Modelis")
         
-        return checkpoint_path
+        # Pridedame paskirtį
+        if purpose and purpose.lower() in purpose_descriptions:
+            parts.append(purpose_descriptions[purpose.lower()])
+        
+        # Pridedame datą
+        current_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        parts.append(current_date)
+        
+        # Sugeneruojame unikalų ID
+        short_id = str(uuid.uuid4())[:6]
+        parts.append(f"ID-{short_id}")
+        
+        # Sujungiame dalis
+        return " - ".join(parts)
     
-    except Exception as e:
-        logger.error(f"Klaida išsaugant modelio tarpinį tašką: {e}")
-        traceback.print_exc()
-        return None
+    def get_all_models(self):
+        """
+        Gauna visų treniruotų modelių sąrašą, kuriuos galima naudoti vertinimui
+        
+        Returns:
+            list: Modelių sąrašas
+        """
+        # Inicializuojame tuščią modelių sąrašą
+        models = []
+        
+        try:
+            # Pereiname per visus konfigūracijos failus
+            for filename in os.listdir(self.configs_dir):
+                if filename.endswith('.json'):
+                    # Pašaliname '.json' galūnę, kad gautume treniravimo ID
+                    training_id = filename[:-5]
+                    
+                    # Gauname modelio konfigūraciją
+                    model_config = self.get_model_config(training_id)
+                    
+                    if model_config:
+                        # Tikriname, ar yra treniravimo rezultatai (tik baigti modeliai)
+                        has_results = os.path.exists(os.path.join(self.results_dir, f"{training_id}.json"))
+                        
+                        # Įtraukiame tik modelius su rezultatais
+                        if has_results:
+                            # Patikriname, ar egzistuoja modelio failas
+                            model_path = self.get_model_file_path(training_id)
+                            has_model_file = model_path is not None and os.path.exists(model_path)
+                            
+                            # Pridedame modelį į sąrašą
+                            models.append({
+                                'training_id': training_id,
+                                'name': model_config.get('name', 'Nenurodyta'),
+                                'type': model_config.get('type', 'Nenurodyta').upper(),
+                                'created_at': model_config.get('created_at', 'Nenurodyta'),
+                                'has_model_file': has_model_file,
+                                'accuracy': self._get_model_accuracy(training_id)
+                            })
+        
+            # Rūšiuojame pagal sukūrimo datą (naujausi viršuje)
+            models.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        except Exception as e:
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida gaunant modelių sąrašą: {str(e)}")
+        
+        # Grąžiname modelių sąrašą (tuščią jei buvo klaida)
+        return models
 
-def cleanup_old_checkpoints(model_dir, max_checkpoints):
-    """
-    Išvalo senus išsaugojimus, jei viršijamas maksimalus skaičius
+    def _get_model_accuracy(self, training_id):
+        """
+        Gauna modelio tikslumą iš treniravimo rezultatų
+        
+        Args:
+            training_id (str): Treniravimo sesijos ID
+            
+        Returns:
+            float: Modelio tikslumas (0-1) arba 0, jei nerasta
+        """
+        try:
+            # Gauname modelio metrikas
+            metrics = self.get_model_metrics(training_id)
+            
+            if not metrics:
+                return 0
+            
+            # Jei metrikos yra žodyne su raktu 'accuracy', grąžiname paskutinę reikšmę
+            if isinstance(metrics, dict) and 'accuracy' in metrics:
+                if isinstance(metrics['accuracy'], list):
+                    return metrics['accuracy'][-1]
+                return metrics['accuracy']
+            
+            # Jei metrikos yra sąraše, grąžiname paskutinio elemento 'accuracy'
+            if isinstance(metrics, list) and metrics:
+                last_metric = metrics[-1]
+                if isinstance(last_metric, dict) and 'accuracy' in last_metric:
+                    return last_metric['accuracy']
+                elif isinstance(last_metric, dict) and 'val_accuracy' in last_metric:
+                    return last_metric['val_accuracy']
+            
+            # Jei nėra metrikų, grąžiname 0
+            return 0
+        except Exception as e:
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida gaunant modelio tikslumą: {str(e)}")
+            return 0
+        
+    # ===== Modelio vertinimas =====
     
-    Args:
-        model_dir (str): Modelio direktorija
-        max_checkpoints (int): Maksimalus išsaugojimų skaičius
-    """
-    try:
-        # Gauname visus .h5 failus
-        h5_files = [f for f in os.listdir(model_dir) if f.endswith('.h5') and 'checkpoint' in f]
+    def evaluate_model_with_dataset(self, training_id, dataset_id):
+        """
+        Įvertina modelį su nurodytu duomenų rinkiniu
         
-        # Jei jų mažiau nei maksimumas, nieko nedarome
-        if len(h5_files) <= max_checkpoints:
-            return
-        
-        # Rūšiuojame pagal modifikavimo laiką (seniausi pirmi)
-        h5_files.sort(key=lambda x: os.path.getmtime(os.path.join(model_dir, x)))
-        
-        # Ištriname seniausius išsaugojimus
-        files_to_remove = h5_files[:-max_checkpoints]
-        
-        for filename in files_to_remove:
-            # Ištrinti .h5 failą
-            os.remove(os.path.join(model_dir, filename))
+        Args:
+            training_id (str): Modelio treniravimo ID
+            dataset_id (str): Duomenų rinkinio ID
             
-            # Taip pat ištrinti susijusį metrics.json failą
-            metrics_filename = filename.replace('.h5', '_metrics.json')
-            metrics_path = os.path.join(model_dir, metrics_filename)
+        Returns:
+            dict: Vertinimo rezultatai arba None, jei įvyko klaida
+        """
+        try:
+            # Tikriname, ar modelis egzistuoja
+            model_config = self.get_model_config(training_id)
+            if not model_config:
+                logging.error(f"Modelis su ID {training_id} nerastas")
+                return None
             
-            if os.path.exists(metrics_path):
-                os.remove(metrics_path)
-                
-        logger.info(f"Ištrinta {len(files_to_remove)} senų išsaugojimų")
+            # Čia būtų logika modelio vertinimui su duomenų rinkiniu
+            # Simuliuojame vertinimo rezultatus (demonstracijai)
+            import random
+            import time
+            from datetime import datetime
+            
+            # Apskaičiuojame atsitiktinius rezultatus demonstracijai
+            accuracy = round(0.7 + random.random() * 0.25, 4)
+            precision = round(0.65 + random.random() * 0.3, 4)
+            recall = round(0.6 + random.random() * 0.35, 4)
+            f1_score = round(2 * precision * recall / (precision + recall), 4)
+            
+            # Simuliuojame vertinimo procesą - trumpas laukimas
+            time.sleep(1)
+            
+            # Grąžiname simuliuotus rezultatus
+            return {
+                'accuracy': accuracy,
+                'precision': precision,
+                'recall': recall,
+                'f1_score': f1_score,
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'dataset_id': dataset_id,
+                'training_id': training_id
+            }
+        except Exception as e:
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida vertinant modelį: {str(e)}")
+            return None
+
+    def save_evaluation_results(self, training_id, dataset_id, results):
+        """
+        Išsaugo modelio vertinimo rezultatus
         
-    except Exception as e:
-        logger.error(f"Klaida tvarkant senus išsaugojimus: {e}")
+        Args:
+            training_id (str): Modelio treniravimo ID
+            dataset_id (str): Duomenų rinkinio ID
+            results (dict): Vertinimo rezultatai
+            
+        Returns:
+            bool: True jei sėkmingai išsaugota, False jei klaida
+        """
+        try:
+            # Sukuriame vertinimo rezultatų aplanką, jei jo nėra
+            eval_dir = os.path.join(self.data_dir, 'evaluations')
+            os.makedirs(eval_dir, exist_ok=True)
+            
+            # Kelias iki vertinimo rezultatų failo
+            eval_file = os.path.join(eval_dir, f"{training_id}_{dataset_id}.json")
+            
+            # Išsaugome rezultatus
+            with open(eval_file, 'w', encoding='utf-8') as f:
+                json.dump(results, f, indent=4, ensure_ascii=False)
+            
+            # Sėkmingai išsaugota
+            return True
+        except Exception as e:
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida išsaugant vertinimo rezultatus: {str(e)}")
+            return False
+
+    def get_evaluation_results(self, training_id, dataset_id):
+        """
+        Gauna modelio vertinimo rezultatus
+        
+        Args:
+            training_id (str): Modelio treniravimo ID
+            dataset_id (str): Duomenų rinkinio ID
+            
+        Returns:
+            dict: Vertinimo rezultatai arba None, jei nerasta
+        """
+        try:
+            # Kelias iki vertinimo rezultatų failo
+            eval_dir = os.path.join(self.data_dir, 'evaluations')
+            eval_file = os.path.join(eval_dir, f"{training_id}_{dataset_id}.json")
+            
+            # Tikriname, ar failas egzistuoja
+            if not os.path.exists(eval_file):
+                return None
+            
+            # Grąžiname rezultatus
+            with open(eval_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida gaunant vertinimo rezultatus: {str(e)}")
+            return None
+
+    def get_evaluation_history(self, training_id):
+        """
+        Gauna visus modelio vertinimo rezultatus
+        
+        Args:
+            training_id (str): Modelio treniravimo ID
+            
+        Returns:
+            list: Vertinimo rezultatų sąrašas
+        """
+        try:
+            # Kelias iki vertinimo rezultatų aplanko
+            eval_dir = os.path.join(self.data_dir, 'evaluations')
+            
+            # Tikriname, ar aplankas egzistuoja
+            if not os.path.exists(eval_dir):
+                return []
+            
+            # Gauname visus vertinimo rezultatų failus šiam modeliui
+            eval_files = [f for f in os.listdir(eval_dir) if f.startswith(f"{training_id}_") and f.endswith(".json")]
+            
+            # Grąžiname rezultatų sąrašą
+            evaluations = []
+            for file in eval_files:
+                with open(os.path.join(eval_dir, file), 'r', encoding='utf-8') as f:
+                    results = json.load(f)
+                    evaluations.append(results)
+            
+            # Rūšiuojame pagal datą (naujausi viršuje)
+            evaluations.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+            
+            # Grąžiname vertinimų sąrašą
+            return evaluations
+        except Exception as e:
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida gaunant vertinimo istoriją: {str(e)}")
+            return []

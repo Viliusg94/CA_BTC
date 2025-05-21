@@ -1,483 +1,810 @@
 {% extends "base.html" %}
 
-{% block title %}Treniruoti modelį - BTC Prekybos Sistema{% endblock %}
+{% block title %}Modelio treniravimas{% endblock %}
 
 {% block styles %}
 <style>
-    .form-section {
-        margin-bottom: 30px;
+    /* Progreso juostos stiliai */
+    .progress {
+        height: 25px;
+        margin-bottom: 15px;
     }
     
-    .form-section-title {
-        border-bottom: 1px solid #e9ecef;
-        padding-bottom: 10px;
+    .status-badge {
+        font-size: 1rem;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 15px;
+    }
+    
+    .time-info {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .log-container {
+        max-height: 300px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        font-family: monospace;
+        margin-top: 20px;
+    }
+    
+    .log-entry {
+        margin-bottom: 5px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+    }
+    
+    .log-entry:last-child {
+        border-bottom: none;
+    }
+    
+    .log-time {
+        color: #666;
+        margin-right: 10px;
+    }
+    
+    .log-info {
+        color: #0d6efd;
+    }
+    
+    .log-success {
+        color: #198754;
+    }
+    
+    .log-warning {
+        color: #ffc107;
+    }
+    
+    .log-error {
+        color: #dc3545;
+    }
+    
+    .control-buttons {
+        display: flex;
+        gap: 10px;
+    }
+    
+    /* Grafikų konteinerio stiliai */
+    .metrics-container {
         margin-bottom: 20px;
     }
     
-    .parameter-name {
-        font-weight: 500;
+    .chart-container {
+        position: relative;
+        height: 250px;
+        margin-bottom: 15px;
     }
     
-    .parameter-description {
+    /* Metrikos kortelės stiliai */
+    .metric-card {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .metric-title {
         font-size: 0.9rem;
         color: #6c757d;
-        margin-bottom: 0.5rem;
-    }
-    
-    .parameter-tooltip {
-        cursor: pointer;
-    }
-    
-    .range-value {
-        font-weight: 600;
-    }
-    
-    .preset-card {
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .preset-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    }
-    
-    .preset-card.selected {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">Treniruoti naują modelį</h1>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Greiti šablonai</h5>
-                <p class="card-text text-muted">Pasirinkite vieną iš šių šablonų, kad greitai pradėtumėte, arba nustatykite parametrus žemiau.</p>
-                <div class="row mt-3">
-                    <div class="col-md-4 mb-3">
-                        <div class="card preset-card" data-preset="quick">
-                            <div class="card-body">
-                                <h5 class="card-title">Greitas testas</h5>
-                                <p class="card-text">Paprastas LSTM modelis su mažai epochų greitam testavimui.</p>
-                                <ul class="list-unstyled">
-                                    <li><small>Modelis: LSTM</small></li>
-                                    <li><small>Sluoksniai: 1</small></li>
-                                    <li><small>Epochos: 10</small></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card preset-card" data-preset="balanced">
-                            <div class="card-body">
-                                <h5 class="card-title">Subalansuotas</h5>
-                                <p class="card-text">Vidutinio dydžio modelis su geru balansu tarp greičio ir tikslumo.</p>
-                                <ul class="list-unstyled">
-                                    <li><small>Modelis: LSTM</small></li>
-                                    <li><small>Sluoksniai: 2</small></li>
-                                    <li><small>Epochos: 50</small></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card preset-card" data-preset="advanced">
-                            <div class="card-body">
-                                <h5 class="card-title">Išplėstinis</h5>
-                                <p class="card-text">Sudėtingesnis modelis siekiant maksimalaus tikslumo, bet ilgiau treniruojamas.</p>
-                                <ul class="list-unstyled">
-                                    <li><small>Modelis: GRU</small></li>
-                                    <li><small>Sluoksniai: 3</small></li>
-                                    <li><small>Epochos: 100</small></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<form id="trainingForm">
+<div class="container mt-4">
     <div class="row">
-        <!-- Kairė pusė: Modelio architektūra ir treniravimo parametrai -->
-        <div class="col-lg-6">
-            <!-- Modelio architektūros sekcija -->
+        <div class="col-12">
+            <h1 class="mb-3">Modelio treniravimas</h1>
+            
+            <!-- Modelio informacija -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Modelio architektūra</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ model_config.name }}</h5>
+                    <span class="badge bg-primary">{{ model_config.type|upper }}</span>
                 </div>
                 <div class="card-body">
-                    <div class="form-section">
-                        <div class="mb-3">
-                            <label for="modelType" class="form-label parameter-name">Modelio tipas</label>
-                            <p class="parameter-description">Pasirinkite modelio tipą prognozavimui.</p>
-                            <select class="form-select" id="modelType" name="model_type">
-                                <option value="LSTM" selected>LSTM (Long Short-Term Memory)</option>
-                                <option value="GRU">GRU (Gated Recurrent Unit)</option>
-                                <option value="BiLSTM">Bi-directional LSTM</option>
-                                <option value="CNN-LSTM">CNN-LSTM Hybrid</option>
-                            </select>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Epochos:</strong> {{ model_config.parameters.epochs }}</p>
+                            <p><strong>Batch dydis:</strong> {{ model_config.parameters.batch_size }}</p>
+                            <p><strong>Mokymosi greitis:</strong> {{ model_config.parameters.learning_rate }}</p>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="layers" class="form-label parameter-name">Sluoksnių skaičius</label>
-                            <p class="parameter-description">Pasirinkite neuroninio tinklo sluoksnių skaičių.</p>
-                            <input type="range" class="form-range" id="layers" name="layers" min="1" max="5" step="1" value="2">
-                            <div class="text-end">
-                                <span class="range-value" id="layersValue">2</span> sluoksniai
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="units" class="form-label parameter-name">Neuronai sluoksnyje</label>
-                            <p class="parameter-description">Neuronų skaičius kiekviename sluoksnyje.</p>
-                            <input type="range" class="form-range" id="units" name="units" min="16" max="256" step="16" value="64">
-                            <div class="text-end">
-                                <span class="range-value" id="unitsValue">64</span> neuronai
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="dropout" class="form-label parameter-name">Dropout</label>
-                            <p class="parameter-description">Dropout reikšmė, padedanti išvengti perrinkimo.</p>
-                            <input type="range" class="form-range" id="dropout" name="dropout" min="0" max="0.5" step="0.05" value="0.2">
-                            <div class="text-end">
-                                <span class="range-value" id="dropoutValue">0.2</span> (0-0.5)
-                            </div>
+                        <div class="col-md-6">
+                            <p><strong>Sluoksniai:</strong> {{ model_config.parameters.layers }}</p>
+                            <p><strong>Neuronai:</strong> {{ model_config.parameters.neurons }}</p>
+                            <p><strong>Sukurtas:</strong> {{ model_config.parameters.created_at }}</p>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Treniravimo parametrų sekcija -->
+            <!-- Treniravimo būsena -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Treniravimo parametrai</h5>
+                    <h5 class="mb-0">Treniravimo būsena</h5>
                 </div>
                 <div class="card-body">
-                    <div class="form-section">
-                        <div class="mb-3">
-                            <label for="epochs" class="form-label parameter-name">Epochos</label>
-                            <p class="parameter-description">Kiek kartų modelis apmokomas visais duomenimis.</p>
-                            <input type="range" class="form-range" id="epochs" name="epochs" min="10" max="200" step="10" value="50">
-                            <div class="text-end">
-                                <span class="range-value" id="epochsValue">50</span> epochos
-                            </div>
+                    <!-- Būsenos indikatorius -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <span id="status-badge" class="badge status-badge bg-secondary">Nepradėta</span>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="batchSize" class="form-label parameter-name">Batch dydis</label>
-                            <p class="parameter-description">Duomenų kiekis apdorojamas vienu metu.</p>
-                            <select class="form-select" id="batchSize" name="batch_size">
-                                <option value="16">16</option>
-                                <option value="32" selected>32</option>
-                                <option value="64">64</option>
-                                <option value="128">128</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="learningRate" class="form-label parameter-name">Mokymosi greitis</label>
-                            <p class="parameter-description">Nustato, kaip greitai modelis atnaujina svorius.</p>
-                            <select class="form-select" id="learningRate" name="learning_rate">
-                                <option value="0.0001">0.0001 (labai lėtas)</option>
-                                <option value="0.001" selected>0.001 (normalus)</option>
-                                <option value="0.01">0.01 (greitas)</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="earlyStop" name="early_stopping" checked>
-                                <label class="form-check-label parameter-name" for="earlyStop">Ankstyvas sustabdymas</label>
-                            </div>
-                            <p class="parameter-description">Sustabdo mokymą, kai metrikos nepagerėja.</p>
+                        <div class="control-buttons">
+                            <!-- Treniravimo kontrolės mygtukai -->
+                            <button id="start-training-btn" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>Pradėti treniravimą
+                            </button>
+                            <button id="resume-training-btn" class="btn btn-success" disabled>
+                                <i class="fas fa-redo me-2"></i>Tęsti treniravimą
+                            </button>
+                            <button id="stop-training-btn" class="btn btn-danger" disabled>
+                                <i class="fas fa-stop me-2"></i>Nutraukti
+                            </button>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Dešinė pusė: Duomenų parametrai ir prognozės -->
-        <div class="col-lg-6">
-            <!-- Duomenų parametrų sekcija -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Duomenų parametrai</h5>
-                </div>
-                <div class="card-body">
-                    <div class="form-section">
-                        <div class="mb-3">
-                            <label for="dataSource" class="form-label parameter-name">Duomenų šaltinis</label>
-                            <p class="parameter-description">Pasirinkite duomenų šaltinį modelio treniravimui.</p>
-                            <select class="form-select" id="dataSource" name="data_source">
-                                <option value="binance" selected>Binance API</option>
-                                <option value="coinbase">Coinbase Pro API</option>
-                                <option value="local">Vietiniai duomenys</option>
-                            </select>
+                    
+                    <!-- Progreso juosta -->
+                    <div class="progress">
+                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            0%
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="sequenceLength" class="form-label parameter-name">Sekos ilgis</label>
-                            <p class="parameter-description">Kiek istorinių duomenų taškų naudoti prognozei.</p>
-                            <input type="range" class="form-range" id="sequenceLength" name="sequence_length" min="10" max="100" step="5" value="60">
-                            <div class="text-end">
-                                <span class="range-value" id="sequenceLengthValue">60</span> laiko taškai
-                            </div>
+                    </div>
+                    
+                    <!-- Informacija apie likusį laiką -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="time-info">
+                            <span id="elapsed-time">Laikas: 00:00:00</span>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="predictionDays" class="form-label parameter-name">Prognozuojamas intervalas</label>
-                            <p class="parameter-description">Kiek laiko taškų į priekį prognozuoti.</p>
-                            <select class="form-select" id="predictionDays" name="prediction_days">
-                                <option value="1" selected>1 diena</option>
-                                <option value="3">3 dienos</option>
-                                <option value="7">7 dienos</option>
-                                <option value="14">14 dienų</option>
-                            </select>
+                        <div class="time-info">
+                            <span id="progress-text">0% (0/{{ model_config.parameters.epochs }} epochų)</span>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="testSize" class="form-label parameter-name">Testavimo duomenų dalis</label>
-                            <p class="parameter-description">Duomenų dalis, skirta modelio testavimui.</p>
-                            <input type="range" class="form-range" id="testSize" name="test_size" min="0.1" max="0.4" step="0.05" value="0.2">
-                            <div class="text-end">
-                                <span class="range-value" id="testSizeValue">0.2</span> (10-40%)
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="normalization" name="normalization" checked>
-                                <label class="form-check-label parameter-name" for="normalization">Duomenų normalizacija</label>
-                            </div>
-                            <p class="parameter-description">Normalizuoja duomenis prieš treniravimą.</p>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="augmentation" name="augmentation">
-                                <label class="form-check-label parameter-name" for="augmentation">Duomenų augmentacija</label>
-                            </div>
-                            <p class="parameter-description">Prideda triukšmą prie duomenų geresniam apibendrinimui.</p>
+                        <div class="time-info">
+                            <span id="remaining-time">Likęs laikas: --:--:--</span>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Papildomų funkcijų sekcija -->
+            <!-- Modelio metrikos -->
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Papildomos funkcijos</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Treniravimo metrikos</h5>
+                    <div>
+                        <button id="toggle-charts-btn" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-chart-line me-1"></i>Grafikai
+                        </button>
+                        <button id="toggle-metrics-btn" class="btn btn-sm btn-outline-secondary ms-2">
+                            <i class="fas fa-table me-1"></i>Lentelė
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="form-section">
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="saveCheckpoints" name="save_checkpoints" checked>
-                                <label class="form-check-label parameter-name" for="saveCheckpoints">Išsaugoti tarpinius taškus</label>
+                    <!-- Metrikos kortelės -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value" id="current-loss">-</div>
+                                <div class="metric-title">Klaidos funkcija (Loss)</div>
                             </div>
-                            <p class="parameter-description">Išsaugo modelio būseną periodiškai.</p>
                         </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="useTransferLearning" name="use_transfer_learning">
-                                <label class="form-check-label parameter-name" for="useTransferLearning">Naudoti transfer learning</label>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value" id="current-val-loss">-</div>
+                                <div class="metric-title">Validacijos klaida (Val Loss)</div>
                             </div>
-                            <p class="parameter-description">Naudoja anksčiau apmokytą modelį kaip pradinį tašką.</p>
                         </div>
-                        
-                        <div class="mb-3" id="transferModelContainer" style="display: none;">
-                            <label for="transferModel" class="form-label parameter-name">Pradinis modelis</label>
-                            <select class="form-select" id="transferModel" name="transfer_model">
-                                <option value="">Pasirinkite modelį...</option>
-                                <!-- Šią dalį užpildys JavaScript -->
-                            </select>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value" id="current-accuracy">-</div>
+                                <div class="metric-title">Tikslumas (Accuracy)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-value" id="current-val-accuracy">-</div>
+                                <div class="metric-title">Validacijos tikslumas (Val Acc)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Grafikai -->
+                    <div id="charts-container" class="metrics-container">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <canvas id="loss-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <canvas id="accuracy-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Metrikų lentelė -->
+                    <div id="metrics-table-container" class="metrics-container" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Epocha</th>
+                                        <th>Loss</th>
+                                        <th>Val Loss</th>
+                                        <th>Accuracy</th>
+                                        <th>Val Accuracy</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="metrics-table-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center">Dar nėra metrikų duomenų</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- Treniravimo žurnalas -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Treniravimo žurnalas</h5>
+                    <div>
+                        <button id="clear-log-btn" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-eraser me-1"></i>Išvalyti
+                        </button>
+                        <button id="download-log-btn" class="btn btn-sm btn-outline-primary ms-2">
+                            <i class="fas fa-download me-1"></i>Atsisiųsti
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="log-container" class="log-container">
+                        <div class="log-entry">
+                            <span class="log-time">[{{ current_time }}]</span>
+                            <span class="log-info">Treniravimo sesija paruošta. Spauskite "Pradėti treniravimą" mygtuką.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Grįžimo mygtukas -->
+            <div class="mt-4">
+                <a href="{{ url_for('model_training.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Grįžti į modelių sąrašą
+                </a>
+            </div>
         </div>
     </div>
-    
-    <div class="row mb-5">
-        <div class="col-12 text-center">
-            <button type="submit" class="btn btn-primary btn-lg px-5">
-                <i class="fas fa-play-circle me-2"></i>Pradėti treniravimą
-            </button>
-        </div>
-    </div>
-</form>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<!-- Socket.IO biblioteka -->
+<script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+
+<!-- Chart.js biblioteka -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-    // Modelių presets
-    const modelPresets = {
-        'quick': {
-            model_type: 'LSTM',
-            layers: 1,
-            units: 32,
-            dropout: 0.1,
-            epochs: 10,
-            batch_size: '32',
-            learning_rate: '0.001',
-            early_stopping: true,
-            sequence_length: 30,
-            prediction_days: '1',
-            test_size: 0.2,
-            normalization: true,
-            augmentation: false
-        },
-        'balanced': {
-            model_type: 'LSTM',
-            layers: 2,
-            units: 64,
-            dropout: 0.2,
-            epochs: 50,
-            batch_size: '32',
-            learning_rate: '0.001',
-            early_stopping: true,
-            sequence_length: 60,
-            prediction_days: '1',
-            test_size: 0.2,
-            normalization: true,
-            augmentation: false
-        },
-        'advanced': {
-            model_type: 'GRU',
-            layers: 3,
-            units: 128,
-            dropout: 0.3,
-            epochs: 100,
-            batch_size: '64',
-            learning_rate: '0.0001',
-            early_stopping: true,
-            sequence_length: 90,
-            prediction_days: '1',
-            test_size: 0.2,
-            normalization: true,
-            augmentation: true
-        }
+    // Treniravimo sesijos ID
+    const trainingId = "{{ training_id }}";
+    
+    // Pagrindiniai elementai
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const statusBadge = document.getElementById('status-badge');
+    const elapsedTime = document.getElementById('elapsed-time');
+    const remainingTime = document.getElementById('remaining-time');
+    const logContainer = document.getElementById('log-container');
+    const startTrainingBtn = document.getElementById('start-training-btn');
+    const resumeTrainingBtn = document.getElementById('resume-training-btn');
+    const stopTrainingBtn = document.getElementById('stop-training-btn');
+    const clearLogBtn = document.getElementById('clear-log-btn');
+    const downloadLogBtn = document.getElementById('download-log-btn');
+    
+    // Metrikų duomenų kintamieji
+    let trainingLoss = [];
+    let validationLoss = [];
+    let trainingAccuracy = [];
+    let validationAccuracy = [];
+    let epochs = [];
+    
+    // Grafikų objektai
+    let lossChart = null;
+    let accuracyChart = null;
+    
+    // Būsenos tekstai ir spalvos
+    const statusConfig = {
+        'not_started': { text: 'Nepradėta', color: 'secondary' },
+        'preparing': { text: 'Ruošiama', color: 'info' },
+        'in_progress': { text: 'Vykdoma', color: 'primary' },
+        'completed': { text: 'Baigta', color: 'success' },
+        'failed': { text: 'Nepavyko', color: 'danger' },
+        'stopped': { text: 'Nutraukta', color: 'warning' }
     };
     
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializuojame slider'ių reikšmes
-        updateSliderValue('layers');
-        updateSliderValue('units');
-        updateSliderValue('dropout');
-        updateSliderValue('epochs');
-        updateSliderValue('sequenceLength');
-        updateSliderValue('testSize');
+    // Laiko formatavimo pagalbinė funkcija
+    function formatTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
         
-        // Pridedame event listener'ius slider'iams
-        document.getElementById('layers').addEventListener('input', function() {
-            updateSliderValue('layers');
-        });
+        return [
+            hours.toString().padStart(2, '0'),
+            minutes.toString().padStart(2, '0'),
+            secs.toString().padStart(2, '0')
+        ].join(':');
+    }
+    
+    // Laiko skaičiavimo kintamieji
+    let startTime = null;
+    let timerInterval = null;
+    
+    // Funkcija, atnaujinanti praėjusį laiką
+    function updateElapsedTime() {
+        if (!startTime) return;
         
-        document.getElementById('units').addEventListener('input', function() {
-            updateSliderValue('units');
-        });
+        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        elapsedTime.textContent = `Laikas: ${formatTime(elapsedSeconds)}`;
+    }
+    
+    // Funkcija, atnaujinanti likusį laiką
+    function updateRemainingTime(currentEpoch, totalEpochs) {
+        if (!startTime || currentEpoch === 0) {
+            remainingTime.textContent = 'Likęs laikas: --:--:--';
+            return;
+        }
         
-        document.getElementById('dropout').addEventListener('input', function() {
-            updateSliderValue('dropout');
-        });
+        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const secondsPerEpoch = elapsedSeconds / currentEpoch;
+        const remainingEpochs = totalEpochs - currentEpoch;
+        const remainingSeconds = Math.floor(secondsPerEpoch * remainingEpochs);
         
-        document.getElementById('epochs').addEventListener('input', function() {
-            updateSliderValue('epochs');
-        });
+        remainingTime.textContent = `Likęs laikas: ${formatTime(remainingSeconds)}`;
+    }
+    
+    // Funkcija, pridedanti įrašą į žurnalą
+    function addLogEntry(message, type = 'info') {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString();
         
-        document.getElementById('sequenceLength').addEventListener('input', function() {
-            updateSliderValue('sequenceLength');
-        });
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
         
-        document.getElementById('testSize').addEventListener('input', function() {
-            updateSliderValue('testSize');
-        });
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'log-time';
+        timeSpan.textContent = `[${timeStr}]`;
         
-        // Transfer learning jungiklis
-        document.getElementById('useTransferLearning').addEventListener('change', function() {
-            const transferModelContainer = document.getElementById('transferModelContainer');
-            transferModelContainer.style.display = this.checked ? 'block' : 'none';
+        const messageSpan = document.createElement('span');
+        messageSpan.className = `log-${type}`;
+        messageSpan.textContent = message;
+        
+        logEntry.appendChild(timeSpan);
+        logEntry.appendChild(document.createTextNode(' '));
+        logEntry.appendChild(messageSpan);
+        
+        logContainer.appendChild(logEntry);
+        
+        // Automatinis slinkimas į apačią
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    
+    // Funkcija, atnaujinanti būsenos indikatorių
+    function updateStatus(status) {
+        const config = statusConfig[status] || statusConfig.not_started;
+        
+        statusBadge.textContent = config.text;
+        statusBadge.className = `badge status-badge bg-${config.color}`;
+        
+        // Atnaujinama mygtukų būsena
+        if (status === 'in_progress') {
+            startTrainingBtn.disabled = true;
+            resumeTrainingBtn.disabled = true;
+            stopTrainingBtn.disabled = false;
+        } else if (status === 'completed' || status === 'failed') {
+            startTrainingBtn.disabled = true;
+            resumeTrainingBtn.disabled = true;
+            stopTrainingBtn.disabled = true;
+        } else if (status === 'stopped') {
+            startTrainingBtn.disabled = true;
+            resumeTrainingBtn.disabled = false;
+            stopTrainingBtn.disabled = true;
+        } else {
+            startTrainingBtn.disabled = false;
+            resumeTrainingBtn.disabled = true;
+            stopTrainingBtn.disabled = true;
+        }
+        
+        // Įrašas į žurnalą
+        addLogEntry(`Būsena pasikeitė į: ${config.text}`, status === 'failed' ? 'error' : status === 'completed' ? 'success' : 'info');
+    }
+    
+    // Funkcija, atnaujinanti progreso juostą
+    function updateProgress(progress, currentEpoch, totalEpochs) {
+        // Atnaujinama progreso juosta
+        progressBar.style.width = `${progress}%`;
+        progressBar.setAttribute('aria-valuenow', progress);
+        progressBar.textContent = `${progress}%`;
+        
+        // Atnaujinamas progreso tekstas
+        progressText.textContent = `${progress}% (${currentEpoch}/${totalEpochs} epochų)`;
+        
+        // Atnaujinamas likęs laikas
+        updateRemainingTime(currentEpoch, totalEpochs);
+    }
+    
+    // Funkcija žurnalo atsiuntimui
+    function downloadLog() {
+        // Surenkame visus žurnalo įrašus
+        const logEntries = logContainer.querySelectorAll('.log-entry');
+        let logText = '=== Treniravimo žurnalas ===\n';
+        logText += `Treniravimo ID: ${trainingId}\n`;
+        logText += `Data: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n\n`;
+        
+        logEntries.forEach((entry) => {
+            const timeEl = entry.querySelector('.log-time');
+            const messageEl = entry.querySelector('[class^="log-"]');
             
-            // Užkrauname modelius, jei transfer learning įjungtas
-            if (this.checked) {
-                fetchModels();
+            if (timeEl && messageEl) {
+                logText += `${timeEl.textContent} ${messageEl.textContent}\n`;
             }
         });
         
-        // Preset kortelių event listener'iai
-        const presetCards = document.querySelectorAll('.preset-card');
-        presetCards.forEach(card => {
-            card.addEventListener('click', function() {
-                // Pašaliname ankstesnę selekciją
-                presetCards.forEach(c => c.classList.remove('selected'));
-                
-                // Pridedame selekciją šiai kortelei
-                this.classList.add('selected');
-                
-                // Užkrauname preset'o parametrus
-                const preset = this.getAttribute('data-preset');
-                if (preset in modelPresets) {
-                    applyPreset(modelPresets[preset]);
+        // Sukuriame failą atsiuntimui
+        const blob = new Blob([logText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        
+        // Sukuriame atsiuntimo nuorodą
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `training_log_${trainingId}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Išvalome
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // Funkcija grafikų inicializavimui
+    function initializeCharts() {
+        // Klaidos funkcijos (Loss) grafikas
+        const lossChartCanvas = document.getElementById('loss-chart');
+        lossChart = new Chart(lossChartCanvas, {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [{
+                    label: 'Treniravimo klaida',
+                    data: trainingLoss,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }, {
+                    label: 'Validacijos klaida',
+                    data: validationLoss,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Klaidos funkcijos kitimas',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Epochos'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Klaidos reikšmė'
+                        },
+                        beginAtZero: true
+                    }
                 }
-            });
+            }
         });
         
-        // Form submit event
-        document.getElementById('trainingForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-            console.log(data);
-        });
-    });
-
-    function updateSliderValue(id) {
-        const slider = document.getElementById(id);
-        const valueDisplay = document.getElementById(`${id}Value`);
-        valueDisplay.textContent = slider.value;
-    }
-
-    function fetchModels() {
-        // Simulate fetching models for transfer learning
-        const transferModelSelect = document.getElementById('transferModel');
-        transferModelSelect.innerHTML = `
-            <option value="model1">Modelis 1</option>
-            <option value="model2">Modelis 2</option>
-            <option value="model3">Modelis 3</option>
-        `;
-    }
-
-    function applyPreset(preset) {
-        Object.keys(preset).forEach(key => {
-            const element = document.getElementById(key);
-            if (element) {
-                if (element.type === 'checkbox') {
-                    element.checked = preset[key];
-                } else {
-                    element.value = preset[key];
-                    if (element.tagName === 'INPUT' && element.type === 'range') {
-                        updateSliderValue(key);
+        // Tikslumo (Accuracy) grafikas
+        const accuracyChartCanvas = document.getElementById('accuracy-chart');
+        accuracyChart = new Chart(accuracyChartCanvas, {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [{
+                    label: 'Treniravimo tikslumas',
+                    data: trainingAccuracy,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }, {
+                    label: 'Validacijos tikslumas',
+                    data: validationAccuracy,
+                    borderColor: 'rgb(255, 159, 64)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Tikslumo kitimas',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Epochos'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Tikslumas'
+                        },
+                        min: 0,
+                        max: 1,
+                        ticks: {
+                            callback: function(value) {
+                                return (value * 100).toFixed(0) + '%';
+                            }
+                        }
                     }
                 }
             }
         });
     }
+    
+    // Funkcija metrikų atnaujinimui
+    function updateMetrics(data) {
+        // Patikriname, ar gauti duomenys teisingi
+        if (!data || !data.epoch) return;
+        
+        // Pridedame naują epochą
+        if (!epochs.includes(data.epoch)) {
+            epochs.push(data.epoch);
+        }
+        
+        // Pridedame naujas metrikos
+        trainingLoss.push(data.loss);
+        validationLoss.push(data.val_loss);
+        trainingAccuracy.push(data.accuracy);
+        validationAccuracy.push(data.val_accuracy);
+        
+        // Atnaujiname grafikus
+        if (lossChart && accuracyChart) {
+            lossChart.update();
+            accuracyChart.update();
+        }
+        
+        // Atnaujiname metrikų korteles
+        document.getElementById('current-loss').textContent = data.loss.toFixed(4);
+        document.getElementById('current-val-loss').textContent = data.val_loss.toFixed(4);
+        document.getElementById('current-accuracy').textContent = (data.accuracy * 100).toFixed(2) + '%';
+        document.getElementById('current-val-accuracy').textContent = (data.val_accuracy * 100).toFixed(2) + '%';
+        
+        // Atnaujiname metrikų lentelę
+        updateMetricsTable(data);
+    }
+    
+    // Funkcija metrikų lentelės atnaujinimui
+    function updateMetricsTable(data) {
+        const tableBody = document.getElementById('metrics-table-body');
+        
+        // Išvalome "nėra duomenų" eilutę, jei ji yra
+        if (tableBody.children.length === 1 && tableBody.children[0].children.length === 1) {
+            tableBody.innerHTML = '';
+        }
+        
+        // Tikriname, ar eilutė šiai epochai jau egzistuoja
+        const existingRow = Array.from(tableBody.children).find(row => {
+            return row.children[0].textContent === data.epoch.toString();
+        });
+        
+        if (existingRow) {
+            // Atnaujiname egzistuojančią eilutę
+            existingRow.children[1].textContent = data.loss.toFixed(4);
+            existingRow.children[2].textContent = data.val_loss.toFixed(4);
+            existingRow.children[3].textContent = (data.accuracy * 100).toFixed(2) + '%';
+            existingRow.children[4].textContent = (data.val_accuracy * 100).toFixed(2) + '%';
+        } else {
+            // Sukuriame naują eilutę
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${data.epoch}</td>
+                <td>${data.loss.toFixed(4)}</td>
+                <td>${data.val_loss.toFixed(4)}</td>
+                <td>${(data.accuracy * 100).toFixed(2)}%</td>
+                <td>${(data.val_accuracy * 100).toFixed(2)}%</td>
+            `;
+            tableBody.appendChild(newRow);
+        }
+    }
+    
+    // Perjungti tarp grafikų ir lentelės
+    document.getElementById('toggle-charts-btn').addEventListener('click', function() {
+        document.getElementById('charts-container').style.display = 'block';
+        document.getElementById('metrics-table-container').style.display = 'none';
+    });
+    
+    document.getElementById('toggle-metrics-btn').addEventListener('click', function() {
+        document.getElementById('charts-container').style.display = 'none';
+        document.getElementById('metrics-table-container').style.display = 'block';
+    });
+    
+    // Metrikų gavimo įvykis per Socket.IO
+    socket.on('training_metrics', function(data) {
+        console.log('Gautos metrikos:', data);
+        updateMetrics(data);
+    });
+    
+    // Inicializuojame Socket.IO
+    const socket = io();
+    
+    // Prisijungimas prie treniravimo kanalo
+    socket.on('connect', () => {
+        addLogEntry('Prisijungta prie treniravimo serverio');
+        
+        // Prisijungiame prie specifinio treniravimo kanalo
+        socket.emit('join_training', { training_id: trainingId });
+    });
+    
+    // Apdorojame treniravimo būsenos atnaujinimus
+    socket.on('training_status', (data) => {
+        console.log('Gauta būsena:', data);
+        
+        // Atnaujinama būsena
+        updateStatus(data.status);
+        
+        // Jei treniravimas prasidėjo, pradedame skaičiuoti laiką
+        if (data.status === 'in_progress' && !startTime) {
+            startTime = Date.now();
+            timerInterval = setInterval(updateElapsedTime, 1000);
+            addLogEntry('Treniravimas pradėtas');
+        }
+        
+        // Jei treniravimas baigtas arba sustabdytas, stabdome laikmatį
+        if (data.status === 'completed' || data.status === 'failed' || data.status === 'stopped') {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            if (data.status === 'completed') {
+                addLogEntry('Treniravimas sėkmingai baigtas!', 'success');
+            } else if (data.status === 'failed') {
+                addLogEntry('Treniravimas nepavyko: ' + (data.message || 'Nežinoma klaida'), 'error');
+            } else {
+                addLogEntry('Treniravimas nutrauktas vartotojo', 'warning');
+            }
+        }
+    });
+    
+    // Apdorojame progreso atnaujinimus
+    socket.on('training_progress', (data) => {
+        console.log('Gautas progresas:', data);
+        
+        // Atnaujinama progreso juosta
+        updateProgress(data.progress, data.current_epoch, data.total_epochs);
+        
+        // Įrašas į žurnalą kas 10% progreso arba kas 10 epochų
+        if (data.current_epoch % 10 === 0 || data.progress % 10 === 0) {
+            addLogEntry(`Progresas: ${data.progress}% (Epocha ${data.current_epoch}/${data.total_epochs})`);
+        }
+    });
+    
+    // Apdorojame žurnalo pranešimus
+    socket.on('training_log', (data) => {
+        console.log('Gautas žurnalo įrašas:', data);
+        
+        // Įrašas į žurnalą
+        addLogEntry(data.message, data.type || 'info');
+    });
+    
+    // Apdorojame atsijungimą
+    socket.on('disconnect', () => {
+        addLogEntry('Atsijungta nuo treniravimo serverio', 'warning');
+    });
+    
+    // Pradėti treniravimą mygtuko paspaudimas
+    startTrainingBtn.addEventListener('click', () => {
+        if (confirm('Ar tikrai norite pradėti modelio treniravimą?')) {
+            // Siunčiama užklausa į serverį pradėti treniravimą
+            socket.emit('start_training', { training_id: trainingId });
+            updateStatus('preparing');
+            addLogEntry('Siunčiama komanda pradėti treniravimą...');
+        }
+    });
+    
+    // Tęsti treniravimą mygtuko paspaudimas
+    resumeTrainingBtn.addEventListener('click', () => {
+        if (confirm('Ar tikrai norite tęsti modelio treniravimą?')) {
+            // Siunčiama užklausa į serverį tęsti treniravimą
+            socket.emit('resume_training', { training_id: trainingId });
+            updateStatus('preparing');
+            addLogEntry('Siunčiama komanda tęsti treniravimą...');
+        }
+    });
+    
+    // Nutraukti treniravimą mygtuko paspaudimas
+    stopTrainingBtn.addEventListener('click', () => {
+        if (confirm('Ar tikrai norite nutraukti modelio treniravimą? Dabartinė pažanga bus prarasta.')) {
+            // Siunčiama užklausa į serverį nutraukti treniravimą
+            socket.emit('stop_training', { training_id: trainingId });
+            addLogEntry('Siunčiama komanda nutraukti treniravimą...', 'warning');
+        }
+    });
+    
+    // Išvalyti žurnalą mygtuko paspaudimas
+    clearLogBtn.addEventListener('click', () => {
+        // Išvalomas žurnalas, paliekant tik pradinį įrašą
+        while (logContainer.firstChild) {
+            logContainer.removeChild(logContainer.firstChild);
+        }
+        
+        // Pridedamas pradinis įrašas
+        addLogEntry('Žurnalas išvalytas');
+    });
+    
+    // Atsisiųsti žurnalą mygtuko paspaudimas
+    downloadLogBtn.addEventListener('click', downloadLog);
+    
+    // Pradinė būsena
+    updateStatus('not_started');
+    
+    // Inicializuojame grafikus kai puslapis užkrautas
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+    });
 </script>
 {% endblock %}

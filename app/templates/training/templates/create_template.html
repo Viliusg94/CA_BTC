@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Naujas modelio šablonas{% endblock %}
+
+{% block styles %}
+<style>
+    .parameter-section {
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .parameter-section h5 {
+        margin-bottom: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 10px;
+    }
+    
+    .form-label {
+        font-weight: 500;
+    }
+    
+    .parameter-help {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('model_training.index') }}">Pagrindinis</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('template_management.template_list') }}">Šablonai</a></li>
+                    <li class="breadcrumb-item active">Naujas šablonas</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-4">Naujas modelio parametrų šablonas</h1>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('template_management.create_template') }}">
+                        <div class="row">
+                            <!-- Pagrindinė informacija -->
+                            <div class="col-md-12 mb-4">
+                                <h5>Pagrindinė informacija</h5>
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Šablono pavadinimas *</label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                    <div class="parameter-help">Įveskite aprašomąjį šablono pavadinimą, pvz., "LSTM su dideliu mokymosi greičiu"</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Aprašymas</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                                    <div class="parameter-help">Pateikite trumpą šablono aprašymą, nurodydami jo paskirtį ar pritaikymą</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="type" class="form-label">Modelio tipas *</label>
+                                    <select class="form-select" id="type" name="type" required>
+                                        <option value="lstm">LSTM</option>
+                                        <option value="gru">GRU</option>
+                                        <option value="cnn">CNN</option>
+                                        <option value="rnn">RNN</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Mokymosi parametrai -->
+                            <div class="col-md-6 mb-4">
+                                <div class="parameter-section">
+                                    <h5>Mokymosi parametrai</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label for="epochs" class="form-label">Epochų skaičius</label>
+                                        <input type="number" class="form-control" id="epochs" name="epochs" min="1" value="50">
+                                        <div class="parameter-help">Kiek kartų modelis pereis per visus duomenis</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="batch_size" class="form-label">Partijos dydis</label>
+                                        <input type="number" class="form-control" id="batch_size" name="batch_size" min="1" value="32">
+                                        <div class="parameter-help">Duomenų kiekis, apdorojamas vienu metu</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="learning_rate" class="form-label">Mokymosi sparta</label>
+                                        <input type="number" class="form-control" id="learning_rate" name="learning_rate" min="0.00001" max="1" step="0.0001" value="0.001">
+                                        <div class="parameter-help">Parametrų atnaujinimo žingsnis</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="optimizer" class="form-label">Optimizatorius</label>
+                                        <select class="form-select" id="optimizer" name="optimizer">
+                                            <option value="adam">Adam</option>
+                                            <option value="sgd">SGD</option>
+                                            <option value="rmsprop">RMSprop</option>
+                                            <option value="adagrad">Adagrad</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Modelio architektūros parametrai -->
+                            <div class="col-md-6 mb-4">
+                                <div class="parameter-section">
+                                    <h5>Modelio architektūra</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label for="layers" class="form-label">Sluoksnių skaičius</label>
+                                        <input type="number" class="form-control" id="layers" name="layers" min="1" value="2">
+                                        <div class="parameter-help">Kiek paslėptų sluoksnių turės modelis</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="neurons" class="form-label">Neuronų skaičius</label>
+                                        <input type="number" class="form-control" id="neurons" name="neurons" min="1" value="64">
+                                        <div class="parameter-help">Kiek neuronų bus kiekviename sluoksnyje</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="activation" class="form-label">Aktyvacijos funkcija</label>
+                                        <select class="form-select" id="activation" name="activation">
+                                            <option value="relu">ReLU</option>
+                                            <option value="sigmoid">Sigmoid</option>
+                                            <option value="tanh">Tanh</option>
+                                            <option value="linear">Linear</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="dropout" class="form-label">Dropout koeficientas</label>
+                                        <input type="number" class="form-control" id="dropout" name="dropout" min="0" max="0.9" step="0.1" value="0.2">
+                                        <div class="parameter-help">Neuronų išjungimo tikimybė (pervikimui išvengti)</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="loss_function" class="form-label">Praradimo funkcija</label>
+                                        <select class="form-select" id="loss_function" name="loss_function">
+                                            <option value="binary_crossentropy">Binary Crossentropy</option>
+                                            <option value="categorical_crossentropy">Categorical Crossentropy</option>
+                                            <option value="mse">Mean Squared Error</option>
+                                            <option value="mae">Mean Absolute Error</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('template_management.template_list') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Atgal į sąrašą
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Išsaugoti šabloną
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

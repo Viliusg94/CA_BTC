@@ -1,0 +1,160 @@
+/* Mobiliosios versijos optimizavimo stiliai */
+
+/* Mažesnių ekranų (iki 768px) stiliaus taisyklės */
+@media (max-width: 768px) {
+    /* Bendrojo išdėstymo taisyklės */
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    /* Antraščių dydžių mažinimas */
+    h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    h2 {
+        font-size: 1.3rem !important;
+    }
+    
+    h3, h4, h5 {
+        font-size: 1.1rem !important;
+    }
+    
+    /* Mygtukų eilutės paslėpimas į burgerio meniu */
+    .btn-group.responsive-btn-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-group.responsive-btn-group .btn {
+        margin-bottom: 5px;
+        width: 100%;
+        border-radius: 4px !important;
+    }
+    
+    /* Lentelių optimizavimas */
+    .table-responsive {
+        border: 0;
+    }
+    
+    /* Kortelių stilius */
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .card-header {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 10px;
+    }
+    
+    /* Grafiko konteineris */
+    .chart-container {
+        height: 250px !important;
+    }
+}
+
+/* Labai mažų ekranų (iki 576px) stiliaus taisyklės */
+@media (max-width: 576px) {
+    /* Navigacijos stilius */
+    .breadcrumb {
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+    }
+    
+    /* Įvesties laukų optimizavimas */
+    input.form-control, select.form-select, textarea.form-control {
+        font-size: 16px; /* Didesnis šriftas, kad būtų patogiau spausti */
+    }
+    
+    /* Filtrų sekcijos paslėpimas */
+    .filter-collapse-btn {
+        display: block !important;
+    }
+    
+    /* Metrikų lentelė */
+    .metrics-table th, .metrics-table td {
+        padding: 5px;
+        font-size: 0.85rem;
+    }
+    
+    /* Mygtukų grupės */
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Mobilus meniu */
+    .navbar-collapse {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 5px;
+    }
+}
+
+/* Horizontalią eilutės elementų pakeitimas vertikaliais */
+@media (max-width: 768px) {
+    .row-to-column {
+        flex-direction: column;
+    }
+    
+    .row-to-column > div {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    /* Modelių sąrašo optimizavimas */
+    .model-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .model-list-item .model-info {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .model-list-item .model-actions {
+        display: flex;
+        justify-content: flex-start;
+        width: 100%;
+    }
+}
+
+/* Optimizuotos formos telefonams */
+@media (max-width: 576px) {
+    .form-row-responsive {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-row-responsive > * {
+        width: 100%;
+        margin-right: 0;
+    }
+    
+    /* Sąrašo stilius */
+    .list-group-item {
+        padding: 8px;
+    }
+    
+    /* Mygtukai */
+    .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Modelio kortelės */
+    .model-card {
+        margin-bottom: 10px;
+    }
+    
+    .model-card .card-body {
+        padding: 10px;
+    }
+}

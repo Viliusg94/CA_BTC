@@ -1,0 +1,106 @@
+<!-- Proceso detalių šablonas - rodo informaciją apie vieną procesą -->
+{% extends "base.html" %}
+
+{% block head %}
+<!-- Automatinis atnaujinimas per WebSocket -->
+<script src="{{ url_for('static', filename='js/notifications.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Puslapio antraštė -->
+    <h1><i class="fas fa-tasks"></i> {{ title }}</h1>
+    
+    <!-- Navigacijos mygtukai -->
+    <div class="mb-4">
+        <a href="{{ url_for('notifications.process_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Grįžti į procesų sąrašą
+        </a>
+        <a href="{{ url_for('notifications.notification_center') }}" class="btn btn-outline-primary ml-2">
+            <i class="fas fa-bell"></i> Pranešimų centras
+        </a>
+    </div>
+    
+    <!-- Proceso informacijos kortelė -->
+    <div class="card mb-4" id="process-card" data-process-id="{{ process.id }}">
+        <div class="card-header bg-{{ 'primary' if process.status == 'running' else 'success' if process.status == 'completed' else 'danger' if process.status == 'failed' else 'warning' if process.status == 'canceled' else 'secondary' }}">
+            <h5 class="mb-0 text-white">
+                <!-- Skirtinga ikona pagal būseną -->
+                {% if process.status == 'pending' %}
+                <i class="fas fa-clock"></i>
+                {% elif process.status == 'running' %}
+                <i class="fas fa-spinner fa-spin"></i>
+                {% elif process.status == 'completed' %}
+                <i class="fas fa-check-circle"></i>
+                {% elif process.status == 'failed' %}
+                <i class="fas fa-times-circle"></i>
+                {% elif process.status == 'canceled' %}
+                <i class="fas fa-ban"></i>
+                {% endif %}
+                {{ process.name }}
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Pagrindinio informacijos blokas -->
+            <div class="row mb-4">
+                <!-- Kairė pusė: būsena ir progresas -->
+                <div class="col-md-6">
+                    <h5>Būsena</h5>
+                    <p>
+                        <span class="badge bg-{{ 'primary' if process.status == 'running' else 'success' if process.status == 'completed' else 'danger' if process.status == 'failed' else 'warning' if process.status == 'canceled' else 'secondary' }}">
+                            {{ 'Vykdomas' if process.status == 'running' else 'Įvykdytas' if process.status == 'completed' else 'Nepavyko' if process.status == 'failed' else 'Atšauktas' if process.status == 'canceled' else 'Laukiantis' }}
+                        </span>
+                    </p>
+                    
+                    <h5>Progresas</h5>
+                    <div class="progress mb-3">
+                        <div class="progress-bar {% if process.status == 'running' %}progress-bar-striped progress-bar-animated{% endif %}" 
+                             role="progressbar" style="width: {{ process.progress }}%;" 
+                             aria-valuenow="{{ process.progress }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ process.progress }}%
+                        </div>
+                    </div>
+                    
+                    {% if process.current_step is not none and process.total_steps is not none %}
+                    <p>Žingsnis {{ process.current_step }} iš {{ process.total_steps }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Dešinė pusė: aprašymas ir laikai -->
+                <div class="col-md-6">
+                    <h5>Aprašymas</h5>
+                    <p>{{ process.description or 'Nėra aprašymo' }}</p>
+                    
+                    <h5>Laikai</h5>
+                    <p>
+                        <strong>Pradžia:</strong> {{ process.start_time|replace('T', ' ')|replace('Z', '')|truncate(19, True, '') }}<br>
+                        {% if process.end_time %}
+                        <strong>Pabaiga:</strong> {{ process.end_time|replace('T', ' ')|replace('Z', '')|truncate(19, True, '') }}<br>
+                        {% endif %}
+                        <strong>Paskutinis atnaujinimas:</strong> {{ process.update_time|replace('T', ' ')|replace('Z', '')|truncate(19, True, '') }}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Proceso žurnalas -->
+            <div class="row">
+                <div class="col-12">
+                    <h5>Vykdymo žurnalas</h5>
+                    {% if process.logs %}
+                    <div class="logs-container border p-2" style="max-height: 300px; overflow-y: auto;">
+                        {% for log in process.logs %}
+                        <div class="log-entry">
+                            <small class="text-muted">{{ log.time|replace('T', ' ')|replace('Z', '')|truncate(19, True, '') }}:</small>
+                            <span>{{ log.message }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Nėra žurnalo įrašų</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

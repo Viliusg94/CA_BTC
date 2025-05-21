@@ -33,3 +33,55 @@
     background-color: white !important;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
+
+/* Grįžtamojo ryšio pranešimų stiliai */
+.alert {
+    margin-bottom: 15px;
+    position: relative;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+
+.alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+/* Animacijos pranešimams */
+.alert.fade {
+    transition: opacity 0.5s linear;
+}
+
+.alert.fade.show {
+    opacity: 1;
+}
+
+/* Pranešimų animuotas išnykimas */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.alert-fadeout {
+    animation: fadeOut 1s forwards;
+}

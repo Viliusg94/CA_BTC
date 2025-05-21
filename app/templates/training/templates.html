@@ -1,0 +1,716 @@
+{% extends "base.html" %}
+
+{% block title %}Modelio parametrų šablonai{% endblock %}
+
+{% block styles %}
+<style>
+    /* Šablonų kortelių stilius */
+    .template-card {
+        margin-bottom: 20px;
+        border-left: 4px solid #007bff;
+        transition: transform 0.2s;
+    }
+    
+    .template-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .template-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .template-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .template-params {
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 0.85rem;
+    }
+    
+    .popular-template {
+        border-left-color: #28a745;
+    }
+    
+    .param-table {
+        font-size: 0.85rem;
+        margin-bottom: 0;
+    }
+    
+    .param-name {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .param-value {
+        font-family: monospace;
+        color: #0366d6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigacijos kelias -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.index') }}">Pagrindinis</a></li>
+            <li class="breadcrumb-item active">Parametrų šablonai</li>
+        </ol>
+    </nav>
+
+    <!-- Puslapio antraštė -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Modelio parametrų šablonai</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+            <i class="fas fa-plus-circle me-1"></i>Sukurti naują šabloną
+        </button>
+    </div>
+
+    <!-- Informacinis tekstas -->
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle me-2"></i>
+        Čia galite valdyti dažniausiai naudojamus modelio parametrų šablonus. Šablonai leidžia greitai sukurti naujus modelius su iš anksto nustatytais parametrais.
+    </div>
+
+    <!-- Filtravimo ir rūšiavimo sekcija -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtrai ir rūšiavimas</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="template-search" class="form-label">Paieška</label>
+                    <input type="text" class="form-control" id="template-search" placeholder="Šablono pavadinimas...">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="template-sort" class="form-label">Rūšiuoti pagal</label>
+                    <select class="form-select" id="template-sort">
+                        <option value="usage" selected>Naudojimo dažnumą</option>
+                        <option value="name">Pavadinimą</option>
+                        <option value="created">Sukūrimo datą</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="template-order" class="form-label">Tvarka</label>
+                    <select class="form-select" id="template-order">
+                        <option value="desc" selected>Mažėjančiai</option>
+                        <option value="asc">Didėjančiai</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Šablonų sąrašas -->
+    <div class="row" id="templates-container">
+        {% for template in templates %}
+        <div class="col-md-6 template-item" data-name="{{ template.name|lower }}" data-usage="{{ template.usage_count }}" data-created="{{ template.created_at }}">
+            <div class="card template-card {% if template.usage_count > 5 %}popular-template{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ template.name }}</h5>
+                    <div class="template-actions">
+                        <button class="btn btn-sm btn-primary use-template-btn" data-template-id="{{ template.id }}">
+                            <i class="fas fa-play me-1"></i>Naudoti
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary edit-template-btn" data-template-id="{{ template.id }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-template-btn" data-template-id="{{ template.id }}" data-template-name="{{ template.name }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if template.description %}
+                    <p class="card-text">{{ template.description }}</p>
+                    {% endif %}
+                    
+                    <!-- Šablono parametrai -->
+                    <div class="template-params mt-3">
+                        <h6>Parametrai</h6>
+                        <table class="table table-sm param-table">
+                            <tbody>
+                                {% for key, value in template.parameters.items() %}
+                                <tr>
+                                    <td class="param-name">{{ key }}</td>
+                                    <td class="param-value">{{ value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Šablono informacija -->
+                    <div class="d-flex justify-content-between mt-3">
+                        <span class="text-muted small">Sukurta: {{ template.created_at }}</span>
+                        <span>
+                            <span class="badge bg-primary template-badge">
+                                <i class="fas fa-clock me-1"></i>Naudota {{ template.usage_count }} kartų
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Nėra sukurtų šablonų. Spauskite "Sukurti naują šabloną" mygtuką, kad sukurtumėte pirmąjį šabloną.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Naujo šablono sukūrimo modalinis langas -->
+<div class="modal fade" id="createTemplateModal" tabindex="-1" aria-labelledby="createTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createTemplateModalLabel">Naujas parametrų šablonas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="create-template-form">
+                    <div class="mb-3">
+                        <label for="template-name" class="form-label">Šablono pavadinimas</label>
+                        <input type="text" class="form-control" id="template-name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="template-description" class="form-label">Aprašymas</label>
+                        <textarea class="form-control" id="template-description" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <hr>
+                    <h5>Modelio parametrai</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="template-model-type" class="form-label">Modelio tipas</label>
+                            <select class="form-control" id="template-model-type" name="model_type" required>
+                                <option value="lstm">LSTM</option>
+                                <option value="gru">GRU</option>
+                                <option value="cnn">CNN</option>
+                                <option value="rnn">RNN</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="template-epochs" class="form-label">Epochų skaičius</label>
+                            <input type="number" class="form-control" id="template-epochs" name="epochs" min="1" max="1000" value="50" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="template-batch-size" class="form-label">Batch dydis</label>
+                            <input type="number" class="form-control" id="template-batch-size" name="batch_size" min="1" max="512" value="32" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="template-learning-rate" class="form-label">Mokymosi sparta</label>
+                            <input type="number" class="form-control" id="template-learning-rate" name="learning_rate" min="0.00001" max="1" step="0.0001" value="0.001" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="template-layers" class="form-label">Sluoksnių skaičius</label>
+                            <input type="number" class="form-control" id="template-layers" name="layers" min="1" max="10" value="2" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="template-neurons" class="form-label">Neuronų skaičius</label>
+                            <input type="number" class="form-control" id="template-neurons" name="neurons" min="1" max="512" value="64" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="template-dropout" class="form-label">Dropout</label>
+                            <input type="number" class="form-control" id="template-dropout" name="dropout" min="0" max="0.9" step="0.1" value="0.2" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Specifiniai parametrai -->
+                    <div id="type-specific-params">
+                        <!-- LSTM specifiniai parametrai -->
+                        <div id="lstm-params">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="template-bidirectional" name="bidirectional">
+                                <label class="form-check-label" for="template-bidirectional">
+                                    Dvikryptis LSTM (Bidirectional)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- CNN specifiniai parametrai -->
+                        <div id="cnn-params" style="display: none;">
+                            <div class="mb-3">
+                                <label for="template-kernel-size" class="form-label">Branduolio dydis (Kernel Size)</label>
+                                <select class="form-control" id="template-kernel-size" name="kernel_size">
+                                    <option value="3">3</option>
+                                    <option value="5" selected>5</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                <button type="button" class="btn btn-primary" id="save-template-btn">Išsaugoti šabloną</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Šablono redagavimo modalinis langas -->
+<div class="modal fade" id="editTemplateModal" tabindex="-1" aria-labelledby="editTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTemplateModalLabel">Redaguoti šabloną</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-template-form">
+                    <input type="hidden" id="edit-template-id" name="template_id">
+                    <div class="mb-3">
+                        <label for="edit-template-name" class="form-label">Šablono pavadinimas</label>
+                        <input type="text" class="form-control" id="edit-template-name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-template-description" class="form-label">Aprašymas</label>
+                        <textarea class="form-control" id="edit-template-description" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <hr>
+                    <h5>Modelio parametrai</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-template-model-type" class="form-label">Modelio tipas</label>
+                            <select class="form-control" id="edit-template-model-type" name="model_type" required>
+                                <option value="lstm">LSTM</option>
+                                <option value="gru">GRU</option>
+                                <option value="cnn">CNN</option>
+                                <option value="rnn">RNN</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-template-epochs" class="form-label">Epochų skaičius</label>
+                            <input type="number" class="form-control" id="edit-template-epochs" name="epochs" min="1" max="1000" value="50" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-template-batch-size" class="form-label">Batch dydis</label>
+                            <input type="number" class="form-control" id="edit-template-batch-size" name="batch_size" min="1" max="512" value="32" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-template-learning-rate" class="form-label">Mokymosi sparta</label>
+                            <input type="number" class="form-control" id="edit-template-learning-rate" name="learning_rate" min="0.00001" max="1" step="0.0001" value="0.001" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-template-layers" class="form-label">Sluoksnių skaičius</label>
+                            <input type="number" class="form-control" id="edit-template-layers" name="layers" min="1" max="10" value="2" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-template-neurons" class="form-label">Neuronų skaičius</label>
+                            <input type="number" class="form-control" id="edit-template-neurons" name="neurons" min="1" max="512" value="64" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-template-dropout" class="form-label">Dropout</label>
+                            <input type="number" class="form-control" id="edit-template-dropout" name="dropout" min="0" max="0.9" step="0.1" value="0.2" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Specifiniai parametrai -->
+                    <div id="edit-type-specific-params">
+                        <!-- LSTM specifiniai parametrai -->
+                        <div id="edit-lstm-params">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="edit-template-bidirectional" name="bidirectional">
+                                <label class="form-check-label" for="edit-template-bidirectional">
+                                    Dvikryptis LSTM (Bidirectional)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- CNN specifiniai parametrai -->
+                        <div id="edit-cnn-params" style="display: none;">
+                            <div class="mb-3">
+                                <label for="edit-template-kernel-size" class="form-label">Branduolio dydis (Kernel Size)</label>
+                                <select class="form-control" id="edit-template-kernel-size" name="kernel_size">
+                                    <option value="3">3</option>
+                                    <option value="5" selected>5</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                <button type="button" class="btn btn-primary" id="update-template-btn">Atnaujinti šabloną</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Šablono ištrynimo patvirtinimo modalinis langas -->
+<div class="modal fade" id="deleteTemplateModal" tabindex="-1" aria-labelledby="deleteTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTemplateModalLabel">Patvirtinkite ištrynimą</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Ar tikrai norite ištrinti šabloną <span id="delete-template-name" class="fw-bold"></span>?</p>
+                <p class="text-danger">Šio veiksmo negalima atšaukti.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-template-btn">Ištrinti</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Šablonų valdymo skripto kodas
+document.addEventListener('DOMContentLoaded', function() {
+    // Modelio tipo pasirinkimo valdymas
+    const modelTypeSelect = document.getElementById('template-model-type');
+    const lstmParams = document.getElementById('lstm-params');
+    const cnnParams = document.getElementById('cnn-params');
+    
+    // Redagavimo modalinio lango elementai
+    const editModelTypeSelect = document.getElementById('edit-template-model-type');
+    const editLstmParams = document.getElementById('edit-lstm-params');
+    const editCnnParams = document.getElementById('edit-cnn-params');
+    
+    // Modelio tipo keitimo stebėjimas
+    if (modelTypeSelect) {
+        modelTypeSelect.addEventListener('change', function() {
+            toggleSpecificParams(this.value, lstmParams, cnnParams);
+        });
+    }
+    
+    // Redagavimo modelio tipo keitimo stebėjimas
+    if (editModelTypeSelect) {
+        editModelTypeSelect.addEventListener('change', function() {
+            toggleSpecificParams(this.value, editLstmParams, editCnnParams);
+        });
+    }
+    
+    // Rodo/slepia specifinius parametrus pagal modelio tipą
+    function toggleSpecificParams(modelType, lstmParamsEl, cnnParamsEl) {
+        if (modelType === 'lstm') {
+            lstmParamsEl.style.display = 'block';
+            cnnParamsEl.style.display = 'none';
+        } else if (modelType === 'cnn') {
+            lstmParamsEl.style.display = 'none';
+            cnnParamsEl.style.display = 'block';
+        } else {
+            lstmParamsEl.style.display = 'none';
+            cnnParamsEl.style.display = 'none';
+        }
+    }
+    
+    // Naujo šablono išsaugojimas
+    const saveTemplateBtn = document.getElementById('save-template-btn');
+    if (saveTemplateBtn) {
+        saveTemplateBtn.addEventListener('click', function() {
+            const form = document.getElementById('create-template-form');
+            const formData = new FormData(form);
+            
+            // Sudarome parametrų objektą
+            const parameters = {
+                'epochs': parseInt(formData.get('epochs')),
+                'batch_size': parseInt(formData.get('batch_size')),
+                'learning_rate': parseFloat(formData.get('learning_rate')),
+                'layers': parseInt(formData.get('layers')),
+                'neurons': parseInt(formData.get('neurons')),
+                'dropout': parseFloat(formData.get('dropout')),
+                'model_type': formData.get('model_type')
+            };
+            
+            // Pridedame specifinius parametrus
+            if (formData.get('model_type') === 'lstm') {
+                parameters['bidirectional'] = formData.get('bidirectional') === 'on';
+            } else if (formData.get('model_type') === 'cnn') {
+                parameters['kernel_size'] = parseInt(formData.get('kernel_size'));
+            }
+            
+            // Kuriame šablono duomenų objektą
+            const templateData = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                params: parameters
+            };
+            
+            // Siunčiame duomenis į serverį
+            fetch('/training/save-template', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(templateData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Perkrauname puslapį, kad rodytų naują šabloną
+                    window.location.reload();
+                } else {
+                    alert('Klaida išsaugant šabloną: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Klaida:', error);
+                alert('Įvyko klaida bandant išsaugoti šabloną');
+            });
+        });
+    }
+    
+    // Šablono naudojimas
+    const useTemplateBtns = document.querySelectorAll('.use-template-btn');
+    useTemplateBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const templateId = this.getAttribute('data-template-id');
+            window.location.href = '/training/models/create?template=' + templateId;
+        });
+    });
+    
+    // Šablono redagavimas
+    const editTemplateBtns = document.querySelectorAll('.edit-template-btn');
+    editTemplateBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const templateId = this.getAttribute('data-template-id');
+            
+            // Gauname šablono duomenis
+            fetch('/training/get-template/' + templateId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const template = data.template;
+                        
+                        // Užpildome formą
+                        document.getElementById('edit-template-id').value = templateId;
+                        document.getElementById('edit-template-name').value = template.name;
+                        document.getElementById('edit-template-description').value = template.description || '';
+                        
+                        // Užpildome parametrus
+                        const params = template.parameters;
+                        document.getElementById('edit-template-model-type').value = params.model_type || 'lstm';
+                        document.getElementById('edit-template-epochs').value = params.epochs || 50;
+                        document.getElementById('edit-template-batch-size').value = params.batch_size || 32;
+                        document.getElementById('edit-template-learning-rate').value = params.learning_rate || 0.001;
+                        document.getElementById('edit-template-layers').value = params.layers || 2;
+                        document.getElementById('edit-template-neurons').value = params.neurons || 64;
+                        document.getElementById('edit-template-dropout').value = params.dropout || 0.2;
+                        
+                        // Specifiniai parametrai
+                        if (params.model_type === 'lstm') {
+                            document.getElementById('edit-template-bidirectional').checked = params.bidirectional || false;
+                            toggleSpecificParams('lstm', editLstmParams, editCnnParams);
+                        } else if (params.model_type === 'cnn') {
+                            document.getElementById('edit-template-kernel-size').value = params.kernel_size || 5;
+                            toggleSpecificParams('cnn', editLstmParams, editCnnParams);
+                        } else {
+                            toggleSpecificParams('other', editLstmParams, editCnnParams);
+                        }
+                        
+                        // Rodome modalinį langą
+                        const editModal = new bootstrap.Modal(document.getElementById('editTemplateModal'));
+                        editModal.show();
+                    } else {
+                        alert('Klaida gaunant šablono duomenis: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida:', error);
+                    alert('Įvyko klaida bandant gauti šablono duomenis');
+                });
+        });
+    });
+    
+    // Šablono atnaujinimas
+    const updateTemplateBtn = document.getElementById('update-template-btn');
+    if (updateTemplateBtn) {
+        updateTemplateBtn.addEventListener('click', function() {
+            const form = document.getElementById('edit-template-form');
+            const formData = new FormData(form);
+            
+            // Sudarome parametrų objektą
+            const parameters = {
+                'epochs': parseInt(formData.get('epochs')),
+                'batch_size': parseInt(formData.get('batch_size')),
+                'learning_rate': parseFloat(formData.get('learning_rate')),
+                'layers': parseInt(formData.get('layers')),
+                'neurons': parseInt(formData.get('neurons')),
+                'dropout': parseFloat(formData.get('dropout')),
+                'model_type': formData.get('model_type')
+            };
+            
+            // Pridedame specifinius parametrus
+            if (formData.get('model_type') === 'lstm') {
+                parameters['bidirectional'] = formData.get('bidirectional') === 'on';
+            } else if (formData.get('model_type') === 'cnn') {
+                parameters['kernel_size'] = parseInt(formData.get('kernel_size'));
+            }
+            
+            // Kuriame šablono duomenų objektą
+            const templateData = {
+                id: formData.get('template_id'),
+                name: formData.get('name'),
+                description: formData.get('description'),
+                params: parameters
+            };
+            
+            // Siunčiame duomenis į serverį
+            fetch('/training/update-template', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(templateData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Perkrauname puslapį, kad rodytų atnaujintą šabloną
+                    window.location.reload();
+                } else {
+                    alert('Klaida atnaujinant šabloną: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Klaida:', error);
+                alert('Įvyko klaida bandant atnaujinti šabloną');
+            });
+        });
+    }
+    
+    // Šablono ištrynimas
+    const deleteTemplateBtns = document.querySelectorAll('.delete-template-btn');
+    deleteTemplateBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const templateId = this.getAttribute('data-template-id');
+            const templateName = this.getAttribute('data-template-name');
+            
+            // Nustatome modalinio lango turinį
+            document.getElementById('delete-template-name').textContent = templateName;
+            
+            // Nustatome patvirtinimo mygtuko veikimą
+            const confirmDeleteBtn = document.getElementById('confirm-delete-template-btn');
+            confirmDeleteBtn.onclick = function() {
+                // Siunčiame DELETE užklausą
+                fetch('/training/delete-template/' + templateId, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Perkrauname puslapį, kad atnaujintume sąrašą
+                        window.location.reload();
+                    } else {
+                        alert('Klaida trinant šabloną: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida:', error);
+                    alert('Įvyko klaida bandant ištrinti šabloną');
+                });
+            };
+            
+            // Rodome modalinį langą
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
+            deleteModal.show();
+        });
+    });
+    
+    // Šablonų paieška ir filtravimas
+    const searchInput = document.getElementById('template-search');
+    const sortSelect = document.getElementById('template-sort');
+    const orderSelect = document.getElementById('template-order');
+    
+    // Paieškos funkcija
+    function filterTemplates() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const sortBy = sortSelect.value;
+        const sortOrder = orderSelect.value;
+        
+        // Gauname visus šablonus
+        const templateItems = document.querySelectorAll('.template-item');
+        
+        // Filtruojame pagal paiešką
+        templateItems.forEach(item => {
+            const templateName = item.getAttribute('data-name');
+            if (templateName.includes(searchTerm)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Rūšiuojame matomus šablonus
+        const templatesContainer = document.getElementById('templates-container');
+        const visibleItems = Array.from(templateItems).filter(item => item.style.display !== 'none');
+        
+        // Rūšiavimo funkcija
+        visibleItems.sort((a, b) => {
+            let aValue, bValue;
+            
+            if (sortBy === 'usage') {
+                aValue = parseInt(a.getAttribute('data-usage'));
+                bValue = parseInt(b.getAttribute('data-usage'));
+            } else if (sortBy === 'name') {
+                aValue = a.getAttribute('data-name');
+                bValue = b.getAttribute('data-name');
+            } else if (sortBy === 'created') {
+                aValue = a.getAttribute('data-created');
+                bValue = b.getAttribute('data-created');
+            }
+            
+            // Rūšiavimo tvarka
+            if (sortOrder === 'asc') {
+                return aValue > bValue ? 1 : -1;
+            } else {
+                return aValue < bValue ? 1 : -1;
+            }
+        });
+        
+        // Pertvarkome elementus
+        visibleItems.forEach(item => {
+            templatesContainer.appendChild(item);
+        });
+    }
+    
+    // Įvykių stebėjimas
+    if (searchInput) {
+        searchInput.addEventListener('input', filterTemplates);
+    }
+    
+    if (sortSelect) {
+        sortSelect.addEventListener('change', filterTemplates);
+    }
+    
+    if (orderSelect) {
+        orderSelect.addEventListener('change', filterTemplates);
+    }
+});
+</script>
+{% endblock %}

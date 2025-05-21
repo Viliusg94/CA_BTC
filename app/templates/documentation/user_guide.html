@@ -1,0 +1,69 @@
+<!-- Vartotojo vadovo šablonas -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Šoninė navigacija -->
+        <div class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{{ url_for('docs.index') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-arrow-left"></i> Grįžti į pagalbos centrą
+                </a>
+                
+                <!-- Vartotojo vadovo skyriai -->
+                {% for section in sections %}
+                <a href="{{ url_for('docs.user_guide', section=section.id) }}" 
+                   class="list-group-item list-group-item-action {{ 'active' if section.id == current_section.id else '' }}">
+                    {{ section.title }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Pagrindinis turinys -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('docs.index') }}">Pagalbos centras</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('docs.user_guide') }}">Vartotojo vadovas</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ current_section.title }}</li>
+                        </ol>
+                    </nav>
+                    
+                    <h1 class="mb-4">{{ current_section.title }}</h1>
+                    
+                    <div class="user-guide-content">
+                        {{ content|safe }}
+                    </div>
+                    
+                    <!-- Puslapių navigacija -->
+                    <div class="mt-5 d-flex justify-content-between">
+                        {% for i in range(sections|length) %}
+                            {% if sections[i].id == current_section.id %}
+                                {% if i > 0 %}
+                                <a href="{{ url_for('docs.user_guide', section=sections[i-1].id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-arrow-left"></i> {{ sections[i-1].title }}
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                                
+                                {% if i < sections|length - 1 %}
+                                <a href="{{ url_for('docs.user_guide', section=sections[i+1].id) }}" class="btn btn-outline-primary">
+                                    {{ sections[i+1].title }} <i class="fas fa-arrow-right"></i>
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

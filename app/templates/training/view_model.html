@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+
+{% block title %}{{ model.name }} - Modelio informacija{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1>{{ model.name }}</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('model_training.list_models') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Grįžti į sąrašą
+            </a>
+            <button class="btn btn-success update-model" data-model-id="{{ model.id }}">
+                <i class="bi bi-arrow-clockwise"></i> Apmokyti su naujais duomenimis
+            </button>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Modelio informacija</h5>
+                    <span class="badge bg-{{ 'success' if model.status == 'active' else 'secondary' }}">
+                        {{ model.status }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Tipas:</strong> {{ model.type }}</p>
+                            <p><strong>Tikslumas:</strong> {{ '%.2f'|format(model.accuracy * 100) }}%</p>
+                            <p><strong>Sukurtas:</strong> {{ model.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            <p><strong>Paskutinį kartą apmokytas:</strong> {{ model.last_trained_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if template %}
+                            <p><strong>Šablonas:</strong> {{ template.name }}</p>
+                            {% endif %}
+                            <p><strong>Aprašymas:</strong> {{ model.description or 'Nėra aprašymo' }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>Modelio parametrai</h6>
+                        <pre class="bg-light p-3 rounded"><code>{{ model.parameters }}</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Prognozavimo grafikas</h5>
+                </div>
+                <div class="card-body">
+                    <div id="prediction-chart" style="min-height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Apmokymo istorija</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tikslumas</th>
+                                <th>Pokytis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Čia būtų apmokymo istorijos įrašai -->
+                            <tr>
+                                <td>{{ model.last_trained_at.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ '%.2f'|format(model.accuracy * 100) }}%</td>
+                                <td class="text-success">+2.5%</td>
+                            </tr>
+                            <tr>
+                                <td>{{ (model.last_trained_at.replace(day=model.last_trained_at.day-5)).strftime('%Y-%m-%d') }}</td>
+                                <td>{{ '%.2f'|format((model.accuracy - 0.025) * 100) }}%</td>
+                                <td class="text-danger">-1.2%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Veiksmai</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#runSimulationModal">
+                            Paleisti simuliaciją
+                        </button>
+                        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exportModal">
+                            Eksportuoti modelį
+                        </button>
+                        <button class="btn btn-danger delete-model" data-model-id="{{ model.id }}" data-model-name="{{ model.name }}">
+                            Ištrinti modelį
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modalinis langas apmokymo būsenai -->
+<div class="modal fade" id="trainingModal" tabindex="-1" aria-labelledby="trainingModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="trainingModalLabel">Modelio apmokymas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="training-progress-container">
+                    <p>Apmokomas modelis su naujausiais duomenimis...</p>
+                    <div class="progress mb-3">
+                        <div id="training-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p id="training-status">Ruošiami duomenys...</p>
+                </div>
+                <div id="training-result" style="display: none;">
+                    <div class="alert alert-success">
+                        Modelis sėkmingai apmokytas su naujausiais duomenimis!
+                    </div>
+                    <div>
+                        <p><strong>Naujas tikslumas:</strong> <span id="new-accuracy"></span>%</p>
+                        <p><strong>Pokytis:</strong> <span id="accuracy-change"></span></p>
+                        <p><strong>Apmokymo laikas:</strong> <span id="training-time"></span></p>
+                    </div>
+                </div>
+                <div id="training-error" class="alert alert-danger" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Uždaryti</button>
+                <button type="button" class="btn btn-primary" id="reload-page" style="display: none;">Atnaujinti puslapį</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Simuliacijos modalinis langas -->
+<div class="modal fade" id="runSimulationModal" tabindex="-1" aria-labelledby="runSimulationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="runSimulationModalLabel">Paleisti simuliaciją</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="simulation-form">
+                    <div class="mb-3">
+                        <label for="simulation-start-date" class="form-label">Pradžios data</label>
+                        <input type="date" class="form-control" id="simulation-start-date" name="start_date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="simulation-end-date" class="form-label">Pabaigos data</label>
+                        <input type="date" class="form-control" id="simulation-end-date" name="end_date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="simulation-initial-balance" class="form-label">Pradinis balansas (USD)</label>
+                        <input type="number" class="form-control" id="simulation-initial-balance" name="initial_balance" value="10000">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                <button type="button" class="btn btn-primary" id="start-simulation">Pradėti simuliaciją</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Eksportavimo modalinis langas -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">Eksportuoti modelį</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="export-format" class="form-label">Eksportavimo formatas</label>
+                    <select class="form-select" id="export-format">
+                        <option value="h5">Keras H5 formatas</option>
+                        <option value="onnx">ONNX formatas</option>
+                        <option value="savedmodel">TensorFlow SavedModel</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="export-include-weights" class="form-check-label">
+                        <input type="checkbox" class="form-check-input" id="export-include-weights" checked>
+                        Įtraukti svorius
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                <button type="button" class="btn btn-primary" id="export-model">Eksportuoti</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modelio trynimo modalinis langas -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Patvirtinkite trynimą</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Ar tikrai norite ištrinti modelį <span id="delete-model-name"></span>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Ištrinti</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modelio apmokymo su naujausiais duomenimis funkcionalumas
+    document.querySelectorAll('.update-model').forEach(button => {
+        button.addEventListener('click', function() {
+            const modelId = this.getAttribute('data-model-id');
+            
+            // Atidaryti apmokymo modalinį langą
+            const trainingModal = new bootstrap.Modal(document.getElementById('trainingModal'));
+            trainingModal.show();
+            
+            // Atstatyti modalinį langą į pradinę būseną
+            document.getElementById('training-progress-container').style.display = 'block';
+            document.getElementById('training-result').style.display = 'none';
+            document.getElementById('training-error').style.display = 'none';
+            document.getElementById('reload-page').style.display = 'none';
+            document.getElementById('training-progress-bar').style.width = '0%';
+            document.getElementById('training-status').textContent = 'Ruošiami duomenys...';
+            
+            // Pradėti apmokymo procesą
+            fetch(`/model-training/update/${modelId}`, {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Nepavyko apmokyti modelio');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Sėkmingas apmokymas
+                document.getElementById('training-progress-container').style.display = 'none';
+                document.getElementById('training-result').style.display = 'block';
+                document.getElementById('new-accuracy').textContent = (data.new_accuracy * 100).toFixed(2);
+                document.getElementById('accuracy-change').textContent = (data.accuracy_change > 0 ? '+' : '') + 
+                    (data.accuracy_change * 100).toFixed(2) + '%';
+                document.getElementById('accuracy-change').style.color = data.accuracy_change >= 0 ? 'green' : 'red';
+                document.getElementById('training-time').textContent = data.training_time;
+                document.getElementById('reload-page').style.display = 'block';
+            })
+            .catch(error => {
+                // Klaida apmokymo metu
+                document.getElementById('training-progress-container').style.display = 'none';
+                document.getElementById('training-error').style.display = 'block';
+                document.getElementById('training-error').textContent = error.message;
+            });
+            
+            // Simuliuojame progreso juostos animaciją
+            let progress = 0;
+            const progressInterval = setInterval(function() {
+                progress += 5;
+                if (progress > 90) {
+                    clearInterval(progressInterval);
+                }
+                document.getElementById('training-progress-bar').style.width = `${progress}%`;
+                
+                // Atnaujinti statusą pagal progresą
+                if (progress <= 20) {
+                    document.getElementById('training-status').textContent = 'Ruošiami duomenys...';
+                } else if (progress <= 50) {
+                    document.getElementById('training-status').textContent = 'Gaunami naujausi duomenys iš Binance...';
+                } else if (progress <= 80) {
+                    document.getElementById('training-status').textContent = 'Modelis apmokomas...';
+                } else {
+                    document.getElementById('training-status').textContent = 'Išsaugomi rezultatai...';
+                }
+            }, 500);
+        });
+    });
+    
+    // Atnaujinti puslapį po apmokymo
+    document.getElementById('reload-page').addEventListener('click', function() {
+        location.reload();
+    });
+    
+    // Modelio trynimo funkcionalumas
+    document.querySelectorAll('.delete-model').forEach(button => {
+        button.addEventListener('click', function() {
+            const modelId = this.getAttribute('data-model-id');
+            const modelName = this.getAttribute('data-model-name');
+            
+            document.getElementById('delete-model-name').textContent = modelName;
+            
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+            
+            document.getElementById('confirm-delete').onclick = function() {
+                window.location.href = `/model-training/delete/${modelId}`;
+            };
+        });
+    });
+    
+    // Prognozavimo grafiko atvaizdavimas
+    const options = {
+        series: [{
+            name: 'Faktinė kaina',
+            data: generateRandomPrices(30, 80000, 120000)
+        }, {
+            name: 'Prognozuojama kaina',
+            data: generateRandomPrices(30, 80000, 120000)
+        }],
+        chart: {
+            height: 400,
+            type: 'line',
+            zoom: {
+                enabled: true
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            width: [3, 3],
+            curve: 'straight',
+            dashArray: [0, 5]
+        },
+        title: {
+            text: 'Bitcoin kainos prognozė',
+            align: 'left'
+        },
+        legend: {
+            tooltipHoverFormatter: function(val, opts) {
+                return val + ': ' + opts.w.globals.series[opts.seriesIndex][opts.dataPointIndex] + ' USD'
+            }
+        },
+        markers: {
+            size: 0,
+            hover: {
+                sizeOffset: 6
+            }
+        },
+        xaxis: {
+            categories: generateDates(30),
+        },
+        tooltip: {
+            y: {
+                formatter: function(val) {
+                    return val + " USD"
+                }
+            }
+        },
+        grid: {
+            borderColor: '#f1f1f1',
+        }
+    };
+
+    const chart = new ApexCharts(document.getElementById("prediction-chart"), options);
+    chart.render();
+    
+    // Pagalbinė funkcija datoms generuoti
+    function generateDates(count) {
+        const dates = [];
+        const today = new Date();
+        
+        for (let i = count - 1; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(today.getDate() - i);
+            dates.push(date.toISOString().split('T')[0]);
+        }
+        
+        return dates;
+    }
+    
+    // Pagalbinė funkcija kainoms generuoti
+    function generateRandomPrices(count, min, max) {
+        const prices = [];
+        let lastPrice = min + Math.random() * (max - min);
+        
+        for (let i = 0; i < count; i++) {
+            const change = (Math.random() - 0.5) * 0.05; // +/- 5% pokytis
+            lastPrice = lastPrice * (1 + change);
+            lastPrice = Math.max(min, Math.min(max, lastPrice)); // Apribojame minimalia ir maksimalia kaina
+            prices.push(Math.round(lastPrice));
+        }
+        
+        return prices;
+    }
+    
+    // Simuliacijos paleidimas
+    document.getElementById('start-simulation').addEventListener('click', function() {
+        const modelId = '{{ model.id }}';
+        const startDate = document.getElementById('simulation-start-date').value;
+        const endDate = document.getElementById('simulation-end-date').value;
+        const initialBalance = document.getElementById('simulation-initial-balance').value;
+        
+        // Čia būtų kreipimasis į simuliacijos API endpoint
+        alert(`Simuliacija paleista su modeliu ${modelId}, nuo ${startDate} iki ${endDate}, pradinis balansas: ${initialBalance} USD`);
+        
+        // Uždaryti modalinį langą
+        const modal = bootstrap.Modal.getInstance(document.getElementById('runSimulationModal'));
+        modal.hide();
+    });
+    
+    // Modelio eksportavimas
+    document.getElementById('export-model').addEventListener('click', function() {
+        const modelId = '{{ model.id }}';
+        const format = document.getElementById('export-format').value;
+        const includeWeights = document.getElementById('export-include-weights').checked;
+        
+        // Čia būtų kreipimasis į eksportavimo API endpoint
+        alert(`Modelis ${modelId} eksportuojamas į ${format} formatą${includeWeights ? ' su svoriais' : ''}`);
+        
+        // Uždaryti modalinį langą
+        const modal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+        modal.hide();
+    });
+});
+</script>
+{% endblock %}

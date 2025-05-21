@@ -1,0 +1,112 @@
+/* Metrikų reikšmių spalvinis kodavimas */
+
+/* Geros reikšmės (accuracy, r2, etc.) */
+.metric-excellent {
+    color: #28a745 !important;
+    font-weight: bold;
+}
+
+.metric-good {
+    color: #5cb85c !important;
+}
+
+.metric-average {
+    color: #ffc107 !important;
+}
+
+.metric-poor {
+    color: #dc3545 !important;
+}
+
+/* Klaidos metrikos spalvos (loss, MAE, MSE, etc.) - atvirkščiai nei accuracy */
+.error-metric-excellent {
+    color: #28a745 !important;
+    font-weight: bold;
+}
+
+.error-metric-good {
+    color: #5cb85c !important;
+}
+
+.error-metric-average {
+    color: #ffc107 !important;
+}
+
+.error-metric-poor {
+    color: #dc3545 !important;
+}
+
+/* Fono spalvos metrikų lentelėms */
+.metric-bg-excellent {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+}
+
+.metric-bg-good {
+    background-color: rgba(92, 184, 92, 0.1) !important;
+}
+
+.metric-bg-average {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.metric-bg-poor {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Metrikų pokytis (palyginimas) */
+.metric-change-positive {
+    color: #28a745;
+}
+
+.metric-change-negative {
+    color: #dc3545;
+}
+
+.metric-change-neutral {
+    color: #6c757d;
+}
+
+/* Metrikų žymės */
+.metric-badge {
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.metric-badge-excellent {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+}
+
+.metric-badge-good {
+    background-color: rgba(92, 184, 92, 0.1);
+    color: #5cb85c;
+}
+
+.metric-badge-average {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #f0ad4e;
+}
+
+.metric-badge-poor {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+/* Progreso juostų spalvinis kodavimas */
+.progress-excellent .progress-bar {
+    background-color: #28a745;
+}
+
+.progress-good .progress-bar {
+    background-color: #5cb85c;
+}
+
+.progress-average .progress-bar {
+    background-color: #ffc107;
+}
+
+.progress-poor .progress-bar {
+    background-color: #dc3545;
+}

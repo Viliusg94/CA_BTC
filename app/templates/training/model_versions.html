@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Modelio versijos: {{ base_model_name }}{% endblock %}
+
+{% block styles %}
+<style>
+    .version-tree {
+        margin-bottom: 30px;
+    }
+    
+    .version-node {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-left: 4px solid #007bff;
+    }
+    
+    .version-node.current {
+        background-color: #e0f0ff;
+        border-left: 4px solid #0056b3;
+    }
+    
+    .version-node .version-name {
+        font-weight: 600;
+        color: #0056b3;
+    }
+    
+    .version-node .version-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .version-children {
+        margin-left: 30px;
+        position: relative;
+    }
+    
+    .version-children::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -15px;
+        height: 100%;
+        border-left: 1px solid #ddd;
+    }
+    
+    .version-comparison-card {
+        margin-bottom: 20px;
+    }
+    
+    .comparison-table th {
+        background-color: #f8f9fa;
+    }
+    
+    .parameter-changed {
+        background-color: #fff3cd;
+    }
+    
+    .parameter-added {
+        background-color: #d4edda;
+    }
+    
+    .parameter-removed {
+        background-color: #f8d7da;
+    }
+    
+    .version-log {
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+    
+    .version-log-entry {
+        margin-bottom: 5px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .version-log-entry:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigacijos kelias -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.index') }}">Pagrindinis</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.model_history') }}">Modelių istorija</a></li>
+            <li class="breadcrumb-item active">Modelio versijos</li>
+        </ol>
+    </nav>
+
+    <!-- Antraštė -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ base_model_name }} versijos</h1>
+        <a href="{{ url_for('model_training.create_model_version', base_model_id=base_model_id) }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i>Nauja versija
+        </a>
+    </div>
+
+    <!-- Versijų medis -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Versijų medis</h5>
+        </div>
+        <div class="card-body">
+            {% if version_tree %}
+            <div class="version-tree">
+                {{ render_version_node(version_tree, current_version_id) }}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Šis modelis neturi versijų istorijos.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Dabartinė versija -->
+    {% if current_version %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Dabartinė versija: {{ current_version.version_name }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h6>Pagrindinė informacija</h6>
+                        <div class="d-flex mb-2">
+                            <div class="fw-bold me-2" style="width: 120px;">Versijos Nr.:</div>
+                            <div>{{ current_version.version_number }}</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="fw-bold me-2" style="width: 120px;">Sukurta:</div>
+                            <div>{{ current_version.created_at }}</div>
+                        </div>
+                        <div class="d-flex mb-2">
+                            <div class="fw-bold me-2" style="width: 120px;">Modelio ID:</div>
+                            <div>{{ current_version_id }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h6>Parametrai</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Parametras</th>
+                                        <th>Reikšmė</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for param, value in current_version.parameters.items() %}
+                                    <tr>
+                                        <td>{{ param }}</td>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if current_version.changes %}
+            <div class="version-log">
+                <h6>Pakeitimų žurnalas</h6>
+                {% for change in current_version.changes %}
+                <div class="version-log-entry">
+                    <span class="badge {% if change.type == 'added' %}bg-success{% elif change.type == 'modified' %}bg-warning{% elif change.type == 'removed' %}bg-danger{% else %}bg-info{% endif %} me-2">
+                        {{ change.type|capitalize }}
+                    </span>
+                    {{ change.description }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="mt-3">
+                <a href="{{ url_for('model_training.view_model', training_id=current_version_id) }}" class="btn btn-primary">
+                    <i class="fas fa-eye me-1"></i>Peržiūrėti modelį
+                </a>
+                {% if parent_version_id %}
+                <a href="{{ url_for('model_training.compare_versions', version1=parent_version_id, version2=current_version_id) }}" class="btn btn-outline-primary ms-2">
+                    <i class="fas fa-exchange-alt me-1"></i>Palyginti su ankstesne versija
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Jei yra palyginimas tarp versijų -->
+    {% if comparison_data %}
+    <div class="card version-comparison-card">
+        <div class="card-header">
+            <h5 class="mb-0">Palyginimas: {{ version1_info.version_name }} vs {{ version2_info.version_name }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Parametras</th>
+                            <th>{{ version1_info.version_name }}</th>
+                            <th>{{ version2_info.version_name }}</th>
+                            <th>Pokytis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for param, comparison in comparison_data.items() %}
+                        <tr class="{{ comparison.status }}">
+                            <td>{{ param }}</td>
+                            <td>{{ comparison.version1_value }}</td>
+                            <td>{{ comparison.version2_value }}</td>
+                            <td>
+                                {% if comparison.status == 'parameter-changed' %}
+                                    {% if comparison.change_percent %}
+                                        <span class="{{ 'text-success' if comparison.change_percent > 0 else 'text-danger' }}">
+                                            {{ '+' if comparison.change_percent > 0 else '' }}{{ comparison.change_percent }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="text-warning">Pakeista</span>
+                                    {% endif %}
+                                {% elif comparison.status == 'parameter-added' %}
+                                    <span class="text-success">Pridėta</span>
+                                {% elif comparison.status == 'parameter-removed' %}
+                                    <span class="text-danger">Pašalinta</span>
+                                {% else %}
+                                    <span class="text-muted">Nepakeista</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Makro versijų medžiui piešti -->
+{% macro render_version_node(node, current_id) %}
+<div class="version-node {{ 'current' if node.id == current_id }}">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <div class="version-name">{{ node.version_name }}</div>
+            <div class="version-meta">
+                <span class="me-2">Sukurta: {{ node.created_at }}</span>
+                <span>ID: {{ node.id }}</span>
+            </div>
+        </div>
+        <div>
+            <a href="{{ url_for('model_training.view_model_version', base_model_id=base_model_id, version_id=node.id) }}" 
+               class="btn btn-sm {{ 'btn-primary' if node.id == current_id else 'btn-outline-primary' }}">
+                {% if node.id == current_id %}
+                <i class="fas fa-check me-1"></i>Dabartinė
+                {% else %}
+                <i class="fas fa-eye me-1"></i>Peržiūrėti
+                {% endif %}
+            </a>
+        </div>
+    </div>
+    
+    {% if node.children %}
+    <div class="version-children">
+        {% for child in node.children %}
+        {{ render_version_node(child, current_id) }}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+{% endblock %}

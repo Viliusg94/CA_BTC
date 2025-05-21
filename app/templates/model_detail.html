@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ model_info.info.model_type|upper }} Modelio Detalės | Bitcoin Prognozavimo Platforma</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigacija -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fab fa-bitcoin text-warning me-2"></i>Bitcoin Prognozavimo Platforma
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Pradžia</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/models"><i class="fas fa-chart-line me-1"></i>Modeliai</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/train"><i class="fas fa-cogs me-1"></i>Mokymas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/predict"><i class="fas fa-magic me-1"></i>Prognozė</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/ensemble"><i class="fas fa-layer-group me-1"></i>Ansamblis</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Pagrindinis turinys -->
+    <div class="container mt-5 pt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">Pradžia</a></li>
+                        <li class="breadcrumb-item"><a href="/models">Modeliai</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ model_info.info.model_type|upper }}</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Modelio antraštė ir statusas -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h1 class="display-5">
+                        {{ model_info.info.model_type|upper }} Modelis
+                        {% if model_info.available %}
+                        <span class="badge bg-success">Aktyvus</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Neaktyvus</span>
+                        {% endif %}
+                    </h1>
+                    <div>
+                        <a href="/train?model={{ model_info.info.model_type }}" class="btn btn-primary">
+                            <i class="fas fa-sync-alt me-1"></i> Perkrauti modelį
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Modelio informacija -->
+            <div class="col-md-4">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Modelio informacija</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <tbody>
+                                <tr>
+                                    <th>Modelio tipas</th>
+                                    <td>{{ model_info.info.model_type|upper }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Sekos ilgis</th>
+                                    <td>{{ model_info.info.sequence_length }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tikslo stulpelis</th>
+                                    <td>{{ model_info.info.target_column }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Paskutinis mokymas</th>
+                                    <td>
+                                        {% if model_info.info.training_date %}
+                                        {{ model_info.info.training_date }}
+                                        {% else %}
+                                        Nežinoma
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Būsena</th>
+                                    <td>
+                                        {% if model_info.available %}
+                                        <span class="text-success">Aktyvus</span>
+                                        {% else %}
+                                        <span class="text-secondary">Neaktyvus</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Modelio metrikos -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Modelio metrikos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <h6 class="text-muted">RMSE</h6>
+                                <h3>{{ "%.2f"|format(model_info.info.metrics.rmse) }}</h3>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h6 class="text-muted">MAE</h6>
+                                <h3>{{ "%.2f"|format(model_info.info.metrics.mae) }}</h3>
+                            </div>
+                            <div class="col-6">
+                                <h6 class="text-muted">MAPE</h6>
+                                <h3>{{ "%.2f"|format(model_info.info.metrics.mape) }}%</h3>
+                            </div>
+                            <div class="col-6">
+                                <h6 class="text-muted">R²</h6>
+                                <h3>{{ "%.4f"|format(model_info.info.metrics.r2) }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Greita prognozė -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Greita prognozė</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <a href="/predict?model={{ model_info.info.model_type }}" class="btn btn-primary">
+                            <i class="fas fa-magic me-1"></i> Prognozuoti su šiuo modeliu
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prognozės grafikas -->
+            <div class="col-md-8">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Modelio prognozės</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="prediction-chart" style="height: 500px;">
+                        {% if not model_info.available %}
+                            <div class="alert alert-warning">
+                                Modelis neaktyvus, prognozės negalimos.
+                            </div>
+                        {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Istoriniai mokymai -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Mokymo istorija</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if training_history %}
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Epochos</th>
+                                    <th>RMSE</th>
+                                    <th>Trukmė</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in training_history %}
+                                <tr>
+                                    <td>{{ item.date }}</td>
+                                    <td>{{ item.epochs }}</td>
+                                    <td>{{ "%.2f"|format(item.rmse) }}</td>
+                                    <td>{{ item.duration }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div class="alert alert-info">
+                            Nėra istorinių mokymų duomenų.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Bitcoin Prognozavimo Platforma</h5>
+                    <p class="text-muted">Magistro projektas, taikantis mašininio mokymosi metodus Bitcoin kainų prognozavimui.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">&copy; 2023. Visos teisės saugomos.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if model_info.available and prediction_chart %}
+                // Atvaizduojame prognozės grafiką
+                const predictionChartData = {{ prediction_chart | safe }};
+                Plotly.newPlot('prediction-chart', predictionChartData.data, predictionChartData.layout);
+            {% endif %}
+        });
+    </script>
+</body>
+</html>

@@ -1,5 +1,3 @@
-"""
-Prekybos paketas
-------------
-Šis paketas turi funkcionalumą susijusį su prekyba
-"""
+
+
+# Tuščias __init__.py failas, kad trading būtų modulis

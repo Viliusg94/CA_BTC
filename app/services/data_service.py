@@ -5,223 +5,149 @@ Duomenų servisas
 """
 
 import os
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-from datetime import datetime, timedelta
+import json
 import logging
-
-logger = logging.getLogger(__name__)
+import uuid
+from datetime import datetime
 
 class DataService:
     """
-    Servisas darbui su duomenimis
+    Servisas, atsakingas už duomenų rinkinių valdymą
     """
-    def __init__(self):
-        self.scaler = None
     
-    def get_data_from_database(self):
+    def __init__(self):
         """
-        Gauna BTC kainų duomenis iš duomenų bazės
+        Inicializuoja DataService ir sukuria reikalingus aplankus
+        """
+        # Kelias iki duomenų direktorijos
+        self.data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+        
+        # Duomenų rinkinių aplankas
+        self.datasets_dir = os.path.join(self.data_dir, 'datasets')
+        os.makedirs(self.datasets_dir, exist_ok=True)
+        
+        # Duomenų rinkinių metaduomenų aplankas
+        self.metadata_dir = os.path.join(self.datasets_dir, 'metadata')
+        os.makedirs(self.metadata_dir, exist_ok=True)
+    
+    def get_all_datasets(self):
+        """
+        Gauna visų duomenų rinkinių sąrašą
         
         Returns:
-            pandas.DataFrame: DataFrame su kainų duomenimis
+            list: Duomenų rinkinių sąrašas
         """
-        # Šiame etape tik simuliuosime duomenų gavimą
-        # Realiame projekte čia būtų naudojama duomenų bazės užklausa
+        # Inicializuojame tuščią duomenų rinkinių sąrašą
+        datasets = []
         
         try:
-            # Patikriname, ar yra cached duomenys
-            cached_path = 'app/static/data/cached_data.csv'
-            if os.path.exists(cached_path):
-                data = pd.read_csv(cached_path, index_col=0, parse_dates=True)
-                logger.info(f"Duomenys įkelti iš kešo. Eilučių: {len(data)}")
-                return data
+            # Tikriname, ar yra duomenų rinkinių
+            if not os.path.exists(self.metadata_dir):
+                # Jei nėra, sukuriame demonstracinius duomenų rinkinius
+                self._create_demo_datasets()
             
-            # Jeigu ne, bandome įkelti iš processed direktorijos
-            processed_path = 'data/processed/btc_features.csv'
-            if os.path.exists(processed_path):
-                data = pd.read_csv(processed_path, index_col=0, parse_dates=True)
-                
-                # Išsaugome į kešą
-                os.makedirs('app/static/data', exist_ok=True)
-                data.to_csv(cached_path)
-                
-                logger.info(f"Duomenys įkelti iš apdorotų failų. Eilučių: {len(data)}")
-                return data
+            # Pereiname per visus metaduomenų failus
+            for filename in os.listdir(self.metadata_dir):
+                if filename.endswith('.json'):
+                    # Pašaliname '.json' galūnę
+                    dataset_id = filename[:-5]
+                    
+                    # Gauname duomenų rinkinio metaduomenis
+                    dataset = self.get_dataset(dataset_id)
+                    
+                    if dataset:
+                        datasets.append(dataset)
             
-            # Jeigu nerandame, generuojame sintetinius duomenis
-            logger.warning("Nerasti BTC duomenys. Sugeneruoti sintetiniai duomenys.")
-            return self._generate_synthetic_data()
-        
+            # Rūšiuojame pagal sukūrimo datą (naujausi viršuje)
+            datasets.sort(key=lambda x: x.get('created_at', ''), reverse=True)
         except Exception as e:
-            logger.error(f"Klaida gaunant duomenis: {str(e)}")
-            return self._generate_synthetic_data()
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida gaunant duomenų rinkinių sąrašą: {str(e)}")
+        
+        # Grąžiname duomenų rinkinių sąrašą
+        return datasets
     
-    def _generate_synthetic_data(self):
+    def get_dataset(self, dataset_id):
         """
-        Generuoja sintetinius duomenis testavimui
-        
-        Returns:
-            pandas.DataFrame: Sintetiniai duomenys
-        """
-        # Generuojame 1000 dienų duomenis
-        dates = pd.date_range(end=datetime.now(), periods=1000, freq='D')
-        
-        # Pradedame nuo 1000 ir pridedame atsitiktinį pokytį
-        close_prices = [1000]
-        for i in range(1, 1000):
-            # Atsitiktinis pokytis nuo -3% iki +3%
-            change = close_prices[-1] * (1 + np.random.uniform(-0.03, 0.03))
-            close_prices.append(change)
-        
-        # Sukuriame DataFrame
-        data = pd.DataFrame({
-            'Close': close_prices,
-            'Open': [price * (1 - np.random.uniform(0, 0.01)) for price in close_prices],
-            'High': [price * (1 + np.random.uniform(0, 0.02)) for price in close_prices],
-            'Low': [price * (1 - np.random.uniform(0, 0.02)) for price in close_prices],
-            'Volume': [np.random.randint(100000, 1000000) for _ in range(1000)]
-        }, index=dates)
-        
-        return data
-    
-    def prepare_data_for_training(self, sequence_length=60, prediction_days=1, test_size=0.2):
-        """
-        Paruošia duomenis modelio treniravimui
+        Gauna duomenų rinkinio metaduomenis
         
         Args:
-            sequence_length (int): Sekos ilgis (kiek dienų naudoti kaip įvestį)
-            prediction_days (int): Kiek dienų į priekį prognozuoti
-            test_size (float): Testavimo duomenų dalis (0-1)
-        
+            dataset_id (str): Duomenų rinkinio ID
+            
         Returns:
-            tuple: (X_train, X_val, y_train, y_val, scaler)
+            dict: Duomenų rinkinio metaduomenys arba None, jei nerasta
         """
-        # Gauname duomenis
-        data = self.get_data_from_database()
-        
-        # Naudosime tik 'Close' stulpelį
-        close_data = data['Close'].values.reshape(-1, 1)
-        
-        # Normalizuojame duomenis
-        self.scaler = MinMaxScaler(feature_range=(0, 1))
-        scaled_data = self.scaler.fit_transform(close_data)
-        
-        # Paruošiame sekas
-        X, y = [], []
-        
-        for i in range(sequence"""
-Duomenų servisas
----------------------------
-Šis modulis yra atsakingas už duomenų gavimą, paruošimą ir transformavimą.
-"""
-
-import os
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-from datetime import datetime, timedelta
-import logging
-
-logger = logging.getLogger(__name__)
-
-class DataService:
-    """
-    Servisas darbui su duomenimis
-    """
-    def __init__(self):
-        self.scaler = None
-    
-    def get_data_from_database(self):
-        """
-        Gauna BTC kainų duomenis iš duomenų bazės
-        
-        Returns:
-            pandas.DataFrame: DataFrame su kainų duomenimis
-        """
-        # Šiame etape tik simuliuosime duomenų gavimą
-        # Realiame projekte čia būtų naudojama duomenų bazės užklausa
-        
         try:
-            # Patikriname, ar yra cached duomenys
-            cached_path = 'app/static/data/cached_data.csv'
-            if os.path.exists(cached_path):
-                data = pd.read_csv(cached_path, index_col=0, parse_dates=True)
-                logger.info(f"Duomenys įkelti iš kešo. Eilučių: {len(data)}")
-                return data
+            # Kelias iki metaduomenų failo
+            metadata_file = os.path.join(self.metadata_dir, f"{dataset_id}.json")
             
-            # Jeigu ne, bandome įkelti iš processed direktorijos
-            processed_path = 'data/processed/btc_features.csv'
-            if os.path.exists(processed_path):
-                data = pd.read_csv(processed_path, index_col=0, parse_dates=True)
-                
-                # Išsaugome į kešą
-                os.makedirs('app/static/data', exist_ok=True)
-                data.to_csv(cached_path)
-                
-                logger.info(f"Duomenys įkelti iš apdorotų failų. Eilučių: {len(data)}")
-                return data
+            # Tikriname, ar failas egzistuoja
+            if not os.path.exists(metadata_file):
+                return None
             
-            # Jeigu nerandame, generuojame sintetinius duomenis
-            logger.warning("Nerasti BTC duomenys. Sugeneruoti sintetiniai duomenys.")
-            return self._generate_synthetic_data()
-        
+            # Grąžiname metaduomenis
+            with open(metadata_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
         except Exception as e:
-            logger.error(f"Klaida gaunant duomenis: {str(e)}")
-            return self._generate_synthetic_data()
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida gaunant duomenų rinkinį: {str(e)}")
+            return None
     
-    def _generate_synthetic_data(self):
+    def _create_demo_datasets(self):
         """
-        Generuoja sintetinius duomenis testavimui
-        
-        Returns:
-            pandas.DataFrame: Sintetiniai duomenys
+        Sukuria demonstracinius duomenų rinkinius
         """
-        # Generuojame 1000 dienų duomenis
-        dates = pd.date_range(end=datetime.now(), periods=1000, freq='D')
-        
-        # Pradedame nuo 1000 ir pridedame atsitiktinį pokytį
-        close_prices = [1000]
-        for i in range(1, 1000):
-            # Atsitiktinis pokytis nuo -3% iki +3%
-            change = close_prices[-1] * (1 + np.random.uniform(-0.03, 0.03))
-            close_prices.append(change)
-        
-        # Sukuriame DataFrame
-        data = pd.DataFrame({
-            'Close': close_prices,
-            'Open': [price * (1 - np.random.uniform(0, 0.01)) for price in close_prices],
-            'High': [price * (1 + np.random.uniform(0, 0.02)) for price in close_prices],
-            'Low': [price * (1 - np.random.uniform(0, 0.02)) for price in close_prices],
-            'Volume': [np.random.randint(100000, 1000000) for _ in range(1000)]
-        }, index=dates)
-        
-        return data
-    
-    def prepare_data_for_training(self, sequence_length=60, prediction_days=1, test_size=0.2):
-        """
-        Paruošia duomenis modelio treniravimui
-        
-        Args:
-            sequence_length (int): Sekos ilgis (kiek dienų naudoti kaip įvestį)
-            prediction_days (int): Kiek dienų į priekį prognozuoti
-            test_size (float): Testavimo duomenų dalis (0-1)
-        
-        Returns:
-            tuple: (X_train, X_val, y_train, y_val, scaler)
-        """
-        # Gauname duomenis
-        data = self.get_data_from_database()
-        
-        # Naudosime tik 'Close' stulpelį
-        close_data = data['Close'].values.reshape(-1, 1)
-        
-        # Normalizuojame duomenis
-        self.scaler = MinMaxScaler(feature_range=(0, 1))
-        scaled_data = self.scaler.fit_transform(close_data)
-        
-        # Paruošiame sekas
-        X, y = [], []
-        
-        for i in range(sequence
+        try:
+            # Sukuriame kelis demonstracinius duomenų rinkinius
+            demo_datasets = [
+                {
+                    'id': str(uuid.uuid4()),
+                    'name': 'Bitcoin 2022 kainų duomenys',
+                    'description': 'Bitcoin kainų duomenys iš 2022 metų, 1 dienos intervalu',
+                    'source': 'Yahoo Finance',
+                    'format': 'CSV',
+                    'rows': 365,
+                    'columns': 7,
+                    'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'type': 'istoriniai',
+                    'features': ['date', 'open', 'high', 'low', 'close', 'volume', 'adj_close']
+                },
+                {
+                    'id': str(uuid.uuid4()),
+                    'name': 'Ethereum 2022-2023 kainų duomenys',
+                    'description': 'Ethereum kainų duomenys iš 2022-2023 metų, 1 dienos intervalu',
+                    'source': 'CoinMarketCap',
+                    'format': 'CSV',
+                    'rows': 730,
+                    'columns': 7,
+                    'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'type': 'istoriniai',
+                    'features': ['date', 'open', 'high', 'low', 'close', 'volume', 'market_cap']
+                },
+                {
+                    'id': str(uuid.uuid4()),
+                    'name': 'Kriptovaliutų koreliacija 2023',
+                    'description': 'Pagrindinių kriptovaliutų kainų koreliacija 2023 metais',
+                    'source': 'CoinGecko',
+                    'format': 'JSON',
+                    'rows': 100,
+                    'columns': 10,
+                    'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'type': 'analitinis',
+                    'features': ['date', 'btc', 'eth', 'xrp', 'ltc', 'ada', 'dot', 'link', 'sol', 'doge']
+                }
+            ]
+            
+            # Išsaugome demonstracinius duomenų rinkinius
+            for dataset in demo_datasets:
+                # Gaukime duomenų rinkinio ID
+                dataset_id = dataset['id']
+                # Kelias iki metaduomenų failo
+                metadata_file = os.path.join(self.metadata_dir, f"{dataset_id}.json")
+                
+                # Įrašome duomenis į failą
+                with open(metadata_file, 'w', encoding='utf-8') as f:
+                    json.dump(dataset, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            # Užfiksuojame klaidą žurnale
+            logging.error(f"Klaida kuriant demonstracinius duomenų rinkinius: {str(e)}")

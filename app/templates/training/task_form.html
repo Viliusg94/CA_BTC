@@ -1,149 +1,132 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1>{{ 'Redaguoti užduotį' if task and task.id else 'Sukurti naują užduotį' }}</h1>
-            <p class="text-muted">{{ 'Atnaujinkite užduoties informaciją' if task and task.id else 'Suplanuokite naują modelio treniravimo užduotį' }}</p>
-        </div>
-        <div>
-            <a href="{{ url_for('tasks.task_list') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Grįžti į sąrašą
-            </a>
-        </div>
+    <!-- Puslapio antraštė -->
+    <h1>{{ title }}</h1>
+    
+    <!-- Navigacijos nuorodos -->
+    <div class="mb-4">
+        <a href="{{ url_for('tasks.task_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Grįžti į sąrašą
+        </a>
     </div>
     
+    <!-- Užduoties forma -->
     <div class="card">
         <div class="card-body">
-            <form method="POST" class="needs-validation" novalidate>
+            <form method="POST" action="{{ request.path }}">
                 <!-- Pagrindinė informacija -->
-                <div class="mb-4">
-                    <h5 class="card-title mb-3">Pagrindinė informacija</h5>
-                    
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Užduoties pavadinimas *</label>
-                        <input type="text" class="form-control" id="name" name="name" required 
-                               value="{{ task.name if task and task.name else '' }}">
-                        <div class="invalid-feedback">Įveskite užduoties pavadinimą</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Aprašymas</label>
-                        <textarea class="form-control" id="description" name="description" rows="3">{{ task.description if task and task.description else '' }}</textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="model_id" class="form-label">Modelis *</label>
-                        <select class="form-select" id="model_id" name="model_id" required>
-                            <option value="" selected disabled>Pasirinkite modelį</option>
-                            {% for model in models %}
-                            <option value="{{ model.id }}" 
-                                    {{ 'selected' if task and task.model_id == model.id else '' }}>
-                                {{ model.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <div class="invalid-feedback">Pasirinkite modelį</div>
-                    </div>
+                <div class="form-group mb-3">
+                    <label for="name" class="form-label">Užduoties pavadinimas <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name" required 
+                           value="{{ task.name if task else '' }}">
+                    <small class="text-muted">Trumpas aprašantis pavadinimas</small>
                 </div>
                 
-                <!-- Planavimo informacija -->
-                <div class="mb-4">
-                    <h5 class="card-title mb-3">Planavimo informacija</h5>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="scheduled_date" class="form-label">Data *</label>
-                            <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" required
+                <div class="form-group mb-3">
+                    <label for="description" class="form-label">Aprašymas</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ task.description if task else '' }}</textarea>
+                    <small class="text-muted">Išsamesnis užduoties aprašymas</small>
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label for="model_id" class="form-label">Modelis <span class="text-danger">*</span></label>
+                    <select class="form-control" id="model_id" name="model_id" required>
+                        <option value="">-- Pasirinkite modelį --</option>
+                        {% for model in models %}
+                        <option value="{{ model.id }}" 
+                                {% if task and task.model_id == model.id %}selected{% endif %}>
+                            {{ model.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Pasirinkite modelį, kurį norite treniruoti</small>
+                </div>
+                
+                <!-- Laiko informacija -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="scheduled_date" class="form-label">Data <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" required 
                                    value="{{ task.scheduled_time.strftime('%Y-%m-%d') if task and task.scheduled_time else '' }}">
-                            <div class="invalid-feedback">Pasirinkite datą</div>
                         </div>
-                        
-                        <div class="col-md-6">
-                            <label for="scheduled_time" class="form-label">Laikas *</label>
-                            <input type="time" class="form-control" id="scheduled_time" name="scheduled_time" required
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="scheduled_time" class="form-label">Laikas <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="scheduled_time" name="scheduled_time" required 
                                    value="{{ task.scheduled_time.strftime('%H:%M') if task and task.scheduled_time else '' }}">
-                            <div class="invalid-feedback">Pasirinkite laiką</div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Treniravimo parametrai -->
-                <div class="mb-4">
-                    <h5 class="card-title mb-3">Treniravimo parametrai</h5>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-4">
+                <h4 class="mt-4 mb-3">Treniravimo parametrai</h4>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="form-group">
                             <label for="epochs" class="form-label">Epochos</label>
                             <input type="number" class="form-control" id="epochs" name="epochs" min="1" max="1000" 
-                                   value="{{ task.training_params.epochs if task and task.training_params.epochs else 10 }}">
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <label for="batch_size" class="form-label">Batch dydis</label>
-                            <input type="number" class="form-control" id="batch_size" name="batch_size" min="1" max="512" 
-                                   value="{{ task.training_params.batch_size if task and task.training_params.batch_size else 32 }}">
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <label for="learning_rate" class="form-label">Mokymosi greitis</label>
-                            <input type="number" class="form-control" id="learning_rate" name="learning_rate" step="0.0001" min="0.0001" max="1" 
-                                   value="{{ task.training_params.learning_rate if task and task.training_params.learning_rate else 0.001 }}">
+                                   value="{{ task.training_params.epochs if task and task.training_params else 10 }}">
+                            <small class="text-muted">Kiek kartų apmokyti modelį</small>
                         </div>
                     </div>
                     
-                    <div class="mt-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="save_checkpoints" name="save_checkpoints"
-                                   {{ 'checked' if task and task.training_params.save_checkpoints else '' }}>
-                            <label class="form-check-label" for="save_checkpoints">
-                                Išsaugoti tarpinius modelio taškus
-                            </label>
+                    <div class="col-md-4 mb-3">
+                        <div class="form-group">
+                            <label for="batch_size" class="form-label">Partijos dydis</label>
+                            <input type="number" class="form-control" id="batch_size" name="batch_size" min="1" max="1024" 
+                                   value="{{ task.training_params.batch_size if task and task.training_params else 32 }}">
+                            <small class="text-muted">Duomenų kiekis vienos iteracijos metu</small>
                         </div>
-                        
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="early_stopping" name="early_stopping"
-                                   {{ 'checked' if task and task.training_params.early_stopping else '' }}>
-                            <label class="form-check-label" for="early_stopping">
-                                Įjungti ankstyvą sustabdymą
-                            </label>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="form-group">
+                            <label for="learning_rate" class="form-label">Mokymosi greitis</label>
+                            <input type="number" class="form-control" id="learning_rate" name="learning_rate" min="0.0001" max="1" step="0.0001" 
+                                   value="{{ task.training_params.learning_rate if task and task.training_params else 0.001 }}">
+                            <small class="text-muted">Mokymosi žingsnio dydis</small>
                         </div>
                     </div>
                 </div>
                 
-                <div class="d-flex justify-content-end">
-                    <a href="{{ url_for('tasks.task_list') }}" class="btn btn-outline-secondary me-2">Atšaukti</a>
-                    <button type="submit" class="btn btn-primary">{{ 'Atnaujinti' if task and task.id else 'Sukurti' }}</button>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="save_checkpoints" name="save_checkpoints" 
+                                   {% if task and task.training_params and task.training_params.save_checkpoints %}checked{% endif %}>
+                            <label class="form-check-label" for="save_checkpoints">Išsaugoti tarpines versijas</label>
+                            <div><small class="text-muted">Išsaugoti modelio būsenas treniravimo metu</small></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="early_stopping" name="early_stopping" 
+                                   {% if task and task.training_params and task.training_params.early_stopping %}checked{% endif %}>
+                            <label class="form-check-label" for="early_stopping">Ankstyvas sustabdymas</label>
+                            <div><small class="text-muted">Sustabdyti treniravimą, kai nebėra pažangos</small></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formos mygtukai -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {{ 'Atnaujinti' if task else 'Sukurti' }}
+                    </button>
+                    <a href="{{ url_for('tasks.task_list') }}" class="btn btn-secondary ml-2">
+                        <i class="fas fa-times"></i> Atšaukti
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-{% block scripts %}
-<script>
-    // Formos validacija
-    (function() {
-        'use strict';
-        
-        // Fetch all the forms we want to apply custom Bootstrap validation styles to
-        var forms = document.querySelectorAll('.needs-validation');
-        
-        // Loop over them and prevent submission
-        Array.prototype.slice.call(forms).forEach(function(form) {
-            form.addEventListener('submit', function(event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                
-                form.classList.add('was-validated');
-            }, false);
-        });
-    })();
-</script>
-{% endblock %}
 {% endblock %}

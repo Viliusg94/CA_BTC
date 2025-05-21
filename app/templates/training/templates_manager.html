@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}Modelių parametrų šablonai{% endblock %}
+
+{% block styles %}
+<style>
+    .template-card {
+        margin-bottom: 15px;
+        border-left: 4px solid #007bff;
+    }
+    
+    .template-title {
+        font-weight: 600;
+        color: #0056b3;
+    }
+    
+    .template-metadata {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .template-category {
+        background-color: #e9ecef;
+        border-radius: 3px;
+        padding: 3px 8px;
+        font-size: 0.8rem;
+    }
+    
+    .template-params {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    
+    .template-description {
+        font-style: italic;
+        color: #495057;
+        margin-bottom: 10px;
+    }
+    
+    .templates-container {
+        margin-top: 20px;
+    }
+    
+    .category-header {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        border-left: 5px solid #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigacijos kelias -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('model_training.index') }}">Pagrindinis</a></li>
+            <li class="breadcrumb-item active">Parametrų šablonai</li>
+        </ol>
+    </nav>
+
+    <!-- Antraštė ir veiksmų mygtukai -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Modelių parametrų šablonai</h1>
+        <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+                <i class="fas fa-plus-circle me-1"></i> Naujas šablonas
+            </button>
+        </div>
+    </div>
+    
+    <!-- Informacinis pranešimas -->
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Parametrų šablonai leidžia greitai sukurti naujus modelius su iš anksto nustatytais parametrais. 
+        Jūs galite naudoti numatytuosius šablonus arba sukurti savo.
+    </div>
+    
+    <!-- Šablonų filtravimo ir paieškos forma -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="filter-form" method="get" action="{{ url_for('model_training.templates_manager') }}">
+                <div class="row">
+                    <!-- Kategorijos filtras -->
+                    <div class="col-md-4 mb-3">
+                        <label for="category-filter" class="form-label">Kategorija</label>
+                        <select class="form-select" id="category-filter" name="category">
+                            <option value="">Visos kategorijos</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}" {% if request.args.get('category') == category %}selected{% endif %}>
+                                {{ category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Modelio tipo filtras -->
+                    <div class="col-md-4 mb-3">
+                        <label for="type-filter" class="form-label">Modelio tipas</label>
+                        <select class="form-select" id="type-filter" name="type">
+                            <option value="">Visi tipai</option>
+                            <option value="lstm" {% if request.args.get('type') == 'lstm' %}selected{% endif %}>LSTM</option>
+                            <option value="gru" {% if request.args.get('type') == 'gru' %}selected{% endif %}>GRU</option>
+                            <option value="cnn" {% if request.args.get('type') == 'cnn' %}selected{% endif %}>CNN</option>
+                            <option value="rnn" {% if request.args.get('type') == 'rnn' %}selected{% endif %}>RNN</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Paieškos laukas -->
+                    <div class="col-md-4 mb-3">
+                        <label for="search" class="form-label">Paieška</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               placeholder="Ieškoti pagal pavadinimą ar aprašymą..." 
+                               value="{{ request.args.get('search', '') }}">
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary me-2" id="clear-filters">
+                        <i class="fas fa-times me-1"></i> Išvalyti filtrus
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-1"></i> Filtruoti
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Šablonų sąrašas pagal kategorijas -->
+    <div class="templates-container">
+        {% if templates|length == 0 %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Nėra šablonų, atitinkančių jūsų paieškos kriterijus.
+        </div>
+        {% else %}
+            {% for category, cat_templates in templates_by_category.items() %}
+            <div class="category-section mb-4">
+                <div class="category-header">
+                    <h3>{{ category }}</h3>
+                </div>
+                
+                <div class="row">
+                    {% for template_name, template in cat_templates.items() %}
+                    <div class="col-lg-6 col-md-12">
+                        <div class="card template-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="template-title">{{ template_name }}</h5>
+                                        <div class="template-metadata">
+                                            <span class="badge bg-primary">{{ template.type|upper }}</span>
+                                            <span class="small text-muted ms-2">Sukurtas: {{ template.created_at }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="template-actions">
+                                        <button class="btn btn-sm btn-outline-primary me-1 use-template-btn" 
+                                                data-template-name="{{ template_name }}">
+                                            <i class="fas fa-check me-1"></i> Naudoti
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary me-1 edit-template-btn" 
+                                                data-template-name="{{ template_name }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-template-btn" 
+                                                data-template-name="{{ template_name }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {% if template.description %}
+                                <div class="template-description mt-2">{{ template.description }}</div>
+                                {% endif %}
+                                
+                                <div class="template-params">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-2"><strong>Epochs:</strong> {{ template.parameters.epochs }}</div>
+                                            <div class="mb-2"><strong>Batch Size:</strong> {{ template.parameters.batch_size }}</div>
+                                            <div class="mb-2"><strong>Learning Rate:</strong> {{ template.parameters.learning_rate }}</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            {% if template.parameters.dropout is defined %}
+                                            <div class="mb-2"><strong>Dropout:</strong> {{ template.parameters.dropout }}</div>
+                                            {% endif %}
+                                            {% if template.parameters.layers is defined %}
+                                            <div class="mb-2"><strong>Layers:</strong> {{ template.parameters.layers }}</div>
+                                            {% endif %}
+                                            {% if template.parameters.neurons is defined %}
+                                            <div class="mb-2"><strong>Neurons:</strong> {{ template.parameters.neurons }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Naujo šablono kūrimo modalinis langas -->
+<div class="modal fade" id="createTemplateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createTemplateModalLabel">Naujas parametrų šablonas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="create-template-form">
+                    <div class="mb-3">
+                        <label for="template-name" class="form-label">Šablono pavadinimas</label>
+                        <input type="text" class="form-control" id="template-name" name="name" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="template-type" class="form-label">Modelio tipas</label>
+                            <select class="form-select" id="template-type" name="type" required>
+                                <option value="" selected disabled>Pasirinkite tipą</option>
+                                <option value="lstm">LSTM</option>
+                                <option value="gru">GRU</option>
+                                <option value="cnn">CNN</option>
+                                <option value="rnn">RNN</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="template-category" class="form-label">Kategorija</label>
+                            <input type="text" class="form-control" id="template-category" name="category" 
+                                   list="category-list" required>
+                            <datalist id="category-list">
+                                {% for category in categories %}
+                                <option value="{{ category }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="template-description" class="form-label">Aprašymas</label>
+                        <textarea class="form-control" id="template-description" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <hr>
+                    <h5>Modelio parametrai</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="param-epochs" class="form-label">Epochų skaičius</label>
+                            <input type="number" class="form-control" id="param-epochs" name="epochs" 
+                                   min="1" max="1000" value="50" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="param-batch-size" class="form-label">Batch Size</label>
+                            <input type="number" class="form-control" id="param-batch-size" name="batch_size" 
+                                   min="1" max="1024" value="32" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="param-learning-rate" class="form-label">Learning Rate</label>
+                            <input type="number" class="form-control" id="param-learning-rate" name="learning_rate" 
+                                   min="0.00001" max="1" step="0.0001" value="0.001" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="param-dropout" class="form-label">Dropout</label>
+                            <input type="number" class="form-control" id="param-dropout" name="dropout" 
+                                   min="0" max="0.9" step="0.1" value="0.2">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="param-layers" class="form-label">Sluoksnių skaičius</label>
+                            <input type="number" class="form-control" id="param-layers" name="layers" 
+                                   min="1" max="10" value="2">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="param-neurons" class="form-label">Neuronų skaičius</label>
+                            <input type="number" class="form-control" id="param-neurons" name="neurons" 
+                                   min="1" max="1024" value="64">
+                        </div>
+                    </div>
+                    
+                    <div id="type-specific-params" class="mt-3">
+                        <!-- Čia bus dinamiškai įkelti specifiniai parametrai pagal modelio tipą -->
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                <button type="button" class="btn btn-primary" id="save-template-btn">Išsaugoti šabloną</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Šablono ištrynimo patvirtinimo modalinis langas -->
+<div class="modal fade" id="deleteTemplateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTemplateModalLabel">Patvirtinkite ištrynimą</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Ar tikrai norite ištrinti šabloną <span id="delete-template-name" class="fw-bold"></span>?</p>
+                <p class="text-danger">Šio veiksmo negalima atšaukti.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atšaukti</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-template-btn">Ištrinti</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Šablonų valdymo skripto funkcijos
+document.addEventListener('DOMContentLoaded', function() {
+    // Filtrų išvalymo mygtukas
+    document.getElementById('clear-filters').addEventListener('click', function() {
+        document.getElementById('category-filter').value = '';
+        document.getElementById('type-filter').value = '';
+        document.getElementById('search').value = '';
+        document.getElementById('filter-form').submit();
+    });
+    
+    // Šablono naudojimo mygtukas
+    document.querySelectorAll('.use-template-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const templateName = this.dataset.templateName;
+            window.location.href = `/training/models/create?template=${encodeURIComponent(templateName)}`;
+        });
+    });
+    
+    // Šablono redagavimo mygtukas
+    document.querySelectorAll('.edit-template-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const templateName = this.dataset.templateName;
+            // Čia būtų logika šablono redagavimui (būtų galima atidaryti redagavimo modalinį langą)
+            alert('Šablono redagavimo funkcija dar neįgyvendinta');
+        });
+    });
+    
+    // Šablono ištrynimo mygtukas
+    document.querySelectorAll('.delete-template-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const templateName = this.dataset.templateName;
+            document.getElementById('delete-template-name').textContent = templateName;
+            
+            // Parodome modalinį langą
+            const modal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
+            modal.show();
+            
+            // Nustatome patvirtinimo mygtuko veikimą
+            document.getElementById('confirm-delete-template-btn').onclick = function() {
+                deleteTemplate(templateName);
+            };
+        });
+    });
+    
+    // Naujo šablono išsaugojimo mygtukas
+    document.getElementById('save-template-btn').addEventListener('click', function() {
+        saveTemplate();
+    });
+    
+    // Funkcija šablono ištrynimui
+    function deleteTemplate(templateName) {
+        fetch(`/training/api/templates/delete/${encodeURIComponent(templateName)}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Perkrauname puslapį po sėkmingo ištrynimo
+                window.location.reload();
+            } else {
+                alert(`Klaida: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Klaida:', error);
+            alert('Įvyko klaida trinant šabloną. Bandykite dar kartą.');
+        });
+    }
+    
+    // Funkcija šablono išsaugojimui
+    function saveTemplate() {
+        const form = document.getElementById('create-template-form');
+        
+        // Surenkame pagrindinę šablono informaciją
+        const templateData = {
+            name: document.getElementById('template-name').value,
+            type: document.getElementById('template-type').value,
+            category: document.getElementById('template-category').value,
+            description: document.getElementById('template-description').value,
+            parameters: {
+                epochs: parseInt(document.getElementById('param-epochs').value),
+                batch_size: parseInt(document.getElementById('param-batch-size').value),
+                learning_rate: parseFloat(document.getElementById('param-learning-rate').value),
+                dropout: parseFloat(document.getElementById('param-dropout').value),
+                layers: parseInt(document.getElementById('param-layers').value),
+                neurons: parseInt(document.getElementById('param-neurons').value)
+            }
+        };
+        
+        // Siunčiame duomenis į serverį
+        fetch('/training/api/templates/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(templateData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Uždarome modalinį langą ir perkrauname puslapį
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createTemplateModal'));
+                modal.hide();
+                window.location.reload();
+            } else {
+                alert(`Klaida: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Klaida:', error);
+            alert('Įvyko klaida išsaugant šabloną. Bandykite dar kartą.');
+        });
+    }
+});
+</script>
+{% endblock %}

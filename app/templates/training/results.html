@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Treniravimo rezultatai{% endblock %}
+
+{% block styles %}
+<style>
+    .chart-container {
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .metrics-table {
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Modelio treniravimo rezultatai</h1>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>{{ model_config.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Modelio informacija</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Modelio tipas</th>
+                                    <td>{{ model_config.type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Epochų skaičius</th>
+                                    <td>{{ model_config.parameters.epochs }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Batch dydis</th>
+                                    <td>{{ model_config.parameters.batch_size }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Mokymosi greitis</th>
+                                    <td>{{ model_config.parameters.learning_rate }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Sluoksnių skaičius</th>
+                                    <td>{{ model_config.parameters.layers }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Treniravimo rezultatai</h6>
+                            {% if metrics %}
+                            <table class="table table-sm metrics-table">
+                                <tr>
+                                    <th>Metrikos</th>
+                                    <th>Treniravimo duomenys</th>
+                                    <th>Validavimo duomenys</th>
+                                </tr>
+                                <tr>
+                                    <th>Paskutinis loss</th>
+                                    <td>{{ metrics.loss[-1] | round(4) }}</td>
+                                    <td>{{ metrics.val_loss[-1] | round(4) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Paskutinis tikslumas</th>
+                                    <td>{{ metrics.accuracy[-1] | round(4) }}</td>
+                                    <td>{{ metrics.val_accuracy[-1] | round(4) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Geriausias tikslumas</th>
+                                    <td>{{ metrics.accuracy | max | round(4) }}</td>
+                                    <td>{{ metrics.val_accuracy | max | round(4) }}</td>
+                                </tr>
+                            </table>
+                            {% else %}
+                            <div class="alert alert-warning">
+                                Treniravimo rezultatai nerasti.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if metrics %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <canvas id="lossChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <canvas id="accuracyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{{ url_for('model_training.view_history') }}" class="btn btn-secondary">
+                        <i class="fas fa-history me-2"></i>Treniravimo istorija
+                    </a>
+                    <a href="{{ url_for('model_evaluation.index') }}" class="btn btn-primary">
+                        <i class="fas fa-chart-line me-2"></i>Įvertinti modelį
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    {% if metrics %}
+    document.addEventListener('DOMContentLoaded', function() {
+        // Grafiko duomenys
+        const epochs = Array.from({length: {{ metrics.loss | length }}}, (_, i) => i + 1);
+        
+        // Loss grafikas
+        const lossCtx = document.getElementById('lossChart').getContext('2d');
+        new Chart(lossCtx, {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    {
+                        label: 'Treniravimo klaida',
+                        data: {{ metrics.loss | tojson }},
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: false
+                    },
+                    {
+                        label: 'Validavimo klaida',
+                        data: {{ metrics.val_loss | tojson }},
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Klaidos funkcija'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+        
+        // Accuracy grafikas
+        const accuracyCtx = document.getElementById('accuracyChart').getContext('2d');
+        new Chart(accuracyCtx, {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    {
+                        label: 'Treniravimo tikslumas',
+                        data: {{ metrics.accuracy | tojson }},
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: false
+                    },
+                    {
+                        label: 'Validavimo tikslumas',
+                        data: {{ metrics.val_accuracy | tojson }},
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Tikslumas'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    });
+    {% endif %}
+</script>
+{% endblock %}

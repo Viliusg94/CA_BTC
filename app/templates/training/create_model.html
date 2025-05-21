@@ -32,14 +32,19 @@
 {% endblock %}
 
 {% block content %}
+{% if template %}
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    Formos laukai užpildyti pagal šabloną "{{ template.name }}". Galite keisti reikšmes prieš kurdami modelį.
+</div>
+{% endif %}
+
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Naujas modelis</h1>
             <div>
-                <a href="{{ url_for('training.models') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Atgal į modelius
-                </a>
+                <a href="{{ url_for('model_training.models') }}" class="btn btn-outline-secondary">Atgal į modelius</a>
             </div>
         </div>
     </div>
@@ -52,24 +57,26 @@
                 <h5 class="card-title mb-0">Modelio parametrai</h5>
             </div>
             <div class="card-body">
-                <form id="modelForm" action="{{ url_for('training.start_training') }}" method="POST">
+                <form id="modelForm" action="{{ url_for('model_training.create_model') }}" method="POST">
                     <!-- Pagrindiniai parametrai -->
                     <div class="form-section">
                         <h4 class="form-section-title">Pagrindiniai parametrai</h4>
                         
                         <div class="mb-3">
                             <label for="modelName" class="form-label">Modelio pavadinimas</label>
-                            <input type="text" class="form-control" id="modelName" name="model_name" required>
+                            <input type="text" class="form-control" id="modelName" name="model_name" 
+                                   value="{% if template %}{{ template.name }} - kopija{% endif %}" 
+                                   required>
                             <div class="param-description">Unikalus modelio pavadinimas</div>
                         </div>
                         
                         <div class="mb-3">
                             <label for="modelType" class="form-label">Modelio tipas</label>
                             <select class="form-select" id="modelType" name="model_type" required>
-                                <option value="lstm">LSTM</option>
-                                <option value="gru">GRU</option>
-                                <option value="cnn">1D CNN</option>
-                                <option value="mlp">MLP (Dense)</option>
+                                <option value="lstm" {% if template and template.type == 'lstm' %}selected{% endif %}>LSTM</option>
+                                <option value="gru" {% if template and template.type == 'gru' %}selected{% endif %}>GRU</option>
+                                <option value="cnn" {% if template and template.type == 'cnn' %}selected{% endif %}>1D CNN</option>
+                                <option value="mlp" {% if template and template.type == 'mlp' %}selected{% endif %}>MLP (Dense)</option>
                             </select>
                             <div class="param-description">Neuroninio tinklo architektūros tipas</div>
                         </div>
@@ -287,6 +294,17 @@
                     </button>
                     <button class="btn btn-outline-primary" id="templateFastMLP">
                         <i class="fas fa-bolt me-1"></i>Greitas MLP
+                    </button>
+                </div>
+                
+                <div class="mt-4">
+                    <p class="mb-2">Arba naudokite esamą šabloną:</p>
+                    <select class="form-select mb-3" id="template-select">
+                        <option value="">Pasirinkite šabloną...</option>
+                        <!-- Šablonų sąrašas bus užpildytas JavaScript pagalba -->
+                    </select>
+                    <button type="button" class="btn btn-outline-secondary" id="load-template-btn" disabled>
+                        <i class="fas fa-sync me-2"></i>Užkrauti šabloną
                     </button>
                 </div>
             </div>
@@ -548,6 +566,55 @@
         // Išsaugojimų parametrų slankikliai
         document.getElementById('checkpointFrequency').addEventListener('input', function() {
             document.getElementById('checkpointFrequencyValue').textContent = this.value;
+        });
+        
+        // Elementai
+        const templateSelect = document.getElementById('template-select');
+        const loadTemplateBtn = document.getElementById('load-template-btn');
+        
+        // Užkrauname šablonų sąrašą
+            fetch('/template_management/templates')
+            .then(response => response.text())
+            .then(html => {
+                // Ištraukiame šablonų duomenis iš HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const templateCards = doc.querySelectorAll('.template-card');
+                
+                // Pridedame šablonus į pasirinkimo sąrašą
+                templateCards.forEach(card => {
+                    // Gauname šablono ID ir pavadinimą
+                    const createFromTemplateBtn = card.querySelector('a[href*="create_model?template="]');
+                    if (createFromTemplateBtn) {
+                        const href = createFromTemplateBtn.getAttribute('href');
+                        const templateId = href.split('template=')[1];
+                        
+                        const templateName = card.querySelector('.card-title').textContent.trim();
+                        const templateType = card.querySelector('.template-badge').textContent.trim();
+                        
+                        // Pridedame į pasirinkimo sąrašą
+                        const option = document.createElement('option');
+                        option.value = templateId;
+                        option.textContent = `${templateName} (${templateType})`;
+                        templateSelect.appendChild(option);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Klaida gaunant šablonų sąrašą:', error);
+            });
+        
+        // Įvykio klausiklis šablono pasirinkimui
+        templateSelect.addEventListener('change', function() {
+            loadTemplateBtn.disabled = !this.value;
+        });
+        
+        // Įvykio klausiklis šablono užkrovimui
+        loadTemplateBtn.addEventListener('click', function() {
+            const templateId = templateSelect.value;
+            if (templateId) {
+                window.location.href = `{{ url_for('model_training.create_model') }}?template=${templateId}`;
+            }
         });
     });
 </script>

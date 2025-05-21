@@ -289,7 +289,203 @@ const BTCNotifications = {
     }
 };
 
-// Inicializuojame pranešimų sistemą, kai puslapis užkraunamas
+// Pranešimų centro ir realaus laiko pranešimų JavaScript
+
+// Kai DOM užkrautas, inicializuojame pranešimų sistemą
 document.addEventListener('DOMContentLoaded', function() {
-    BTCNotifications.init();
+    // WebSocket jungimasis
+    initWebSocket();
+    
+    // Neperskaitytų pranešimų skaičiaus atnaujinimas
+    updateUnreadCount();
+    
+    // Nustatome periodinį atnaujinimą kas 60 sekundžių
+    setInterval(updateUnreadCount, 60000);
 });
+
+// WebSocket inicializavimas ir pranešimų gavimas
+function initWebSocket() {
+    // Gauname WebSocket URL
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const wsUrl = `${protocol}${window.location.host}/ws`;
+    
+    // Sukuriame WebSocket jungtį
+    const socket = new WebSocket(wsUrl);
+    
+    // Kai jungtis atidaryta
+    socket.onopen = function(event) {
+        console.log('WebSocket jungtis atidaryta');
+    };
+    
+    // Kai gaunamas pranešimas
+    socket.onmessage = function(event) {
+        try {
+            // Konvertuojame JSON į objektą
+            const data = JSON.parse(event.data);
+            
+            // Apdorojame skirtingus pranešimų tipus
+            if (data.type === 'notification') {
+                // Rodome naują pranešimą
+                showNotificationToast(data.data);
+                
+                // Atnaujiname pranešimų skaičių
+                updateUnreadCount();
+                
+                // Atnaujiname pranešimų sąrašą, jei esame pranešimų centre
+                updateNotificationList(data.data);
+            } 
+            else if (data.type === 'process_update') {
+                // Atnaujiname proceso informaciją
+                updateProcessInfo(data.data);
+            }
+        } catch (error) {
+            console.error('Klaida apdorojant WebSocket pranešimą:', error);
+        }
+    };
+    
+    // Kai jungtis uždaroma
+    socket.onclose = function(event) {
+        console.log('WebSocket jungtis uždaryta, bandysime prisijungti iš naujo po 5s');
+        
+        // Bandome prisijungti iš naujo po 5 sekundžių
+        setTimeout(initWebSocket, 5000);
+    };
+    
+    // Klaidos apdorojimas
+    socket.onerror = function(error) {
+        console.error('WebSocket klaida:', error);
+    };
+}
+
+// Neperskaitytų pranešimų skaičiaus atnaujinimas
+function updateUnreadCount() {
+    fetch('/notifications/api/unread-count')
+        .then(response => response.json())
+        .then(data => {
+            // Atnaujiname pranešimų skaičių navigacijoje
+            const badgeElement = document.getElementById('notification-badge');
+            if (badgeElement) {
+                badgeElement.textContent = data.count;
+                
+                // Rodome arba slepiame ženkliuką
+                if (data.count > 0) {
+                    badgeElement.style.display = 'inline-block';
+                } else {
+                    badgeElement.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Klaida gaunant pranešimų skaičių:', error);
+        });
+}
+
+// Naujo pranešimo rodymas iššokančiame lange
+function showNotificationToast(notification) {
+    // Tikriname, ar yra Toast konteineris
+    let toastContainer = document.getElementById('toast-container');
+    
+    // Jei nėra, sukuriame
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Nustatome spalvą pagal tipą
+    let bgColor = 'bg-info';
+    switch (notification.type) {
+        case 'success': bgColor = 'bg-success'; break;
+        case 'warning': bgColor = 'bg-warning'; break;
+        case 'error': bgColor = 'bg-danger'; break;
+        case 'process': bgColor = 'bg-primary'; break;
+    }
+    
+    // Kuriam toast HTML
+    const toastId = 'toast-' + notification.id;
+    const toastHtml = `
+        <div id="${toastId}" class="toast ${bgColor} text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header ${bgColor} text-white">
+                <strong class="me-auto">${notification.title}</strong>
+                <small>${new Date(notification.created_at).toLocaleTimeString()}</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${notification.message}
+                ${notification.target_url ? `<div class="mt-2"><a href="${notification.target_url}" class="btn btn-sm btn-light">Atidaryti</a></div>` : ''}
+            </div>
+        </div>
+    `;
+    
+    // Pridedame toast į konteinerį
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Inicializuojame ir rodome toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+    
+    // Nustatome, kad išnykus toast elementui, jis būtų pašalintas iš DOM
+    toastElement.addEventListener('hidden.bs.toast', function () {
+        toastElement.remove();
+    });
+}
+
+// Pranešimų sąrašo atnaujinimas pranešimų centre
+function updateNotificationList(newNotification) {
+    const notificationList = document.getElementById('notification-list');
+    if (!notificationList) {
+        return; // Nesame pranešimų centro puslapyje
+    }
+    
+    // Tikriname, ar jau yra šis pranešimas sąraše
+    const existingNotification = document.querySelector(`.notification-item[data-id="${newNotification.id}"]`);
+    if (existingNotification) {
+        // Jei yra, atnaujiname jo būseną
+        existingNotification.setAttribute('data-status', newNotification.status);
+        return;
+    }
+    
+    // Kuriam naują pranešimo elementą
+    const notificationItem = document.createElement('div');
+    notificationItem.className = 'list-group-item list-group-item-action notification-item';
+    notificationItem.setAttribute('data-id', newNotification.id);
+    notificationItem.setAttribute('data-status', newNotification.status);
+    
+    // Nustatome ikoną pagal tipą
+    let icon = 'fa-info-circle text-info';
+    switch (newNotification.type) {
+        case 'success': icon = 'fa-check-circle text-success'; break;
+        case 'warning': icon = 'fa-exclamation-triangle text-warning'; break;
+        case 'error': icon = 'fa-times-circle text-danger'; break;
+        case 'process': icon = 'fa-cogs text-primary'; break;
+    }
+    
+    // Pridedame pranešimo turinį
+    notificationItem.innerHTML = `
+        <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">
+                <i class="fas ${icon}"></i>
+                ${newNotification.title}
+                ${newNotification.status === 'unread' ? '<span class="badge bg-danger rounded-pill ms-2">Naujas</span>' : ''}
+            </h5>
+            <small class="text-muted">${new Date(newNotification.created_at).toLocaleString()}</small>
+        </div>
+        <div class="progress" style="height: 5px;">
+            <div class="progress-bar" role="progressbar" style="width: ${newNotification.progress}%" aria-valuenow="${newNotification.progress}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    `;
+    
+    // Pridedame į sąrašą viršuje
+    notificationList.insertAdjacentElement('afterbegin', notificationItem);
+}
+
+// Atnaujina proceso informaciją UI
+function updateProcessInfo(processData) {
+    // Čia galite pridėti kodą proceso informacijai atnaujinti
+    console.log('Proceso informacija atnaujinta:', processData);
+}

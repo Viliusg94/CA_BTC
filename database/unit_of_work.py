@@ -7,7 +7,7 @@ vienos transakcijos kontekste ir užtikrina duomenų vientisumą.
 
 from sqlalchemy.exc import SQLAlchemyError
 import logging
-from database.repositories import (
+from database.repository import (
     BtcPriceRepository, 
     TechnicalIndicatorRepository, 
     AdvancedFeatureRepository,

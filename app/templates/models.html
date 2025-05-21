@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modeliai - Bitcoin Prognozavimo Platforma</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigacija -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fab fa-bitcoin text-warning me-2"></i>Bitcoin Prognozavimo Platforma
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Pradžia</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/models"><i class="fas fa-chart-line me-1"></i>Modeliai</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/train"><i class="fas fa-cogs me-1"></i>Mokymas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/predict"><i class="fas fa-crystal-ball me-1"></i>Prognozė</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/ensemble"><i class="fas fa-layer-group me-1"></i>Ansamblis</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Pagrindinis turinys -->
+    <div class="container mt-5 pt-4">
+        <h1 class="mb-4"><i class="fas fa-chart-line me-2"></i>Prognozavimo Modeliai</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Modelių Sąrašas</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Modelis</th>
+                                        <th>Tipas</th>
+                                        <th>Sekos ilgis</th>
+                                        <th>RMSE</th>
+                                        <th>MAE</th>
+                                        <th>MAPE (%)</th>
+                                        <th>R²</th>
+                                        <th>Būsena</th>
+                                        <th>Veiksmai</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for model_type, model in models_info.items() %}
+                                    <tr>
+                                        <td>{{ model_type.upper() }}</td>
+                                        <td>{{ model.info.model_type }}</td>
+                                        <td>{{ model.info.sequence_length }}</td>
+                                        <td>{{ "%.2f"|format(model.info.metrics.rmse) }}</td>
+                                        <td>{{ "%.2f"|format(model.info.metrics.mae) }}</td>
+                                        <td>{{ "%.2f"|format(model.info.metrics.mape) }}</td>
+                                        <td>{{ "%.4f"|format(model.info.metrics.r2) }}</td>
+                                        <td>
+                                            {% if model.available %}
+                                            <span class="badge bg-success">Aktyvus</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Neaktyvus</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="/model/{{ model_type }}" class="btn btn-sm btn-outline-primary">Detalės</a>
+                                                {% if model.available %}
+                                                <a href="/predict?model={{ model_type }}" class="btn btn-sm btn-outline-success">Prognozuoti</a>
+                                                {% else %}
+                                                <a href="/train?model={{ model_type }}" class="btn btn-sm btn-outline-warning">Apmokyti</a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Modelių Palyginimas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="models-comparison-chart" style="height: 600px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Bitcoin Prognozavimo Platforma</h5>
+                    <p class="text-muted">Magistro projektas, taikantis mašininio mokymosi metodus Bitcoin kainų prognozavimui.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">&copy; 2023. Visos teisės saugomos.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gauname modelių metrikas iš API
+            fetch('/api/models_metrics')
+                .then(response => response.json())
+                .then(chartData => {
+                    Plotly.newPlot('models-comparison-chart', chartData.data, chartData.layout);
+                });
+        });
+    </script>
+</body>
+</html>

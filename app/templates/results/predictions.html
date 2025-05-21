@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Prognozių rezultatai</h1>
+    
+    <div class="mb-4">
+        <form method="GET" class="form-inline">
+            <div class="form-group mr-2">
+                <label for="model_id">Pasirinkite modelį:</label>
+                <select class="form-control ml-2" id="model_id" name="model_id">
+                    <option value="">Visi modeliai</option>
+                    <!-- Čia reikėtų įdėti modelių sąrašą -->
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Filtruoti</button>
+        </form>
+    </div>
+    
+    {% if predictions %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Prognozuojama data</th>
+                    <th>Prognozuojama vertė</th>
+                    <th>Tikroji vertė</th>
+                    <th>Intervalas</th>
+                    <th>Pasitikėjimo lygis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prediction in predictions %}
+                <tr>
+                    <td>{{ prediction.prediction_date }}</td>
+                    <td>{{ prediction.target_date }}</td>
+                    <td>${{ "%.2f"|format(prediction.predicted_value) }}</td>
+                    <td>
+                        {% if prediction.actual_value %}
+                        ${{ "%.2f"|format(prediction.actual_value) }}
+                        {% else %}
+                        <span class="text-muted">Nežinoma</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ prediction.interval }}</td>
+                    <td>
+                        {% if prediction.confidence %}
+                        {{ "%.2f"|format(prediction.confidence * 100) }}%
+                        {% else %}
+                        <span class="text-muted">Nenustatyta</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        {% if model_id %}
+        <p>Nerasta prognozių pasirinktam modeliui.</p>
+        {% else %}
+        <p>Pasirinkite modelį, kad galėtumėte peržiūrėti jo prognozes.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <a href="{{ url_for('results.index') }}" class="btn btn-secondary">Grįžti į rezultatų puslapį</a>
+</div>
+{% endblock %}

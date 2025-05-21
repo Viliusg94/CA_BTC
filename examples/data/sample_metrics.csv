@@ -1,0 +1,9 @@
+metric_name,metric_value,created_at,stage,notes
+accuracy,0.92,2025-05-21 10:15:30,test,Galutinis modelio tikslumas
+precision,0.89,2025-05-21 10:15:30,test,Galutinis modelio tikslumas
+recall,0.91,2025-05-21 10:15:30,test,Galutinis modelio tikslumas
+f1_score,0.9,2025-05-21 10:15:30,test,Galutinis modelio tikslumas
+loss,0.15,2025-05-21 10:00:00,validation,Validacijos vertė
+accuracy,0.87,2025-05-21 10:00:00,validation,Validacijos vertė
+loss,0.12,2025-05-21 09:45:00,train,Treniravimo vertė
+accuracy,0.91,2025-05-21 09:45:00,train,Treniravimo vertė

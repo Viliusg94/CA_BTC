@@ -1,0 +1,22 @@
+{
+    "model_type": "Transformer",
+    "input_shape": [
+        24,
+        5
+    ],
+    "sequence_length": 24,
+    "target_column": "close",
+    "params": {
+        "d_model": 64,
+        "num_heads": 4,
+        "ff_dim": 128,
+        "dropout": 0.1
+    },
+    "metrics": {
+        "mse": 62764.018693986196,
+        "rmse": 250.52748091573946,
+        "mae": 175.089187233052,
+        "r2": 0.9990718098886154,
+        "mape": 0.19817293096970162
+    }
+}

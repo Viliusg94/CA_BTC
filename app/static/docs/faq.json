@@ -1,0 +1,62 @@
+[
+  {
+    "category": "Bendra",
+    "question": "Kas yra Bitcoin prognozavimo sistema?",
+    "answer": "Bitcoin prognozavimo sistema yra įrankis, kuris naudoja dirbtinius neuroninius tinklus (DNT) ir mašininio mokymosi algoritmus, kad analizuotų Bitcoin kainos istorinius duomenis ir sudarytų prognozes ateičiai."
+  },
+  {
+    "category": "Bendra",
+    "question": "Ar prognozės yra tikslios?",
+    "answer": "Jokia prognozavimo sistema negali garantuoti 100% tikslumo, ypač kalbant apie kriptovaliutų rinką, kuri yra labai nepastovi. Mūsų sistema remiasi istoriniais duomenimis ir tendencijomis, tačiau rinkos elgesys gali pasikeisti dėl naujienų, reguliavimo pokyčių ar kitų nenuspėjamų veiksnių. Visada naudokite prognozes kartu su savo finansine analize ir konsultuokitės su profesionaliais finansų patarėjais."
+  },
+  {
+    "category": "Bendra",
+    "question": "Ar sistema mokama?",
+    "answer": "Sistema turi nemokamą ir mokamą versiją. Nemokama versija leidžia naudoti pagrindinius modelius ir sudaryti ribotas prognozes. Mokama versija suteikia prieigą prie sudėtingesnių modelių, ilgalaikių prognozių ir kitų papildomų funkcijų."
+  },
+  {
+    "category": "Naudojimas",
+    "question": "Kaip pradėti naudotis sistema?",
+    "answer": "Pradėti naudotis labai paprasta: <ol><li>Užsiregistruokite sistemoje</li><li>Pasirinkite modelį arba sukurkite naują</li><li>Nustatykite treniravimo parametrus</li><li>Paleiskite modelio treniravimą</li><li>Kai modelis bus apmokytas, naudokite jį prognozėms</li></ol>"
+  },
+  {
+    "category": "Naudojimas",
+    "question": "Kaip sukurti ir treniruoti modelį?",
+    "answer": "Modelio sukūrimo ir treniravimo procesas susideda iš šių žingsnių:<ol><li>Eikite į 'Modeliai' skiltį</li><li>Spauskite 'Naujas modelis'</li><li>Pasirinkite modelio tipą (LSTM, GRU, kt.)</li><li>Nustatykite parametrus</li><li>Spauskite 'Sukurti'</li><li>Naujai sukurtam modeliui spauskite 'Treniruoti'</li><li>Nustatykite treniravimo parametrus ir spauskite 'Pradėti treniravimą'</li></ol>"
+  },
+  {
+    "category": "Naudojimas",
+    "question": "Kaip gauti prognozę?",
+    "answer": "Prognozei gauti: <ol><li>Eikite į 'Prognozės' skiltį</li><li>Pasirinkite treniruotą modelį</li><li>Nustatykite prognozės periodą ir intervalą</li><li>Spauskite 'Sudaryti prognozę'</li></ol>"
+  },
+  {
+    "category": "Modeliai",
+    "question": "Koks skirtumas tarp LSTM ir GRU modelių?",
+    "answer": "LSTM (Long Short-Term Memory) ir GRU (Gated Recurrent Unit) yra du populiarūs rekurentinių neuroninių tinklų tipai.<ul><li><strong>LSTM</strong> turi sudėtingesnę architektūrą su trimis vartais (įėjimo, išėjimo ir užmaršties) ir paprastai geriau veikia su ilgomis sekomis, bet reikalauja daugiau skaičiavimo resursų.</li><li><strong>GRU</strong> turi paprastesnę architektūrą su dviem vartais (atnaujinimo ir perkrovimo) ir dažnai treniruojamas greičiau, išlaikant panašų tikslumą.</li></ul>"
+  },
+  {
+    "category": "Modeliai",
+    "question": "Kiek laiko trunka modelio treniravimas?",
+    "answer": "Treniravimo laikas priklauso nuo daugelio veiksnių: modelio tipo, duomenų kiekio, treniravimo parametrų (epochų skaičiaus, partijos dydžio), kompiuterio galingumao. Paprastai paprastesnių modelių treniravimas trunka nuo kelių minučių iki valandos, o sudėtingesnių - nuo kelių valandų iki kelių dienų."
+  },
+  {
+    "category": "Prognozės",
+    "question": "Kokius laiko intervalus galima prognozuoti?",
+    "answer": "Sistema leidžia sudaryti prognozes įvairiems laiko intervalams, įskaitant: <ul><li>Trumpalaikes (valandinės iki 24 valandų)</li><li>Vidutinio ilgio (dieninės iki 7 dienų)</li><li>Ilgalaikes (savaitinės iki 4 savaičių)</li></ul> Atkreipkite dėmesį, kad ilgesni laiko intervalai paprastai turi didesnę paklaidą."
+  },
+  {
+    "category": "Prognozės",
+    "question": "Kaip interpretuoti prognozės rezultatus?",
+    "answer": "Prognozės rezultatuose rodoma:<ul><li><strong>Prognozuojama kaina</strong> - tikėtina Bitcoin kaina nurodytam laikui</li><li><strong>Pasikliautiniai intervalai</strong> - rodo tikėtiną kainos svyravimo diapazoną</li><li><strong>Tikimybės</strong> - rodo tikimybę, kad kaina pasieks tam tikrą lygį</li></ul> Taip pat pateikiami vizualiniai grafikai, padedantys geriau suprasti prognozes."
+  },
+  {
+    "category": "Techniniai klausimai",
+    "question": "Ar galiu naudoti sistemą mobiliuosiuose įrenginiuose?",
+    "answer": "Taip, sistema yra pritaikyta naudojimui mobiliuosiuose įrenginiuose. Galite naudoti bet kurią naršyklę savo išmaniajame telefone ar planšetiniame kompiuteryje. Ateityje planuojame išleisti specialią mobiliąją programėlę."
+  },
+  {
+    "category": "Techniniai klausimai",
+    "question": "Ar galiu eksportuoti duomenis ir prognozes?",
+    "answer": "Taip, sistema leidžia eksportuoti duomenis ir prognozes įvairiais formatais, įskaitant CSV, JSON ir Excel. Taip pat galite naudoti API, jei norite integruoti duomenis į savo sistemas."
+  }
+]

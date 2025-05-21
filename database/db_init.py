@@ -1,134 +1,98 @@
 # SUKURTI FAILĄ: d:\CA_BTC\database\db_init.py
+"""
+Šis modulis patikrina, ar visi reikalingi moduliai yra importuojami teisingai,
+ir atnaujina duomenų bazės lentelių schemas.
+"""
+import sys
 import os
-import pandas as pd
-from datetime import datetime
-from database.models import BtcPriceData, init_db, Base
-from sqlalchemy import text, create_engine, inspect
-from sqlalchemy_utils import database_exists, create_database
-from database.config import DATABASE_URL, DB_NAME
+import importlib
+from sqlalchemy import inspect
 
-def create_database():
-    """
-    Sukuria duomenų bazę, jei ji neegzistuoja.
-    Sukuria lenteles pagal ORM modelius.
-    """
-    # Pirmiausia sukuriame engine objektą tik duomenų bazės sukūrimui
-    # Naudojame URL be konkretaus DB pavadinimo, kad galėtume sukurti duomenų bazę
-    db_url_without_name = DATABASE_URL.rsplit('/', 1)[0]
-    engine = create_engine(db_url_without_name)
-    
-    try:
-        # Patikriname, ar duomenų bazė egzistuoja
-        if not database_exists(DATABASE_URL):
-            # Sukuriame duomenų bazę
-            create_database(DATABASE_URL)
-            print(f"Duomenų bazė '{DB_NAME}' sukurta sėkmingai.")
-        else:
-            print(f"Duomenų bazė '{DB_NAME}' jau egzistuoja.")
-        
-        # Prisijungiame prie sukurtos duomenų bazės
-        engine = create_engine(DATABASE_URL)
-        
-        # Sukuriame lentelių schemas pagal ORM modelius
-        inspector = inspect(engine)
-        existing_tables = inspector.get_table_names()
-        
-        # Jei lentelės neegzistuoja, sukuriame jas
-        if not all(table in existing_tables for table in ['btc_price_data', 'technical_indicators', 'advanced_features', 'model_predictions']):
-            Base.metadata.create_all(engine)
-            print("Duomenų bazės lentelės sukurtos sėkmingai.")
-        else:
-            print("Visos duomenų bazės lentelės jau egzistuoja.")
-            
-        return True
-    
-    except Exception as e:
-        print(f"Klaida kuriant duomenų bazę: {e}")
-        return False
+# Pridedame projekto katalogą į Python kelią
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def import_data_from_csv(csv_path, session):
+def validate_imports():
     """
-    Importuoja duomenis iš CSV failo į MySQL duomenų bazę
-    
-    Args:
-        csv_path (str): Kelias iki CSV failo
-        session: SQLAlchemy sesija
+    Patikrina visus reikalingus importus
     """
-    if not os.path.exists(csv_path):
-        print(f"Klaida: Nerastas CSV failas {csv_path}")
-        return
-        
-    print(f"Importuojami duomenys iš {csv_path}...")
+    print("Tikrinami modulių importai...")
     
-    # Nuskaitome CSV
-    df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
+    imports = [
+        "sqlalchemy",
+        "sqlalchemy.orm",
+        "sqlalchemy.ext.declarative",
+        "datetime",
+        "uuid",
+        "json",
+        "logging",
+    ]
     
-    # Patikriname, ar jau yra įrašų duomenų bazėje
-    existing_count = session.query(BtcPriceData).count()
-    print(f"Duomenų bazėje jau yra {existing_count} įrašai")
+    for module_name in imports:
+        try:
+            importlib.import_module(module_name)
+            print(f"✓ Modulis {module_name} sėkmingai importuotas")
+        except ImportError as e:
+            print(f"✗ Klaida importuojant modulį {module_name}: {str(e)}")
+            return False
     
-    # Importuojame kiekvieną eilutę
-    rows_inserted = 0
-    batch_size = 1000
-    batch = []
+    print("Visi pagrindiniai moduliai sėkmingai importuoti")
     
-    try:
-        for idx, row in df.iterrows():
-            # Patikriname, ar jau egzistuoja įrašas su tokiu laiku
-            existing = session.query(BtcPriceData).filter_by(timestamp=idx).first()
-            
-            if existing:
-                continue
-                
-            # Kuriame naują įrašą
-            price_data = BtcPriceData(
-                timestamp=idx,
-                open=row['Open'],
-                high=row['High'],
-                low=row['Low'],
-                close=row['Close'],
-                volume=row['Volume']
-            )
-            
-            batch.append(price_data)
-            rows_inserted += 1
-            
-            # Įtraukiame partijomis, kad būtų efektyviau
-            if len(batch) >= batch_size:
-                session.add_all(batch)
-                session.commit()
-                print(f"Importuota {rows_inserted} įrašų...")
-                batch = []
-        
-        # Įtraukiame likusius įrašus
-        if batch:
-            session.add_all(batch)
-            session.commit()
-        
-        print(f"Importavimas baigtas. Iš viso importuota {rows_inserted} naujų įrašų.")
+    # Tikriname projekto modulius
+    project_modules = [
+        "database.db_utils",
+        "database.models.models",
+        "database.models.results_models",
+    ]
     
-    except Exception as e:
-        session.rollback()
-        print(f"Klaida importuojant duomenis: {e}")
+    for module_name in project_modules:
+        try:
+            importlib.import_module(module_name)
+            print(f"✓ Projekto modulis {module_name} sėkmingai importuotas")
+        except ImportError as e:
+            print(f"✗ Klaida importuojant projekto modulį {module_name}: {str(e)}")
+            return False
+    
+    print("Visi projekto moduliai sėkmingai importuoti")
+    return True
 
-def main():
-    """Pagrindinis duomenų importavimo skriptas"""
-    # Sukuriame duomenų bazę, jei jos dar nėra
-    create_database()
+def check_database_tables():
+    """
+    Patikrina duomenų bazės lenteles ir jų stulpelius
+    """
+    from database import SQLALCHEMY_DATABASE_URL
+    from sqlalchemy import create_engine
     
-    # Inicializuojame duomenų bazės prisijungimą
-    engine, session = init_db()
+    print("\nTikrinamos duomenų bazės lentelės...")
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    inspector = inspect(engine)
     
-    try:
-        # Jei turime esamus CSV, importuojame jų duomenis
-        raw_data_path = "data/raw/btc_data.csv"
-        if os.path.exists(raw_data_path):
-            import_data_from_csv(raw_data_path, session)
+    expected_tables = ['models', 'simulations', 'trades', 'predictions', 'metrics']
+    
+    for table in expected_tables:
+        if table in inspector.get_table_names():
+            print(f"✓ Lentelė {table} egzistuoja")
+            
+            # Patikrinam stulpelius
+            columns = inspector.get_columns(table)
+            column_names = [col['name'] for col in columns]
+            print(f"  Stulpeliai: {', '.join(column_names)}")
         else:
-            print("Nerastas CSV failas. Pirmiausia paleiskite duomenų rinkimą.")
+            print(f"✗ Lentelė {table} neegzistuoja!")
     
-    finally:
-        session.close()
+    return True
 
 if __name__ == "__main__":
-    main()
+    print("Inicializuojama duomenų bazė...\n")
+    
+    # Patikriname importus
+    if validate_imports():
+        print("\nVisi importai sėkmingai patikrinti.")
+    else:
+        print("\nKai kurie importai nepavyko. Patikrinkite klaidas aukščiau.")
+        sys.exit(1)
+    
+    # Patikriname duomenų bazės lenteles
+    if check_database_tables():
+        print("\nDuomenų bazės lentelės sėkmingai patikrintos.")
+    else:
+        print("\nKai kurios duomenų bazės lentelės nebuvo rastos. Paleiskite migracijas.")

@@ -7,95 +7,163 @@ Flask aplikacijos inicijavimas
 
 import os
 from datetime import datetime
-from flask import Flask
+from flask import Flask, redirect, url_for, current_app
+from flask_socketio import SocketIO
+import logging
 
 # Importuojame WebSocket managerį
-from app.services.websocket_manager import WebSocketManager
-from app.utils.generate_sample_metrics import add_sample_models
-
-# Sukuriame WebSocket managerio objektą
-websocket_manager = WebSocketManager()
+from app.services.websocket_service import websocket_manager
 
 # Importuojame modelio validavimo maršrutus
-from app.evaluation.evaluation_routes import model_evaluation
+try:
+    from app.evaluation.evaluation_routes import model_evaluation
+except ImportError:
+    # Laikinas sprendimas
+    from flask import Blueprint
+    model_evaluation = Blueprint('model_evaluation', __name__, url_prefix='/evaluation')
+
 from app.api.validation_routes import api_validation
 
 # Importuojame užduočių maršrutus
 from app.routes.task_routes import task_routes
 
 # Užduočių vykdymo serviso įtraukimas į aplikaciją
-
-# Importuojame:
 from app.services.task_executor import task_executor
+
+# Importuojame pranešimų maršrutus
+from app.routes.notification_routes import notification_routes
+
+# Importuojame dokumentacijos maršrutus
+from app.routes.documentation_routes import documentation_routes
+
+# Registruojame dashboard maršrutus
+from app.dashboard.dashboard_routes import dashboard
+
+# Importuojame prekybos maršrutus
+from app.trading.trading_routes import trading
+
+# Importuojame modelio treniravimo maršrutus
+from app.training.training_routes import model_training
+
+# Pridėkite šią importo eilutę
+from app.training.template_routes import template_management
+
+# Importuojame naują rezultatų modulį
+from app.results.results_routes import results
+
+# Sukuriame loggerį
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Sukurkite SocketIO objektą
+socketio = SocketIO()
+
+# Inicializuojame duomenų bazę
+from app.database import init_db
+
+# Papildykite failą d:\CA_BTC\app\__init__.py
+
+from app.db.init_results_db import init_results_tables
 
 def create_app(config=None):
     """
     Sukuria ir sukonfigūruoja Flask aplikaciją
     
+    Args:
+        config: Konfigūracijos objektas arba failo kelias
+        
     Returns:
-        Flask: Sukonfigūruota Flask aplikacija
+        app: Flask aplikacijos objektas
     """
-    # Inicializuojame Flask
+    # Sukuriame Flask aplikaciją
     app = Flask(__name__)
     
-    # Nustatome slaptą raktą, naudojamą formų apsaugai ir sesijai
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'paslaptis_123456789')
+    # Nustatome pagrindinę konfigūraciją
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'development_key')
+    app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
     
-    # Inicializuojame WebSocket managerį su mūsų aplikacija
-    websocket_manager.init_app(app)
+    # Taikomos konfigūracijos
+    app.config.from_mapping(
+        SECRET_KEY='dev',  # Pakeiskite į saugesnį slaptažodį produkcinėje aplinkoje
+        # Kitos konfigūracijos...
+    )
     
-    # Importuojame ir registruojame blueprint'us
-    from app.dashboard.routes import dashboard
-    from app.trading.routes import trading, trading_scheduler
-    from app.training.training_routes import model_training
-    from app.routes.scheduler import scheduler
-    from app.routes.models import models
+    if config:
+        app.config.from_mapping(config)
     
-    app.register_blueprint(dashboard)
-    app.register_blueprint(trading)
-    app.register_blueprint(trading_scheduler, url_prefix='/trading/scheduler')
-    app.register_blueprint(model_training, url_prefix='/training')
-    app.register_blueprint(scheduler, url_prefix='/scheduler')
-    app.register_blueprint(models, url_prefix='/models')
+    # Inicializuojame SocketIO su aplikacija
+    socketio.init_app(app, cors_allowed_origins="*")
     
-    # Registruojame modelio įvertinimo maršrutus
+    # Nustatykite websocket_manager su socketio objektu
+    websocket_manager.setup_socketio(socketio)
+    
+    # Registruojame modelio validavimo maršrutus
     app.register_blueprint(model_evaluation)
-    
-    # Registruojame API validavimo maršrutus
     app.register_blueprint(api_validation)
-    
-    # Registruojame klaidų apdorojimo funkcijas
-    register_error_handlers(app)
-    
-    # Perduodame dabarties laiką į visus šablonus
-    @app.context_processor
-    def inject_now():
-        return {'now': datetime.utcnow()}
-    
-    # Pridedame pavyzdinius modelius
-    add_sample_models()
     
     # Registruojame užduočių maršrutus
     app.register_blueprint(task_routes)
     
+    # Registruojame pranešimų maršrutus
+    app.register_blueprint(notification_routes)
+    
+    # Registruojame dokumentacijos maršrutus
+    app.register_blueprint(documentation_routes)
+    
+    # Registruojame dashboard maršrutus
+    app.register_blueprint(dashboard)
+    
+    # Registruojame prekybos maršrutus
+    app.register_blueprint(trading)
+    
+    # Registruojame modelio treniravimo maršrutus
+    app.register_blueprint(model_training)
+    
+    # Pridėkite šią eilutę prie kitų app.register_blueprint() eilučių
+    app.register_blueprint(template_management)
+    
+    # Registruojame rezultatų maršrutus
+    app.register_blueprint(results)
+    
+    # Inicializuojame duomenų bazę
+    init_db()
+    
+    # Inicializuojame rezultatų lenteles esamoje duomenų bazėje
+    try:
+        init_results_tables()
+    except Exception as e:
+        app.logger.error(f"Klaida inicializuojant rezultatų lenteles: {e}")
+    
+    # PASTABA: Schemos optimizavimo neįtraukiame į paleidimo procesą,
+    # nes tai turėtų būti atlikta tik vieną kartą administratoriaus
+    # naudojant app/db/migrate_to_optimized.py skriptą.
+    
+    # Pridedame konteksto procesorius datai
+    @app.context_processor
+    def inject_now():
+        return {'now': datetime.utcnow()}
+    
+    # Pridedame konteksto procesorių dabartinei aplikacijai
+    @app.context_processor
+    def inject_current_app():
+        return {'current_app': current_app}
+    
     # Paleidžiame užduočių vykdytoją
     task_executor.start()
     
+    # Paleidžiame WebSocket serverį
+    try:
+        websocket_manager.start()
+    except Exception as e:
+        app.logger.error(f"Klaida paleidžiant WebSocket serverį: {e}")
+    
+    # Pridėtas pagrindinio puslapio maršrutas
+    @app.route('/')
+    def index():
+        # Pakeiskite šį nukreipimą, jei jis neteisinga
+        return redirect(url_for('model_evaluation.index'))
+    
+    # Grąžiname sukonfigūruotą aplikaciją
     return app
-
-def register_error_handlers(app):
-    """
-    Registruoja klaidų apdorojimo maršrutus
-    
-    Args:
-        app (Flask): Flask aplikacija
-    """
-    @app.errorhandler(404)
-    def page_not_found(error):
-        from flask import render_template
-        return render_template('errors/404.html', title='Puslapis nerastas'), 404
-    
-    @app.errorhandler(500)
-    def internal_server_error(error):
-        from flask import render_template
-        return render_template('errors/500.html', title='Serverio klaida'), 500

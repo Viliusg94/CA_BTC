@@ -1,0 +1,100 @@
+<!-- Pagrindinis dokumentacijos puslapis -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Šoninė navigacija -->
+        <div class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="{{ url_for('docs.index') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-home"></i> Pradžia
+                </a>
+                <a href="{{ url_for('docs.user_guide') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-book"></i> Vartotojo vadovas
+                </a>
+                <a href="{{ url_for('docs.faq') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-question-circle"></i> DUK (FAQ)
+                </a>
+                <a href="{{ url_for('docs.tutorials') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-graduation-cap"></i> Mokomoji medžiaga
+                </a>
+                <a href="{{ url_for('docs.api_docs') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-code"></i> API dokumentacija
+                </a>
+            </div>
+        </div>
+        
+        <!-- Pagrindinis turinys -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="mb-4">Dokumentacija ir pagalba</h1>
+                    
+                    <p class="lead">
+                        Sveiki atvykę į Bitcoin prognozavimo sistemos dokumentacijos ir pagalbos centrą. 
+                        Čia rasite visą reikalingą informaciją, kad galėtumėte efektyviai naudotis sistema.
+                    </p>
+                    
+                    <div class="row mt-5">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center py-4">
+                                    <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                                    <h3>Vartotojo vadovas</h3>
+                                    <p>Detalus sistemos naudojimo aprašymas su nuosekliomis instrukcijomis.</p>
+                                    <a href="{{ url_for('docs.user_guide') }}" class="btn btn-primary">Skaityti vadovą</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center py-4">
+                                    <i class="fas fa-question-circle fa-3x text-primary mb-3"></i>
+                                    <h3>DUK (FAQ)</h3>
+                                    <p>Atsakymai į dažniausiai užduodamus klausimus apie sistemą.</p>
+                                    <a href="{{ url_for('docs.faq') }}" class="btn btn-primary">Peržiūrėti DUK</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center py-4">
+                                    <i class="fas fa-graduation-cap fa-3x text-primary mb-3"></i>
+                                    <h3>Mokomoji medžiaga</h3>
+                                    <p>Išsamūs mokomieji straipsniai apie Bitcoin prognozavimą.</p>
+                                    <a href="{{ url_for('docs.tutorials') }}" class="btn btn-primary">Mokytis</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center py-4">
+                                    <i class="fas fa-code fa-3x text-primary mb-3"></i>
+                                    <h3>API dokumentacija</h3>
+                                    <p>Techninė dokumentacija programuotojams, norintiems integruoti API.</p>
+                                    <a href="{{ url_for('docs.api_docs') }}" class="btn btn-primary">API dokumentacija</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h2>Pagalba</h2>
+                    <p>
+                        Jei nerandate atsakymo į savo klausimą dokumentacijoje, galite:
+                    </p>
+                    <ul>
+                        <li>Įjungti kontekstinę pagalbą - viršutiniame meniu rasite "Pagalba" jungiklį</li>
+                        <li>Susisiekti su administracija - rašykite adresu <a href="mailto:pagalba@btcforecast.lt">pagalba@btcforecast.lt</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

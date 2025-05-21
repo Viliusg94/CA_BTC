@@ -510,6 +510,13 @@ function stopAutoUpdate() {
     }
 }
 
+// Užregistruokite anotacijų įskiepį, jei jis egzistuoja
+if (typeof ChartAnnotation !== 'undefined') {
+    Chart.register(ChartAnnotation);
+} else {
+    console.warn('ChartAnnotation nerastas! Anotacijos grafikuose nebus rodomos.');
+}
+
 // Inicializuojame, kai dokumentas užkrautas
 document.addEventListener('DOMContentLoaded', function() {
     // Tikriname ar yra grafikų elementai
@@ -521,3 +528,9 @@ document.addEventListener('DOMContentLoaded', function() {
         initCharts();
     }
 });
+
+// Patikrinkite, ar duomenys turi reikiamus laukus
+if (trainingData.length > 0 && !trainingData[0].hasOwnProperty('loss')) {
+    console.error('Neteisingas duomenų formatas - trūksta metrikų laukų!');
+    return;
+}
