@@ -152,7 +152,7 @@
         <div class="col-md-3">
             <div class="card stats-card">
                 <div class="card-body">
-                    <div class="stats-value">{{ stats.total }}</div>
+                    <div class="stats-value">{{ history|length if history else 0 }}</div>
                     <div class="stats-label">Viso sesijų</div>
                 </div>
             </div>
@@ -160,7 +160,7 @@
         <div class="col-md-3">
             <div class="card stats-card">
                 <div class="card-body">
-                    <div class="stats-value text-success">{{ stats.completed }}</div>
+                    <div class="stats-value text-success">{{ history|selectattr('status', 'eq', 'Baigta')|list|length if history else 0 }}</div>
                     <div class="stats-label">Sėkmingai baigta</div>
                 </div>
             </div>
@@ -168,7 +168,7 @@
         <div class="col-md-3">
             <div class="card stats-card">
                 <div class="card-body">
-                    <div class="stats-value text-danger">{{ stats.failed }}</div>
+                    <div class="stats-value text-danger">{{ history|selectattr('status', 'search', 'Klaida')|list|length if history else 0 }}</div>
                     <div class="stats-label">Nepavykusios</div>
                 </div>
             </div>
@@ -176,7 +176,7 @@
         <div class="col-md-3">
             <div class="card stats-card">
                 <div class="card-body">
-                    <div class="stats-value text-warning">{{ stats.canceled }}</div>
+                    <div class="stats-value text-warning">{{ history|selectattr('status', 'eq', 'Atšaukta')|list|length if history else 0 }}</div>
                     <div class="stats-label">Atšauktos</div>
                 </div>
             </div>
@@ -184,7 +184,8 @@
     </div>
     
     <!-- Geriausias modelis -->
-    {% if stats.best_model %}
+    {% if history and history|selectattr('metrics.mae', 'defined')|list|length > 0 %}
+    {% set best_model = (history|selectattr('metrics.mae', 'defined')|sort(attribute='metrics.mae'))[0] %}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card best-model-card">
@@ -192,11 +193,11 @@
                     <div class="row">
                         <div class="col-md-8">
                             <h5>Geriausias modelis</h5>
-                            <h4>{{ stats.best_model.name }}</h4>
-                            <p class="text-muted">Mažiausia validavimo MAE: <strong>{{ stats.best_model.val_mae|round(6) }}</strong></p>
+                            <h4>{{ best_model.model_type|upper }}</h4>
+                            <p class="text-muted">Mažiausia validavimo MAE: <strong>{{ best_model.metrics.mae|default(0)|round(6) }}</strong></p>
                         </div>
                         <div class="col-md-4 text-end d-flex align-items-center justify-content-end">
-                            <a href="{{ url_for('training.model_details', filename=stats.best_model.model_path) }}" class="btn btn-primary">
+                            <a href="{{ url_for('models_overview') }}" class="btn btn-primary">
                                 Peržiūrėti modelį
                             </a>
                         </div>
@@ -231,44 +232,98 @@
                 <form id="filtersForm">
                     <div class="mb-3">
                         <label for="dateFrom" class="form-label">Data nuo:</label>
-                        <input type="date" class="form-control" id="dateFrom" name="date_from" value="{{ filters.date_from }}">
+                        <input type="date" class="form-control" id="dateFrom" name="date_from" value="{{ filters.date_from|default('') }}">
                     </div>
                     <div class="mb-3">
                         <label for="dateTo" class="form-label">Data iki:</label>
-                        <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ filters.date_to }}">
+                        <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ filters.date_to|default('') }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Modelio tipas:</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="LSTM" id="typeLSTM" name="model_types" {% if 'LSTM' in filters.model_types %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" value="LSTM" id="typeLSTM" name="model_types" {% if filters is defined and 'LSTM' in filters.model_types %}checked{% endif %}>
                             <label class="form-check-label" for="typeLSTM">LSTM</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="GRU" id="typeGRU" name="model_types" {% if 'GRU' in filters.model_types %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" value="GRU" id="typeGRU" name="model_types" {% if filters is defined and 'GRU' in filters.model_types %}checked{% endif %}>
                             <label class="form-check-label" for="typeGRU">GRU</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="CNN" id="typeCNN" name="model_types" {% if 'CNN' in filters.model_types %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" value="CNN" id="typeCNN" name="model_types" {% if filters is defined and 'CNN' in filters.model_types %}checked{% endif %}>
                             <label class="form-check-label" for="typeCNN">CNN</label>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Būsena:</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="Completed" id="statusCompleted" name="statuses" {% if 'Completed' in filters.statuses %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" value="Completed" id="statusCompleted" name="statuses" {% if filters is defined and 'Completed' in filters.statuses %}checked{% endif %}>
                             <label class="form-check-label" for="statusCompleted">Baigti</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="Failed" id="statusFailed" name="statuses" {% if 'Failed' in filters.statuses %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" value="Failed" id="statusFailed" name="statuses" {% if filters is defined and 'Failed' in filters.statuses %}checked{% endif %}>
                             <label class="form-check-label" for="statusFailed">Nepavykę</label>
                         </div>
                         <div class="form-check">
-                                </tr>
-                                {% else %}
+                            <input class="form-check-input" type="checkbox" value="Canceled" id="statusCanceled" name="statuses" {% if filters is defined and 'Canceled' in filters.statuses %}checked{% endif %}>
+                            <label class="form-check-label" for="statusCanceled">Atšaukti</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary">
+                            Taikyti filtrus
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Treniruotės istorija -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Treniruočių sesijų istorija</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
                                 <tr>
-                                    <td colspan="9" class="text-center">Nėra treniravimo sesijų istorijos</td>
+                                    <th>Data</th>
+                                    <th>Modelio tipas</th>
+                                    <th>Būsena</th>
+                                    <th>Trukmė (min)</th>
+                                    <th>MAE</th>
+                                    <th>RMSE</th>
+                                    <th>Veiksmai</th>
                                 </tr>
-                                {% endfor %}
+                            </thead>
+                            
+                            <tbody>
+                                {% if history and history|length > 0 %}
+                                    {% for session in history %}
+                                    <tr>
+                                        <td>{{ session.start_time|default('-') }}</td>
+                                        <td>{{ session.model_type|upper }}</td>
+                                        <td>
+                                            <span class="badge {% if session.status == 'Baigta' %}bg-success{% elif 'Klaida' in session.status %}bg-danger{% else %}bg-info{% endif %}">
+                                                {{ session.status }}
+                                            </span>
+                                        </td>
+                                        <td>{{ session.duration|default('-') }}</td>
+                                        <td>{{ session.metrics.mae|default('-')|round(6) if session.metrics is defined else '-' }}</td>
+                                        <td>{{ session.metrics.rmse|default('-')|round(6) if session.metrics is defined else '-' }}</td>
+                                        <td>
+                                            <a href="{{ url_for('models_overview') }}" class="btn btn-sm btn-outline-primary">
+                                                Peržiūrėti
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">Nėra treniravimo sesijų istorijos</td>
+                                    </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
@@ -284,8 +339,8 @@
     // Funkcija rikiuoti lentelę
     function sortTable(field) {
         // Gauname dabartinius parametrus
-        const currentSortBy = document.getElementById('sort_by').value;
-        const currentSortOrder = document.getElementById('sort_order').value;
+        const currentSortBy = document.getElementById('sort_by') ? document.getElementById('sort_by').value : '';
+        const currentSortOrder = document.getElementById('sort_order') ? document.getElementById('sort_order').value : '';
         
         // Nustatome naujus parametrus
         let newSortOrder = 'asc';
@@ -293,12 +348,45 @@
             newSortOrder = 'desc';
         }
         
-        // Atnaujiname paslėptus laukus
-        document.getElementById('sort_by').value = field;
-        document.getElementById('sort_order').value = newSortOrder;
-        
-        // Pateikiame formą
-        document.getElementById('filterForm').submit();
+        // Tikriname, ar egzistuoja elementai
+        if (document.getElementById('sort_by') && document.getElementById('sort_order')) {
+            // Atnaujiname paslėptus laukus
+            document.getElementById('sort_by').value = field;
+            document.getElementById('sort_order').value = newSortOrder;
+            
+            // Pateikiame formą, jei ji egzistuoja
+            if (document.getElementById('filterForm')) {
+                document.getElementById('filterForm').submit();
+            }
+        }
     }
+    
+    // Trainingų grafiko inicializavimas (tik jei yra duomenų)
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('trainingChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [/* čia pridedame datas */],
+                    datasets: [{
+                        label: 'Modelių treniravimo MAE',
+                        data: [/* čia pridedame MAE reikšmes */],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}

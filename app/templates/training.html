@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Modelių apmokymas{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>Modelių apmokymas</h2>
+            <p class="text-muted">Sukurkite ir apmokykite naujus modelius Bitcoin kainų prognozavimui.</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Kairysis stulpelis - modelio pasirinkimas -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Naujo modelio apmokymas</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('training') }}">
+                        <div class="mb-3">
+                            <label for="model_type" class="form-label">Modelio tipas</label>
+                            <select class="form-select" id="model_type" name="model_type" required>
+                                <option value="lstm">LSTM</option>
+                                <option value="gru">GRU</option>
+                                <option value="transformer">Transformer</option>
+                                <option value="cnn">CNN</option>
+                                <option value="cnn_lstm">CNN-LSTM</option>
+                                <option value="arima">ARIMA</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="epochs" class="form-label">Epochų skaičius</label>
+                            <input type="number" class="form-control" id="epochs" name="epochs" min="1" max="500" value="50">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="batch_size" class="form-label">Partijos dydis (batch size)</label>
+                            <input type="number" class="form-control" id="batch_size" name="batch_size" min="1" max="1024" value="32">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="sequence_length" class="form-label">Sekos ilgis</label>
+                            <input type="number" class="form-control" id="sequence_length" name="sequence_length" min="1" max="100" value="24">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Pradėti apmokymą</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dešinysis stulpelis - aktyvūs apmokymai -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Aktyvūs apmokymai</h5>
+                </div>
+                <div class="card-body" id="active-training-container">
+                    {% if training_jobs %}
+                        <ul class="list-group list-group-flush">
+                            {% for job in training_jobs %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ job.model_type.upper() }}</span>
+                                        <small>{{ job.status }}</small>
+                                    </div>
+                                    <div class="progress mt-2" style="height: 5px;">
+                                        <div class="progress-bar bg-info" role="progressbar" 
+                                            
+                                             style="width: {{ job.progress or 0 }}%;" 
+                                             aria-valuenow="{{ job.progress }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center p-3">
+                            <p class="text-muted mb-0">Šiuo metu nėra aktyvių mokymų.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Apmokymo istorija -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Apmokymo istorija</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('training_history') }}" class="btn btn-outline-secondary">Peržiūrėti apmokymo istoriją</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Funkcija aktyvių mokymų atnaujinimui
+    function updateActiveTrainingJobs() {
+        const container = document.getElementById('active-training-container');
+        if (!container) return;
+        
+        fetch('/api/training_status')
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Serverio klaida: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                if (!Array.isArray(data)) {
+                    throw new Error('Gautas neteisingas duomenų formatas');
+                }
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="text-center p-3"><p class="text-muted mb-0">Šiuo metu nėra aktyvių mokymų.</p></div>';
+                    return;
+                }
+                
+                let htmlContent = '<ul class="list-group list-group-flush">';
+                
+                for (let i = 0; i < data.length; i++) {
+                    const job = data[i];
+                    const progress = job.progress || 0;
+                    
+                    htmlContent += `
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <span>${job.model_type.toUpperCase()}</span>
+                                <small>${job.status}</small>
+                            </div>
+                            <div class="progress mt-2" style="height: 5px;">
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: ${progress}%;" 
+                                     aria-valuenow="${progress}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </li>
+                    `;
+                }
+                
+                htmlContent += '</ul>';
+                container.innerHTML = htmlContent;
+            })
+            .catch(function(error) {
+                console.error('Klaida atnaujinant aktyvių mokymų sąrašą:', error);
+                container.innerHTML = '<div class="alert alert-warning text-center"><i class="fas fa-exclamation-triangle me-2"></i> Nepavyko atnaujinti mokymų sąrašo.</div>';
+            });
+    }
+    
+    // Atnaujinti aktyvius mokymus pirmą kartą įkėlus puslapį
+    document.addEventListener('DOMContentLoaded', function() {
+        updateActiveTrainingJobs();
+        
+        // Periodiškai atnaujinti aktyvių mokymų sąrašą
+        setInterval(updateActiveTrainingJobs, 5000);
+    });
+</script>
+{% endblock %}
