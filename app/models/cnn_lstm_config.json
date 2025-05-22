@@ -1,0 +1,21 @@
+{
+    "epochs": 50,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "lookback": 30,
+    "dropout": 0.2,
+    "validation_split": 0.2,
+    "filters": [
+        64,
+        32
+    ],
+    "kernel_size": [
+        3,
+        3
+    ],
+    "recurrent_dropout": 0.2,
+    "layers": [
+        64,
+        32
+    ]
+}

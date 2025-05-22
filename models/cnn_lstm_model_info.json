@@ -1,11 +1,16 @@
 {
     "model_type": "CNN-LSTM",
-    "sequence_length": 24,
+    "input_shape": [
+        48,
+        5
+    ],
+    "sequence_length": 48,
     "target_column": "close",
     "metrics": {
-        "rmse": 1000.0,
-        "mae": 500.0,
-        "mape": 2.5,
-        "r2": 0.85
+        "mse": 5161102.651958544,
+        "rmse": 2271.8060330843705,
+        "mae": 1666.4268938654648,
+        "r2": 0.9236970097589243,
+        "mape": 1.7378716638276317
     }
 }

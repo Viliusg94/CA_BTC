@@ -1,0 +1,14 @@
+{
+    "epochs": 50,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "lookback": 30,
+    "dropout": 0.2,
+    "validation_split": 0.2,
+    "num_heads": 2,
+    "d_model": 64,
+    "layers": [
+        64,
+        32
+    ]
+}

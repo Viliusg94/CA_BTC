@@ -568,6 +568,12 @@
         
         // Inicializuojame puslapį
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Modelių tipai:', {{ model_configs|tojson }});
+            
+            // Įsitikinkite, kad visų modelių konfigūracijos matomos
+            const modelTypes = Object.keys({{ model_configs|tojson }});
+            console.log('Turime šiuos modelių tipus:', modelTypes);
+            
             // Inicializuojame visų modelių progreso stebėjimą
             {% for model_type in model_configs %}
             pollTrainingProgress('{{ model_type }}');
