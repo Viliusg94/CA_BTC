@@ -1,0 +1,17 @@
+{
+    "model_type": "transformer",
+    "last_trained": "2025-05-22 14:27",
+    "performance": {
+        "mape": 7.48,
+        "rmse": 291.48,
+        "accuracy": 0.9601
+    },
+    "parameters": {
+        "lookback": 30,
+        "attention_heads": 4,
+        "batch_size": 32,
+        "epochs": 100,
+        "forecast_days": 7,
+        "learning_rate": 0.001
+    }
+}

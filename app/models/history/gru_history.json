@@ -1,0 +1,30 @@
+[
+    {
+        "id": "20250522153604",
+        "timestamp": "2025-05-22 15:36:04",
+        "model_type": "gru",
+        "training_time": 100,
+        "metrics": {
+            "mae": 468.74,
+            "mse": 14769.35,
+            "rmse": 260.81,
+            "r2": 0.7056,
+            "mape": 4.67
+        },
+        "parameters": {
+            "epochs": 50,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "dropout": 0.2,
+            "recurrent_dropout": 0.0,
+            "validation_split": 0.2,
+            "num_heads": "8",
+            "d_model": "64",
+            "filters": "32,64,128",
+            "kernel_size": "3,3,3",
+            "notes": "Testing"
+        },
+        "is_active": true
+    }
+]

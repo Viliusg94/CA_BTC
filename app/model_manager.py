@@ -22,78 +22,120 @@ class ModelManager:
     Klasė, valdanti neuroninius tinklus ir jų apmokymą
     """
     
-    def __init__(self, models_dir='models'):
+    def __init__(self, models_dir="models"):
         """
-        Inicializuoja ModelManager
+        Inicializuoja ModelManager klasę
         
         Args:
-            models_dir (str): Direktorija, kurioje saugomi modeliai
+            models_dir (str): Modelių direktorija
         """
+        self.logger = logging.getLogger(__name__)
         self.models_dir = models_dir
         
-        # Sukuriame direktoriją, jei jos nėra
-        if not os.path.exists(models_dir):
-            os.makedirs(models_dir)
-            
-        # Modelių tipai, kuriuos palaiko sistema
-        self.model_types = ['lstm', 'gru', 'transformer', 'cnn', 'arima']
+        # Palaikomi modelių tipai
+        self.model_types = ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
         
         # Modelių būsenos
+        self.statuses = {}
+        
+        # Modelių konfigūracijos
+        self.model_configs = {}
+        
+        # Modelių objektai
         self.models = {}
+        
+        # Vykstančių apmokymų sekimas
         self.running_trainings = {}
         
-        # Modelių apmokymo progresas
+        # Apmokymo progreso sekimas
         self.training_progress = {}
         
-        # Modelių nustatymai (numatytosios reikšmės)
-        self.model_configs = {
-            'lstm': {
-                'lookback': 30,
-                'layers': [50, 100, 1],
-                'batch_size': 32,
-                'epochs': 100,
-                'forecast_days': 7,
-                'learning_rate': 0.001
-            },
-            'gru': {
-                'lookback': 30,
-                'layers': [60, 60, 1],
-                'batch_size': 32,
-                'epochs': 100,
-                'forecast_days': 7,
-                'learning_rate': 0.001
-            },
-            'transformer': {
-                'lookback': 30,
-                'attention_heads': 4,
-                'batch_size': 32,
-                'epochs': 100,
-                'forecast_days': 7,
-                'learning_rate': 0.001
-            },
-            'cnn': {
-                'lookback': 30,
-                'filters': [64, 128],
-                'batch_size': 32,
-                'epochs': 100,
-                'forecast_days': 7,
-                'learning_rate': 0.001
-            },
-            'arima': {
-                'p': 5,
-                'd': 1,
-                'q': 0,
-                'forecast_days': 7
+        # Inicializuojame progreso sekimą kiekvienam modelio tipui
+        for model_type in self.model_types:
+            self.training_progress[model_type] = {
+                'progress': 0,
+                'status': 'Neaktyvus',
+                'history': []
             }
-        }
+            # Inicializuojame modelio objektą
+            self.models[model_type] = {
+                'status': 'Neapmokytas',
+                'last_trained': 'Niekada',
+                'performance': 'Nežinoma'
+            }
         
-        # Inicializuojame modelių būsenas
-        self._initialize_models()
+        # Sukuriame reikiamas direktorijas
+        self._create_directories()
         
-        # Įkeliame išsaugotus nustatymus, jei jie egzistuoja
-        self._load_model_configs()
+        # Įkrauname esamas modelių būsenas
+        self._load_model_status()
         
         logger.info(f"ModelManager inicializuotas. Direktorija: {os.path.abspath(models_dir)}")
+    
+    def _create_directories(self):
+        """Sukuria reikiamas direktorijas modelių saugojimui"""
+        try:
+            # Sukuriame pagrindinę modelių direktoriją
+            os.makedirs(self.models_dir, exist_ok=True)
+            
+            # Sukuriame papildomas direktorijas
+            subdirs = ['weights', 'history', 'config']
+            for subdir in subdirs:
+                os.makedirs(os.path.join(self.models_dir, subdir), exist_ok=True)
+                
+            self.logger.info(f"Modelių direktorijos sukurtos: {self.models_dir}")
+        except Exception as e:
+            self.logger.error(f"Klaida kuriant direktorijas: {str(e)}")
+
+    def _load_model_status(self):
+        """Įkrauna modelių būsenas iš failo"""
+        try:
+            status_path = os.path.join(self.models_dir, "status.json")
+            
+            if os.path.exists(status_path):
+                with open(status_path, 'r') as f:
+                    self.statuses = json.load(f)
+                    
+                self.logger.info(f"Modelių būsenos įkeltos iš {status_path}")
+            else:
+                # Inicializuojame tuščias būsenas
+                self.statuses = {}
+                for model_type in self.model_types:
+                    self.statuses[model_type] = {
+                        'status': 'Neapmokytas',
+                        'last_trained': 'Niekada',
+                        'performance': 'Nežinoma',
+                        'active_model_id': None
+                    }
+                    
+                # Išsaugome numatytąsias būsenas
+                self._save_model_status()
+                
+                self.logger.info("Sukurtos numatytosios modelių būsenos")
+        except Exception as e:
+            self.logger.error(f"Klaida įkeliant modelių būsenas: {str(e)}")
+            
+            # Inicializuojame tuščias būsenas klaidos atveju
+            self.statuses = {}
+            for model_type in self.model_types:
+                self.statuses[model_type] = {
+                    'status': 'Klaida',
+                    'last_trained': 'Nežinoma',
+                    'performance': 'Nežinoma',
+                    'active_model_id': None
+                }
+
+    def _save_model_status(self):
+        """Išsaugo modelių būsenas į failą"""
+        try:
+            status_path = os.path.join(self.models_dir, "status.json")
+            
+            with open(status_path, 'w') as f:
+                json.dump(self.statuses, f, indent=4)
+                
+            self.logger.info(f"Modelių būsenos išsaugotos į {status_path}")
+        except Exception as e:
+            self.logger.error(f"Klaida išsaugant modelių būsenas: {str(e)}")
     
     def _load_model_configs(self):
         """Įkelia modelių nustatymus iš failų"""
@@ -175,93 +217,174 @@ class ModelManager:
     
     def get_model_status(self, model_type):
         """
-        Grąžina modelio būseną
-        
+        Gauna modelio būseną
+    
         Args:
             model_type (str): Modelio tipas
-            
-        Returns:
-            dict: Modelio būsenos informacija
-        """
-        if model_type not in self.models:
-            return {
-                'status': 'Neprieinamas',
-                'last_trained': None,
-                'performance': None
-            }
         
-        return self.models[model_type]
-    
+        Returns:
+            dict: Modelio būsena
+        """
+      
+            # Tikriname, ar modelio tipas palaikomas
+        if model_type not in self.model_types:
+            self.logger.error(f"Modelio tipas {model_type} nepalaikomas")
+            return {}
+        
+        # Nustatome statusų failo kelią
+        status_path = os.path.join(self.models_dir, "status.json")
+        
+        # Jei statusų failas egzistuoja, grąžiname modelio būseną
+        if os.path.exists(status_path):
+            with open(status_path, 'r') as f:
+                statuses = json.load(f)
+            
+            if model_type in statuses:
+                return statuses[model_type]
+        
+        # Jei statusų failas neegzistuoja arba modelio tipo nėra jame,
+        # grąžiname numatytąją modelio būseną
+        return {
+            'status': 'Neapmokytas',
+            'last_trained': 'Niekada',
+            'performance': 'Nežinoma',
+            'active_model_id': None
+        }
+   
     def update_model_config(self, model_type, config):
         """
-        Atnaujina modelio nustatymus
+        Atnaujina modelio konfigūraciją
         
         Args:
             model_type (str): Modelio tipas
-            config (dict): Nauji nustatymai
+            config (dict): Modelio konfigūracija
             
         Returns:
-            bool: Ar pavyko atnaujinti nustatymus
+            bool: Ar pavyko atnaujinti konfigūraciją
         """
-        if model_type not in self.model_types:
-            logger.error(f"Nežinomas modelio tipas: {model_type}")
-            return False
-        
         try:
-            # Atnaujiname tik tuos nustatymus, kurie jau egzistuoja
+            # Tikriname, ar modelio tipas palaikomas
+            if model_type not in self.model_types:
+                self.logger.error(f"Modelio tipas {model_type} nepalaikomas")
+                return False
+            
+            # Gauname dabartinę konfigūraciją
+            current_config = self.get_model_config(model_type)
+            
+            # Atnaujiname tik tuos parametrus, kurie pateikti
             for key, value in config.items():
-                if key in self.model_configs[model_type]:
-                    # Konvertuojame į tinkamą tipą
-                    if key == 'layers' or key == 'filters':
-                        # Konvertuojame sluoksnių sąrašą iš eilutės į skaičių sąrašą
-                        if isinstance(value, str):
-                            try:
-                                value = [int(x.strip()) for x in value.split(',')]
-                            except ValueError:
-                                logger.error(f"Neteisingas sluoksnių sąrašas: {value}")
-                                continue
-                    elif key in ['lookback', 'batch_size', 'epochs', 'forecast_days', 'attention_heads', 'p', 'd', 'q']:
-                        # Konvertuojame į sveikuosius skaičius
-                        try:
-                            value = int(value)
-                        except ValueError:
-                            logger.error(f"Neteisingas sveikasis skaičius: {value}")
-                            continue
-                    elif key == 'learning_rate':
-                        # Konvertuojame į slankiojo kablelio skaičių
-                        try:
-                            value = float(value)
-                        except ValueError:
-                            logger.error(f"Neteisingas slankiojo kablelio skaičius: {value}")
-                            continue
-                    
-                    # Priskiriame naują reikšmę
-                    self.model_configs[model_type][key] = value
+                current_config[key] = value
             
-            # Išsaugome atnaujintus nustatymus
-            self.save_model_configs()
+            # Išsaugome atnaujintą konfigūraciją
+            config_path = os.path.join(self.models_dir, "config", f"{model_type}_config.json")
             
-            logger.info(f"Modelio {model_type} nustatymai atnaujinti: {config}")
+            # Sukuriame direktoriją, jei ji neegzistuoja
+            os.makedirs(os.path.dirname(config_path), exist_ok=True)
+            
+            with open(config_path, 'w') as f:
+                json.dump(current_config, f, indent=4)
+            
+            self.logger.info(f"Modelio {model_type} konfigūracija atnaujinta: {current_config}")
             return True
         except Exception as e:
-            logger.error(f"Klaida atnaujinant modelio {model_type} nustatymus: {str(e)}")
+            self.logger.error(f"Klaida atnaujinant modelio {model_type} konfigūraciją: {str(e)}")
             return False
     
     def get_model_config(self, model_type):
         """
-        Grąžina modelio nustatymus
+        Gauna modelio konfigūraciją
         
         Args:
             model_type (str): Modelio tipas
             
         Returns:
-            dict: Modelio nustatymai
+            dict: Modelio konfigūracija
         """
-        if model_type not in self.model_types:
-            logger.error(f"Nežinomas modelio tipas: {model_type}")
+        try:
+            # Tikriname, ar modelio tipas palaikomas
+            if model_type not in self.model_types:
+                self.logger.error(f"Modelio tipas {model_type} nepalaikomas")
+                return {}
+            
+            # Nustatome konfigūracijos failo kelią
+            config_path = os.path.join(self.models_dir, "config", f"{model_type}_config.json")
+            
+            # Jei konfigūracijos failas egzistuoja, grąžiname jo turinį
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                return config
+            
+            # Jei konfigūracijos failas neegzistuoja, grąžiname numatytąją konfigūraciją
+            else:
+                # Numatytosios konfigūracijos skirtingiems modeliams
+                default_configs = {
+                    'lstm': {
+                        'epochs': 50,
+                        'batch_size': 32,
+                        'learning_rate': 0.001,
+                        'lookback': 14,
+                        'dropout': 0.2,
+                        'recurrent_dropout': 0.0,
+                        'validation_split': 0.2
+                    },
+                    'gru': {
+                        'epochs': 50,
+                        'batch_size': 32,
+                        'learning_rate': 0.001,
+                        'lookback': 14,
+                        'dropout': 0.2,
+                        'recurrent_dropout': 0.0,
+                        'validation_split': 0.2
+                    },
+                    'transformer': {
+                        'epochs': 50,
+                        'batch_size': 32,
+                        'learning_rate': 0.001,
+                        'lookback': 14,
+                        'num_heads': 8,
+                        'd_model': 64,
+                        'validation_split': 0.2
+                    },
+                    'cnn': {
+                        'epochs': 50,
+                        'batch_size': 32,
+                        'learning_rate': 0.001,
+                        'lookback': 14,
+                        'filters': '32,64,128',
+                        'kernel_size': '3,3,3',
+                        'validation_split': 0.2
+                    },
+                    'cnn_lstm': {
+                        'epochs': 50,
+                        'batch_size': 32,
+                        'learning_rate': 0.001,
+                        'lookback': 14,
+                        'filters': '32,64',
+                        'kernel_size': '3,3',
+                        'dropout': 0.2,
+                        'validation_split': 0.2
+                    }
+                }
+                
+                # Grąžiname numatytąją konfigūraciją pagal modelio tipą
+                config = default_configs.get(model_type, {
+                    'epochs': 50,
+                    'batch_size': 32,
+                    'learning_rate': 0.001,
+                    'lookback': 14,
+                    'validation_split': 0.2
+                })
+                
+                # Išsaugome numatytąją konfigūraciją į failą
+                os.makedirs(os.path.dirname(config_path), exist_ok=True)
+                with open(config_path, 'w') as f:
+                    json.dump(config, f, indent=4)
+                
+                return config
+        except Exception as e:
+            self.logger.error(f"Klaida gaunant modelio {model_type} konfigūraciją: {str(e)}")
             return {}
-        
-        return self.model_configs.get(model_type, {})
     
     def _simulate_training(self, model_type):
         """
@@ -270,25 +393,17 @@ class ModelManager:
         Args:
             model_type (str): Modelio tipas
         """
-        logger.info(f"Simuliuojamas modelio {model_type} apmokymas")
+        self.logger.info(f"Simuliuojamas modelio {model_type} apmokymas")
         
         # Pažymime, kad apmokymas prasidėjo
-        self.models[model_type]['status'] = 'Apmokomas'
+        if model_type in self.models:
+            self.models[model_type]['status'] = 'Apmokomas'
         
         # Gauname modelio nustatymus
-        config = self.model_configs[model_type]
-        epochs = config.get('epochs', 100)
+        config = self.get_model_config(model_type)
+        epochs = config.get('epochs', 50)
         
-        # Inicializuojame progresą
-        self.training_progress[model_type] = {
-            'current_epoch': 0,
-            'total_epochs': epochs,
-            'accuracy': 0,
-            'loss': 0,
-            'eta': f"{epochs * 2} sek."  # Apytiksliai 2 sekundės per epochą
-        }
-        
-        # Simuliuojame apmokymo procesą per epochas
+        # Simuliuojame apmokymo procesą
         for epoch in range(epochs):
             # Simuliuojame vieną epochą
             time.sleep(0.1)  # Pagreitiname simuliaciją demonstracijos tikslais
@@ -296,66 +411,48 @@ class ModelManager:
             # Atnaujiname progresą
             accuracy = min(0.5 + (epoch / epochs) * 0.45 + random.uniform(-0.02, 0.02), 0.99)
             loss = max(0.5 - (epoch / epochs) * 0.45 + random.uniform(-0.02, 0.02), 0.01)
+            progress = int((epoch + 1) / epochs * 100)
             
             self.training_progress[model_type] = {
+                'progress': progress,
+                'status': 'Vykdoma',
+                'message': f"Epocha {epoch+1}/{epochs}",
                 'current_epoch': epoch + 1,
                 'total_epochs': epochs,
                 'accuracy': round(accuracy, 4),
                 'loss': round(loss, 4),
-                'eta': f"{(epochs - epoch - 1) * 2} sek."
+                'eta': f"{(epochs - epoch - 1) * 2} sek.",
+                'history': self.training_progress[model_type].get('history', [])
             }
             
-            logger.info(f"Modelio {model_type} apmokymas: Epocha {epoch+1}/{epochs}, "
-                      f"Tikslumas: {accuracy:.4f}, Nuostolis: {loss:.4f}")
+            # Įrašome progreso informaciją į istoriją
+            history_entry = {
+                'epoch': epoch + 1,
+                'accuracy': round(accuracy, 4),
+                'loss': round(loss, 4),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            self.training_progress[model_type]['history'].append(history_entry)
+            
+            self.logger.info(f"Modelio {model_type} apmokymas: Epocha {epoch+1}/{epochs}, "
+                          f"Tikslumas: {accuracy:.4f}, Nuostolis: {loss:.4f}")
         
-        # Generuojame atsitiktinį MAPE (vidutinė absoliutinė procentinė paklaida)
-        mape = round(random.uniform(3.0, 8.0), 2)
-        
-        # Nustatome, kad apmokymas baigtas
-        self.models[model_type]['status'] = 'Aktyvus'
-        self.models[model_type]['last_trained'] = datetime.now().strftime('%Y-%m-%d %H:%M')
-        self.models[model_type]['performance'] = f"{mape}% MAPE"
-        
-        # Sukuriame modelio info failą
-        info = {
-            'model_type': model_type,
-            'last_trained': self.models[model_type]['last_trained'],
-            'performance': {
-                'mape': mape,
-                'rmse': round(random.uniform(100, 500), 2),
-                'accuracy': self.training_progress[model_type]['accuracy']
-            },
-            'parameters': self.model_configs[model_type]
+        # Generuojame atsitiktines metrikas
+        metrics = {
+            'mae': round(random.uniform(100, 500), 2),
+            'mse': round(random.uniform(10000, 50000), 2),
+            'rmse': round(random.uniform(100, 500), 2),
+            'r2': round(random.uniform(0.7, 0.95), 4),
+            'mape': round(random.uniform(3.0, 8.0), 2)
         }
         
-        # Sukuriame direktoriją, jei jos nėra
-        if not os.path.exists(self.models_dir):
-            os.makedirs(self.models_dir)
+        # Gauname modelio parametrus
+        params = self.get_model_config(model_type)
         
-        # Įrašome informaciją į failą
-        info_path = os.path.join(self.models_dir, f"{model_type}_model_info.json")
-        with open(info_path, 'w') as f:
-            json.dump(info, f, indent=4)
+        # Baigiame apmokymo procesą
+        self.end_training(model_type, metrics=metrics, duration=epochs * 2, params=params)
         
-        # Sukuriame fiktyvų modelio failą
-        model_path = os.path.join(self.models_dir, f"{model_type}_model.h5")
-        with open(model_path, 'w') as f:
-            f.write(f"Fiktyvus {model_type} modelio failas")
-        
-        # Sukuriame fiktyvų scaler failą
-        scaler_path = os.path.join(self.models_dir, f"{model_type}_scaler.pkl")
-        with open(scaler_path, 'wb') as f:
-            pickle.dump({'mean': 0, 'scale': 1}, f)
-        
-        logger.info(f"Modelio {model_type} apmokymas baigtas. MAPE: {mape}%")
-        
-        # Pašaliname iš einamųjų apmokymų sąrašo
-        if model_type in self.running_trainings:
-            del self.running_trainings[model_type]
-        
-        # Išvalome progreso informaciją
-        if model_type in self.training_progress:
-            del self.training_progress[model_type]
+        self.logger.info(f"Modelio {model_type} apmokymas baigtas. MAE: {metrics['mae']}")
     
     def get_training_progress(self, model_type):
         """
@@ -368,31 +465,23 @@ class ModelManager:
             dict: Apmokymo progreso informacija
         """
         if model_type not in self.model_types:
-            logger.error(f"Nežinomas modelio tipas: {model_type}")
-            return {}
+            self.logger.error(f"Nežinomas modelio tipas: {model_type}")
+            return {'status': 'Neaktyvus', 'progress': 0}
         
         if model_type not in self.training_progress:
-            return {
-                'status': 'Inactive',
-                'progress': 0,
-                'message': 'Apmokymas nevyksta'
-            }
+            return {'status': 'Neaktyvus', 'progress': 0}
         
-        progress = self.training_progress[model_type]
+        progress_data = self.training_progress[model_type]
         
-        # Apskaičiuojame progreso procentą
-        percent = int((progress['current_epoch'] / progress['total_epochs']) * 100)
+        # Jei status nėra, nustatome 'Neaktyvus'
+        if 'status' not in progress_data:
+            progress_data['status'] = 'Neaktyvus'
         
-        return {
-            'status': 'Active',
-            'progress': percent,
-            'current_epoch': progress['current_epoch'],
-            'total_epochs': progress['total_epochs'],
-            'accuracy': progress['accuracy'],
-            'loss': progress['loss'],
-            'eta': progress['eta'],
-            'message': f"Epocha {progress['current_epoch']}/{progress['total_epochs']}"
-        }
+        # Jei progress nėra, nustatome 0
+        if 'progress' not in progress_data:
+            progress_data['progress'] = 0
+        
+        return progress_data
     
     def train_model(self, model_type):
         """
@@ -400,14 +489,36 @@ class ModelManager:
         
         Args:
             model_type (str): Modelio tipas
+            
+        Returns:
+            bool: Ar sėkmingai pradėtas apmokymas
         """
         if model_type not in self.model_types:
-            raise ValueError(f"Nežinomas modelio tipas: {model_type}")
+            self.logger.error(f"Nežinomas modelio tipas: {model_type}")
+            return False
+        
+        # Inicializuojame running_trainings žodyną, jei jis neegzistuoja
+        if not hasattr(self, 'running_trainings'):
+            self.running_trainings = {}
         
         # Tikriname, ar modelis jau apmokomas
         if model_type in self.running_trainings and self.running_trainings[model_type].is_alive():
-            logger.warning(f"Modelis {model_type} jau apmokomas")
+            self.logger.warning(f"Modelis {model_type} jau apmokomas")
             return False
+        
+        # Atnaujiname modelio būseną
+        model_status = self.get_model_status(model_type)
+        model_status['status'] = 'Apmokomas'
+        self.statuses[model_type] = model_status
+        self._save_model_status()
+        
+        # Inicializuojame progreso stebėjimą
+        self.training_progress[model_type] = {
+            'progress': 0,
+            'status': 'Pradėta',
+            'start_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'history': []
+        }
         
         # Paleidžiame apmokymą atskirame gije
         self.running_trainings[model_type] = threading.Thread(
@@ -417,5 +528,135 @@ class ModelManager:
         self.running_trainings[model_type].daemon = True
         self.running_trainings[model_type].start()
         
-        logger.info(f"Modelio {model_type} apmokymas pradėtas atskirame gije")
+        self.logger.info(f"Modelio {model_type} apmokymas pradėtas atskirame gije")
         return True
+    
+    def end_training(self, model_type, metrics=None, duration=None, params=None):
+        """
+        Baigia modelio apmokymo procesą ir išsaugo rezultatus
+        
+        Args:
+            model_type (str): Modelio tipas
+            metrics (dict): Apmokymo metrikos
+            duration (float): Apmokymo trukmė
+            params (dict): Apmokymo parametrai
+        """
+        try:
+            # Atnaujinti modelio statusą
+            model_status = self.get_model_status(model_type)
+            model_status['status'] = 'Aktyvus'
+            model_status['last_trained'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Nustatome našumo metriką (jei pateikta)
+            if metrics and 'mae' in metrics:
+                model_status['performance'] = f"MAE: {metrics['mae']:.4f}"
+            
+            # Išsaugome statusą
+            self._save_model_status()
+            
+            # Išsaugome progresą
+            self.training_progress[model_type] = {
+                'progress': 100,
+                'status': 'Baigta',
+                'end_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'history': self.training_progress[model_type].get('history', [])
+            }
+            
+            # Išsaugome istoriją
+            self.save_training_history(model_type, metrics, duration, params)
+            
+            # Bandome išsaugoti į duomenų bazę, jei ji prieinama
+            try:
+                import requests
+                db_data = {
+                    'model_type': model_type,
+                    'training_time': duration,
+                    'epochs': params.get('epochs', 0) if params else 0,
+                    'batch_size': params.get('batch_size', 0) if params else 0,
+                    'learning_rate': params.get('learning_rate', 0) if params else 0,
+                    'lookback': params.get('lookback', 0) if params else 0,
+                    'layers': params.get('layers', []) if params else [],
+                    'metrics': metrics if metrics else {},
+                    'is_active': True,
+                    'notes': params.get('notes', '') if params else '',
+                    'parameters': {
+                        'dropout': params.get('dropout', 0) if params else 0,
+                        'recurrent_dropout': params.get('recurrent_dropout', 0) if params else 0,
+                        'num_heads': params.get('num_heads', 0) if params else 0,
+                        'd_model': params.get('d_model', 0) if params else 0,
+                        'filters': params.get('filters', []) if params else [],
+                        'kernel_size': params.get('kernel_size', []) if params else [],
+                        'validation_split': params.get('validation_split', 0) if params else 0
+                    }
+                }
+                
+                # Siunčiame duomenis į API endpoint'ą
+                requests.post('http://localhost:5000/api/save_model_history', 
+                             json=db_data, 
+                             headers={'Content-Type': 'application/json'})
+            except Exception as e:
+                self.logger.error(f"Klaida išsaugant modelio istoriją į duomenų bazę: {str(e)}")
+            
+            self.logger.info(f"Modelio {model_type} apmokymas baigtas")
+        except Exception as e:
+            self.logger.error(f"Klaida baigiant modelio {model_type} apmokymą: {str(e)}")
+    
+    def get_model_history(self, model_type):
+        """
+        Gauna modelio istorijos duomenis
+        
+        Args:
+            model_type (str): Modelio tipas
+            
+        Returns:
+            list: Modelio istorijos įrašai
+        """
+        try:  
+            history_path = os.path.join(self.models_dir, "history", f"{model_type}_history.json")
+            if os.path.exists(history_path):
+                with open(history_path, 'r') as f:
+                    history = json.load(f)
+                return history
+            return []
+        except Exception as e:
+            self.logger.error(f"Klaida gaunant modelio {model_type} istoriją: {str(e)}")
+            return []
+    
+    def save_training_history(self, model_type, metrics=None, duration=None, params=None):
+        """
+        Išsaugo modelio apmokymo istoriją
+    
+        Args:
+            model_type (str): Modelio tipas
+            metrics (dict): Apmokymo metrikos
+            duration (float): Apmokymo trukmė
+            params (dict): Apmokymo parametrai
+        """
+        try:
+            # Sukuriame istorijos įrašą
+            history_entry = {
+                'id': datetime.now().strftime('%Y%m%d%H%M%S'),
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'model_type': model_type,
+                'training_time': duration,
+                'metrics': metrics or {},
+                'parameters': params or {},
+                'is_active': True
+            }
+            
+            # Gauname esamą istoriją
+            history = self.get_model_history(model_type)
+            
+            # Įtraukiame naują įrašą
+            history.append(history_entry)
+            
+            # Išsaugome į failą
+            history_path = os.path.join(self.models_dir, "history", f"{model_type}_history.json")
+            os.makedirs(os.path.dirname(history_path), exist_ok=True)
+            
+            with open(history_path, 'w') as f:
+                json.dump(history, f, indent=4)
+            
+            self.logger.info(f"Modelio {model_type} apmokymo istorija išsaugota: {history_path}")
+        except Exception as e:
+            self.logger.error(f"Klaida išsaugant modelio {model_type} apmokymo istoriją: {str(e)}")

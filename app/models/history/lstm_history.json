@@ -1,0 +1,25 @@
+[
+    {
+        "id": "20250522152820",
+        "timestamp": "2025-05-22 15:28:20",
+        "model_type": "lstm",
+        "training_time": 100,
+        "metrics": {
+            "mae": 225.59,
+            "mse": 39217.02,
+            "rmse": 497.1,
+            "r2": 0.7332,
+            "mape": 6.83
+        },
+        "parameters": {
+            "epochs": 50,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "dropout": 0.2,
+            "recurrent_dropout": 0.0,
+            "validation_split": 0.2
+        },
+        "is_active": true
+    }
+]

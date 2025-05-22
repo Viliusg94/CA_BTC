@@ -1,0 +1,32 @@
+{
+    "lstm": {
+        "status": "Apmokomas",
+        "last_trained": "Niekada",
+        "performance": "Ne\u017einoma",
+        "active_model_id": null
+    },
+    "gru": {
+        "status": "Apmokomas",
+        "last_trained": "Niekada",
+        "performance": "Ne\u017einoma",
+        "active_model_id": null
+    },
+    "transformer": {
+        "status": "Apmokomas",
+        "last_trained": "Niekada",
+        "performance": "Ne\u017einoma",
+        "active_model_id": null
+    },
+    "cnn": {
+        "status": "Neapmokytas",
+        "last_trained": "Niekada",
+        "performance": "Ne\u017einoma",
+        "active_model_id": null
+    },
+    "cnn_lstm": {
+        "status": "Neapmokytas",
+        "last_trained": "Niekada",
+        "performance": "Ne\u017einoma",
+        "active_model_id": null
+    }
+}

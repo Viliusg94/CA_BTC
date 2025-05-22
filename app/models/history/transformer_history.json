@@ -1,0 +1,53 @@
+[
+    {
+        "id": "20250522153444",
+        "timestamp": "2025-05-22 15:34:44",
+        "model_type": "transformer",
+        "training_time": 100,
+        "metrics": {
+            "mae": 238.65,
+            "mse": 29099.44,
+            "rmse": 240.83,
+            "r2": 0.8635,
+            "mape": 5.46
+        },
+        "parameters": {
+            "epochs": 50,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "num_heads": 8,
+            "d_model": 64,
+            "validation_split": 0.2
+        },
+        "is_active": true
+    },
+    {
+        "id": "20250522153516",
+        "timestamp": "2025-05-22 15:35:16",
+        "model_type": "transformer",
+        "training_time": 50,
+        "metrics": {
+            "mae": 155.88,
+            "mse": 21878.27,
+            "rmse": 147.47,
+            "r2": 0.7673,
+            "mape": 3.31
+        },
+        "parameters": {
+            "epochs": 25,
+            "batch_size": 16,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "num_heads": 8,
+            "d_model": 64,
+            "validation_split": 0.3,
+            "dropout": 0.2,
+            "recurrent_dropout": 0.0,
+            "filters": "32,64,128",
+            "kernel_size": "3,3,3",
+            "notes": null
+        },
+        "is_active": true
+    }
+]
