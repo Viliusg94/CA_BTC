@@ -20,6 +20,113 @@
             "recurrent_dropout": 0.0,
             "validation_split": 0.2
         },
+        "is_active": false
+    },
+    {
+        "id": "20250522161422",
+        "timestamp": "2025-05-22 16:14:22",
+        "model_type": "lstm",
+        "training_time": 100,
+        "metrics": {
+            "mae": 256.55,
+            "mse": 44642.34,
+            "rmse": 419.93,
+            "r2": 0.7714,
+            "mape": 7.26
+        },
+        "parameters": {
+            "epochs": 50,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "dropout": 0.2,
+            "recurrent_dropout": 0.0,
+            "validation_split": 0.2
+        },
+        "is_active": false
+    },
+    {
+        "id": "20250522161442",
+        "timestamp": "2025-05-22 16:14:42",
+        "model_type": "lstm",
+        "training_time": 100,
+        "metrics": {
+            "mae": 347.7,
+            "mse": 40863.98,
+            "rmse": 419.86,
+            "r2": 0.8362,
+            "mape": 5.01
+        },
+        "parameters": {
+            "epochs": 50,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "dropout": 0.2,
+            "recurrent_dropout": 0.0,
+            "validation_split": 0.2,
+            "num_heads": "8",
+            "d_model": "64",
+            "filters": "32,64,128",
+            "kernel_size": "3,3,3",
+            "notes": "lol"
+        },
+        "is_active": false
+    },
+    {
+        "id": "20250522162938",
+        "timestamp": "2025-05-22 16:29:38",
+        "model_type": "lstm",
+        "training_time": 1000,
+        "metrics": {
+            "mae": 196.3,
+            "mse": 40219.62,
+            "rmse": 338.92,
+            "r2": 0.8168,
+            "mape": 3.5
+        },
+        "parameters": {
+            "epochs": 500,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "dropout": 0.2,
+            "recurrent_dropout": 0.0,
+            "validation_split": 0.2,
+            "num_heads": "8",
+            "d_model": "64",
+            "filters": "32,64,128",
+            "kernel_size": "3,3,3",
+            "notes": "lol"
+        },
+        "is_active": false
+    },
+    {
+        "id": "20250522163029",
+        "timestamp": "2025-05-22 16:30:29",
+        "model_type": "lstm",
+        "training_time": 10,
+        "metrics": {
+            "mae": 483.51,
+            "mse": 18183.91,
+            "rmse": 348.98,
+            "r2": 0.9302,
+            "mape": 3.42
+        },
+        "parameters": {
+            "epochs": 5,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "dropout": 0.2,
+            "recurrent_dropout": 0.0,
+            "validation_split": 0.2,
+            "num_heads": "8",
+            "d_model": "64",
+            "filters": "32,64,128",
+            "kernel_size": "3,3,3",
+            "notes": "lol"
+        },
         "is_active": true
     }
 ]

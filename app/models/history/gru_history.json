@@ -26,5 +26,33 @@
             "notes": "Testing"
         },
         "is_active": true
+    },
+    {
+        "id": "20250522160341",
+        "timestamp": "2025-05-22 16:03:41",
+        "model_type": "gru",
+        "training_time": 100,
+        "metrics": {
+            "mae": 384.16,
+            "mse": 13373.2,
+            "rmse": 389.34,
+            "r2": 0.9018,
+            "mape": 5.73
+        },
+        "parameters": {
+            "epochs": 50,
+            "batch_size": 32,
+            "learning_rate": 0.001,
+            "lookback": 14,
+            "dropout": 0.2,
+            "recurrent_dropout": 0.0,
+            "validation_split": 0.2,
+            "num_heads": "8",
+            "d_model": "64",
+            "filters": "32,64,128",
+            "kernel_size": "3,3,3",
+            "notes": "Testing"
+        },
+        "is_active": true
     }
 ]

@@ -127,7 +127,6 @@
                                 <th>ID</th>
                                 <th>Modelis</th>
                                 <th>Data</th>
-                                <th>Parametrai</th>
                                 <th>Metrikos</th>
                                 <th>Trukmė</th>
                                 <th>Veiksmai</th>
@@ -135,44 +134,40 @@
                         </thead>
                         <tbody>
                             {% for record in records %}
-                            <tr {% if record.is_active %}class="active-model"{% endif %}>
+                            <tr data-model-id="{{ record.id }}" data-model-type="{{ record.model_type }}">
                                 <td>{{ record.id }}</td>
                                 <td>
-                                    <span class="badge model-badge model-{{ record.model_type }}">{{ record.model_type.upper() }}</span>
-                                    {% if record.is_active %}
-                                    <span class="badge bg-success ms-1">Aktyvus</span>
-                                    {% endif %}
+                                    <span class="badge bg-primary">{{ record.model_type }}</span>
+                                    {% if record.is_active %}<span class="badge bg-success ms-1">Aktyvus</span>{% endif %}
                                 </td>
-                                <td>{{ record.timestamp.strftime('%Y-%m-%d %H:%M') if record.timestamp else 'N/A' }}</td>
+                                <td>{{ record.timestamp }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-info" onclick="showParams({{ record.id }})">
-                                        <i class="fas fa-cog me-1"></i>Parametrai
+                                    <!-- Metrikos -->
+                                    MAE: {{ record.mae }}<br>
+                                    MSE: {{ record.mse }}<br>
+                                    RMSE: {{ record.rmse }}<br>
+                                    R²: {{ record.r2 }}
+                                </td>
+                                <td>{{ record.training_time }}s</td>
+                                <td>
+                                    <!-- Veiksmai -->
+                                    <button class="btn btn-sm btn-info" title="Parametrai" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
+                                        <i class="fas fa-cogs"></i> Parametrai
                                     </button>
-                                </td>
-                                <td class="metrics-cell">
-                                    {% if record.mae %}MAE: {{ "%.4f"|format(record.mae) }}<br>{% endif %}
-                                    {% if record.mse %}MSE: {{ "%.4f"|format(record.mse) }}<br>{% endif %}
-                                    {% if record.rmse %}RMSE: {{ "%.4f"|format(record.rmse) }}<br>{% endif %}
-                                    {% if record.r2 %}R²: {{ "%.4f"|format(record.r2) }}{% endif %}
-                                </td>
-                                <td>
-                                    {% if record.training_time %}
-                                    {{ "%dm %ds"|format(record.training_time // 60, record.training_time % 60) }}
+                                    
+                                    <button class="btn btn-sm btn-danger" title="Ištrinti" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
+                                        <i class="fas fa-trash"></i> Ištrinti
+                                    </button>
+                                    
+                                    {% if not record.is_active %}
+                                    <button class="btn btn-sm btn-success" title="Aktyvuoti" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
+                                        <i class="fas fa-check"></i> Aktyvuoti
+                                    </button>
                                     {% else %}
-                                    -
+                                    <button class="btn btn-sm btn-success" disabled title="Aktyvus">
+                                        <i class="fas fa-check-circle"></i> Aktyvus
+                                    </button>
                                     {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        {% if not record.is_active %}
-                                        <button class="btn btn-sm btn-success" onclick="activateModel({{ record.id }})">
-                                            <i class="fas fa-check me-1"></i>Aktyvuoti
-                                        </button>
-                                        {% endif %}
-                                        <button class="btn btn-sm btn-danger" onclick="deleteModel({{ record.id }})">
-                                            <i class="fas fa-trash me-1"></i>Ištrinti
-                                        </button>
-                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -235,32 +230,80 @@
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     
     <script>
-        // DataTables inicializacija
-        $(document).ready(function() {
-            $('#historyTable').DataTable({
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/lt.json'
-                },
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Visi"]]
+        // Pagrindinės funkcijos mygtukams
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Inicializuojami mygtukai...');
+            
+            // 1. Parametrų mygtukai
+            document.querySelectorAll('.btn[title="Parametrai"]').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const modelType = this.getAttribute('data-model-type');
+                    const modelId = this.getAttribute('data-model-id');
+                    console.log(`Paspaustas parametrų mygtukas: modelType=${modelType}, modelId=${modelId}`);
+                    showModelParameters(modelType, modelId);
+                });
             });
             
-            // Automatiškai pateikti formą, kai pasikeičia filtrai
-            $('#modelTypeFilter, #metricsFilter').change(function() {
-                $('#filterForm').submit();
+            // 2. Ištrinti mygtukai
+            document.querySelectorAll('.btn[title="Ištrinti"]').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const modelType = this.getAttribute('data-model-type');
+                    const modelId = this.getAttribute('data-model-id');
+                    console.log(`Paspaustas ištrynimo mygtukas: modelType=${modelType}, modelId=${modelId}`);
+                    deleteModelRecord(modelType, modelId);
+                });
             });
+            
+            // 3. Aktyvuoti mygtukai
+            document.querySelectorAll('.btn[title="Aktyvuoti"]').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const modelType = this.getAttribute('data-model-type');
+                    const modelId = this.getAttribute('data-model-id');
+                    console.log(`Paspaustas aktyvavimo mygtukas: modelType=${modelType}, modelId=${modelId}`);
+                    activateModelRecord(modelType, modelId);
+                });
+            });
+            
+            // Inicializuojame DataTables
+            if ($.fn.DataTable) {
+                $('#historyTable').DataTable({
+                    language: {
+                        url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/lt.json'
+                    },
+                    pageLength: 10,
+                    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Visi"]]
+                });
+            }
         });
         
-        // Funkcija parametrų rodymui
-        function showParams(modelId) {
+        // Funkcija modelio parametrų atvaizdavimui
+        function showModelParameters(modelType, modelId) {
             // Rodome modalą
             const paramsModal = new bootstrap.Modal(document.getElementById('paramsModal'));
             paramsModal.show();
             
-            // Užkrauname parametrus
-            fetch(`/api/model_params/${modelId}`)
+            // Nustatome modalo antraštę
+            document.getElementById('paramsModalLabel').textContent = `${modelType.toUpperCase()} modelio parametrai (ID: ${modelId})`;
+            
+            // Rodome kraunamos informacijos indikatorių
+            document.getElementById('paramsModalBody').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Kraunama...</span>
+                    </div>
+                    <p class="mt-2">Kraunami modelio parametrai...</p>
+                </div>
+            `;
+            
+            // Siunčiame užklausą
+            fetch(`/api/model/history_config?model_type=${modelType}&model_id=${modelId}`)
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Gauti parametrų duomenys:', data);
+                    
                     if (!data.success) {
                         document.getElementById('paramsModalBody').innerHTML = `
                             <div class="alert alert-danger">
@@ -270,130 +313,54 @@
                         return;
                     }
                     
-                    // Formtuojame parametrų lentelę
+                    // Rodome parametrus
                     let html = `
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h5>Pagrindiniai parametrai</h5>
-                                <table class="table table-striped table-sm">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
                                     <tr>
-                                        <th>Modelio tipas</th>
-                                        <td><span class="badge model-badge model-${data.model.model_type}">${data.model.model_type.toUpperCase()}</span></td>
+                                        <th>Parametras</th>
+                                        <th>Reikšmė</th>
+                                        <th>Aprašymas</th>
                                     </tr>
-                                    <tr>
-                                        <th>Epochos</th>
-                                        <td>${data.model.epochs || 'N/A'}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Batch dydis</th>
-                                        <td>${data.model.batch_size || 'N/A'}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Mokymosi koeficientas</th>
-                                        <td>${data.model.learning_rate || 'N/A'}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Lookback periodas</th>
-                                        <td>${data.model.lookback || 'N/A'}</td>
-                                    </tr>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <h5>Specifiniai parametrai</h5>
-                                <table class="table table-striped table-sm">
+                                </thead>
+                                <tbody>
                     `;
                     
-                    // Pridedame specifinius parametrus pagal modelio tipą
-                    if (data.model.model_type === 'lstm' || data.model.model_type === 'gru') {
-                        html += `
-                            <tr>
-                                <th>Dropout</th>
-                                <td>${data.model.parameters.dropout || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <th>Recurrent Dropout</th>
-                                <td>${data.model.parameters.recurrent_dropout || 'N/A'}</td>
-                            </tr>
-                        `;
-                    } else if (data.model.model_type === 'transformer') {
-                        html += `
-                            <tr>
-                                <th>Attention Heads</th>
-                                <td>${data.model.parameters.num_heads || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <th>D Model</th>
-                                <td>${data.model.parameters.d_model || 'N/A'}</td>
-                            </tr>
-                        `;
-                    } else if (data.model.model_type === 'cnn' || data.model.model_type === 'cnn_lstm') {
-                        html += `
-                            <tr>
-                                <th>Filters</th>
-                                <td>${data.model.parameters.filters || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <th>Kernel Size</th>
-                                <td>${data.model.parameters.kernel_size || 'N/A'}</td>
-                            </tr>
-                        `;
+                    // Parametrų aprašymai
+                    const paramDescriptions = {
+                        'epochs': 'Apmokymo epochų skaičius',
+                        'batch_size': 'Duomenų paketo dydis',
+                        'learning_rate': 'Mokymosi greičio koeficientas',
+                        'lookback': 'Istorinių duomenų taškų skaičius',
+                        'validation_split': 'Duomenų dalis validacijai',
+                        'dropout': 'Neuronų išmetimo tikimybė',
+                        'recurrent_dropout': 'Rekurentinių ryšių išmetimo tikimybė',
+                        'num_heads': 'Attention mechanizmo galvučių skaičius',
+                        'd_model': 'Modelio dimensijos dydis',
+                        'filters': 'Filtrų skaičius (CNN)',
+                        'kernel_size': 'Branduolio dydžiai (CNN)',
+                        'notes': 'Papildomos pastabos'
+                    };
+                    
+                    // Pridedame parametrus į lentelę
+                    const config = data.config;
+                    for (const [key, value] of Object.entries(config)) {
+                        if (value !== null && value !== undefined) {
+                            html += `
+                                <tr>
+                                    <td><strong>${key}</strong></td>
+                                    <td>${value}</td>
+                                    <td>${paramDescriptions[key] || ''}</td>
+                                </tr>
+                            `;
+                        }
                     }
                     
                     html += `
-                            <tr>
-                                <th>Validation Split</th>
-                                <td>${data.model.parameters.validation_split || 'N/A'}</td>
-                            </tr>
+                            </tbody>
                         </table>
                     </div>
-                </div>
-                
-                <div class="mt-4">
-                    <h5>Našumo metrikos</h5>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <h6>MAE</h6>
-                                    <h4>${data.model.metrics.mae ? data.model.metrics.mae.toFixed(4) : 'N/A'}</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <h6>MSE</h6>
-                                    <h4>${data.model.metrics.mse ? data.model.metrics.mse.toFixed(4) : 'N/A'}</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <h6>RMSE</h6>
-                                    <h4>${data.model.metrics.rmse ? data.model.metrics.rmse.toFixed(4) : 'N/A'}</h4>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <h6>R²</h6>
-                                    <h4>${data.model.metrics.r2 ? data.model.metrics.r2.toFixed(4) : 'N/A'}</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                    
-                <div class="mt-4">
-                    <h5>Pastabos</h5>
-                    <div class="card">
-                        <div class="card-body">
-                            ${data.model.notes || 'Nėra pastabų'}
-                        </div>
-                    </div>
-                </div>
                     `;
                     
                     document.getElementById('paramsModalBody').innerHTML = html;
@@ -408,65 +375,73 @@
                 });
         }
         
-        // Funkcija modelio aktyvavimui
-        function activateModel(modelId) {
-            if (!confirm('Ar tikrai norite aktyvuoti šį modelį?')) {
-                return;
-            }
-            
-            fetch(`/api/activate_model/${modelId}`, {
-                method: 'POST'
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Modelis sėkmingai aktyvuotas!');
-                        window.location.reload();
-                    } else {
-                        alert(`Klaida: ${data.error || 'Nepavyko aktyvuoti modelio'}`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Klaida:', error);
-                    alert('Įvyko klaida bandant aktyvuoti modelį');
-                });
-        }
-        
         // Funkcija modelio ištrynimui
-        function deleteModel(modelId) {
+        function deleteModelRecord(modelType, modelId) {
             if (!confirm('Ar tikrai norite ištrinti šį modelį? Šis veiksmas negrįžtamas!')) {
                 return;
             }
             
-            fetch(`/api/delete_db_model/${modelId}`, {
-                method: 'DELETE'
+            // URL sukūrimas pagal tai, ar turime modelType
+            const url = modelType ? 
+                `/api/delete_model_history/${modelType}/${modelId}` : 
+                `/api/delete_db_model/${modelId}`;
+            
+            // Siunčiame užklausą
+            fetch(url, {
+                method: 'DELETE',
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Modelis sėkmingai ištrintas!');
-                        window.location.reload();
-                    } else {
-                        alert(`Klaida: ${data.error || 'Nepavyko ištrinti modelio'}`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Klaida:', error);
-                    alert('Įvyko klaida bandant ištrinti modelį');
-                });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Modelis sėkmingai ištrintas!');
+                    window.location.reload();
+                } else {
+                    alert(`Klaida: ${data.error || 'Nepavyko ištrinti modelio'}`);
+                }
+            })
+            .catch(error => {
+                console.error('Klaida trinant modelį:', error);
+                alert(`Klaida: ${error.message}`);
+            });
         }
         
-        // Po to, kai puslapis užkraunamas
-        $(document).ready(function() {
-            // Jei istorija tuščia, bandome užkrauti ją per AJAX
-            if ($('#historyTable tbody tr').length === 0) {
-                loadHistoryFromAPI();
+        // Funkcija modelio aktyvavimui
+        function activateModelRecord(modelType, modelId) {
+            if (!confirm('Ar tikrai norite aktyvuoti šį modelį?')) {
+                return;
             }
-        });
-
+            
+            // URL sukūrimas pagal tai, ar turime modelType
+            const url = modelType ? 
+                `/api/use_model/${modelType}/${modelId}` : 
+                `/api/activate_model/${modelId}`;
+            
+            // Siunčiame užklausą
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Modelis sėkmingai aktyvuotas!');
+                    window.location.reload();
+                } else {
+                    alert(`Klaida: ${data.error || 'Nepavyko aktyvuoti modelio'}`);
+                }
+            })
+            .catch(error => {
+                console.error('Klaida aktyvuojant modelį:', error);
+                alert(`Klaida: ${error.message}`);
+            });
+        }
+        
+        // Funkcija istorijos užkrovimui iš API
         function loadHistoryFromAPI() {
             // Rodome kraunamos informacijos indikatorių
-            $('#historyTable tbody').html('<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Kraunama istorija...</p></td></tr>');
+            $('#historyTable tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Kraunama istorija...</p></td></tr>');
             
             // Užklausiame duomenų iš API
             $.ajax({
@@ -475,50 +450,19 @@
                 dataType: 'json',
                 success: function(data) {
                     if (data.length === 0) {
-                        $('#historyTable tbody').html('<tr><td colspan="7" class="text-center">Modelių istorija tuščia</td></tr>');
+                        $('#historyTable tbody').html('<tr><td colspan="6" class="text-center">Modelių istorija tuščia</td></tr>');
                         return;
                     }
                     
-                    // Formuojame eilutes lentelei
-                    var rows = '';
-                    data.forEach(function(record) {
-                        var activeClass = record.is_active ? 'active-model' : '';
-                        var activeCell = record.is_active ? '<span class="badge bg-success ms-1">Aktyvus</span>' : '';
-                        var metrics = '';
-                        
-                        if (record.metrics) {
-                            if (record.metrics.mae) metrics += 'MAE: ' + record.metrics.mae.toFixed(4) + '<br>';
-                            if (record.metrics.mse) metrics += 'MSE: ' + record.metrics.mse.toFixed(4) + '<br>';
-                            if (record.metrics.rmse) metrics += 'RMSE: ' + record.metrics.rmse.toFixed(4) + '<br>';
-                            if (record.metrics.r2) metrics += 'R²: ' + record.metrics.r2.toFixed(4);
-                        }
-                        
-                        var trainingTime = '';
-                        if (record.training_time) {
-                            var minutes = Math.floor(record.training_time / 60);
-                            var seconds = Math.floor(record.training_time % 60);
-                            trainingTime = minutes + 'm ' + seconds + 's';
-                        }
-                        
-                        var activateBtn = !record.is_active ? '<button class="btn btn-sm btn-success" onclick="activateModel(' + record.id + ')"><i class="fas fa-check me-1"></i>Aktyvuoti</button>' : '';
-                        
-                        rows += '<tr class="' + activeClass + '">' +
-                            '<td>' + record.id + '</td>' +
-                            '<td><span class="badge model-badge model-' + record.model_type + '">' + record.model_type.toUpperCase() + '</span>' + activeCell + '</td>' +
-                            '<td>' + record.timestamp + '</td>' +
-                            '<td><button class="btn btn-sm btn-outline-info" onclick="showParams(' + record.id + ')"><i class="fas fa-cog me-1"></i>Parametrai</button></td>' +
-                            '<td class="metrics-cell">' + metrics + '</td>' +
-                            '<td>' + trainingTime + '</td>' +
-                            '<td><div class="btn-group">' + activateBtn +
-                            '<button class="btn btn-sm btn-danger" onclick="deleteModel(' + record.id + ')"><i class="fas fa-trash me-1"></i>Ištrinti</button></div></td>' +
-                            '</tr>';
-                    });
-                    
-                    $('#historyTable tbody').html(rows);
-                    
-                    // Inicializuojame DataTable
-                    if (!$.fn.DataTable.isDataTable('#historyTable')) {
-                        $('#historyTable').DataTable({
-                            language: {
-                                url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/lt.json'
-                           
+                    // Perkrauname puslapį, kad atnaujinti duomenis
+                    window.location.reload();
+                },
+                error: function(error) {
+                    console.error('Klaida gaunant istoriją:', error);
+                    $('#historyTable tbody').html('<tr><td colspan="6" class="text-center text-danger">Klaida gaunant istoriją!</td></tr>');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

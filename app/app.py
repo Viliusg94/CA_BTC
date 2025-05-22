@@ -199,40 +199,36 @@ def model_history(model_type):
         logger.error(f"Klaida gaunant modelio {model_type} istoriją: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/use_model/<model_type>/<model_id>', methods=['POST'])
-def use_model(model_type, model_id):
-    """API endpoint modelio aktyvavimui"""
-    try:
-        if not model_manager:
-            return jsonify({'success': False, 'error': 'ModelManager nepasiekiamas'}), 500
-        
-        # Aktyvuojame modelį
-        success = model_manager.activate_model(model_type, model_id)
-        
-        if success:
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Nepavyko aktyvuoti modelio'})
-    except Exception as e:
-        logger.error(f"Klaida aktyvuojant modelį {model_type}/{model_id}: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 @app.route('/api/delete_model_history/<model_type>/<model_id>', methods=['DELETE'])
 def delete_model_history(model_type, model_id):
     """API endpoint modelio istorijos įrašo ištrynimui"""
     try:
-        if not model_manager:
-            return jsonify({'success': False, 'error': 'ModelManager nepasiekiamas'}), 500
+        app.logger.info(f"Bandoma ištrinti modelio {model_type} įrašą (ID: {model_id})")
         
-        # Ištriname istorijos įrašą
-        success = model_manager.delete_model_history_entry(model_type, model_id)
+        if model_manager:
+            success = model_manager.delete_model_history(model_type, model_id)
+            if success:
+                return jsonify({'success': True, 'message': 'Modelio įrašas ištrintas'})
         
-        if success:
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Nepavyko ištrinti istorijos įrašo'})
+        return jsonify({'success': False, 'error': 'Nepavyko ištrinti modelio įrašo'}), 500
     except Exception as e:
-        logger.error(f"Klaida trinant modelio {model_type}/{model_id} istorijos įrašą: {str(e)}")
+        app.logger.error(f"Klaida trinant modelio {model_type} įrašą (ID: {model_id}): {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/use_model/<model_type>/<model_id>', methods=['POST'])
+def use_model(model_type, model_id):
+    """API endpoint modelio aktyvavimui"""
+    try:
+        app.logger.info(f"Bandoma aktyvuoti modelį {model_type} (ID: {model_id})")
+        
+        if model_manager:
+            success = model_manager.activate_model(model_type, model_id)
+            if success:
+                return jsonify({'success': True, 'message': 'Modelis aktyvuotas'})
+        
+        return jsonify({'success': False, 'error': 'Nepavyko aktyvuoti modelio'}), 500
+    except Exception as e:
+        app.logger.error(f"Klaida aktyvuojant modelį {model_type} (ID: {model_id}): {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/model_params/<int:model_id>')
@@ -325,34 +321,6 @@ def export_models():
         
     except Exception as e:
         logger.error(f"Klaida eksportuojant modelius: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/model/status')
-def get_model_status_api():
-    """API endpoint modelio būsenos gavimui"""
-    model_type = request.args.get('model_type')
-    
-    if not model_type:
-        return jsonify({'success': False, 'error': 'Nenurodytas modelio tipas'}), 400
-    
-    if not model_manager:
-        return jsonify({'success': False, 'error': 'ModelManager nepasiekiamas'}), 500
-    
-    try:
-        # Gauname modelio būseną
-        model_status = model_manager.get_model_status(model_type)
-        
-        # Grąžiname būseną
-        return jsonify({
-            'success': True,
-            'model_type': model_type,
-            'status': model_status.get('status', 'Neapmokytas'),
-            'last_trained': model_status.get('last_trained', 'Niekada'),
-            'performance': model_status.get('performance', 'Nežinoma')
-        })
-    
-    except Exception as e:
-        logger.error(f"Klaida gaunant modelio {model_type} būseną: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Pagrindiniai maršrutai
@@ -507,7 +475,6 @@ def models_page():
             
             # Gauname modelio konfigūraciją
             model_configs[model_type] = model_manager.get_model_config(model_type)
-            logger.info(f"Modelio {model_type} konfigūracija: {model_configs[model_type]}")
         
         # Rendiname šabloną su duomenimis
         return render_template('models.html', 

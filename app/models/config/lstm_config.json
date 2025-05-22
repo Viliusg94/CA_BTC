@@ -1,9 +1,14 @@
 {
-    "epochs": 50,
+    "epochs": 5,
     "batch_size": 32,
     "learning_rate": 0.001,
     "lookback": 14,
     "dropout": 0.2,
     "recurrent_dropout": 0.0,
-    "validation_split": 0.2
+    "validation_split": 0.2,
+    "num_heads": "8",
+    "d_model": "64",
+    "filters": "32,64,128",
+    "kernel_size": "3,3,3",
+    "notes": "lol"
 }

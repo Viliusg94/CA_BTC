@@ -166,7 +166,7 @@ class ModelManager:
             logger.info(f"Modelių nustatymai išsaugoti į {config_path}")
             return True
         except Exception as e:
-            logger.error(f"Klaida išsaugant modelių nustatymus: {str(e)}")
+            logger.error(f"Klaida išsaugojant modelių nustatymus: {str(e)}")
             return False
     
     def _initialize_models(self):
@@ -554,7 +554,7 @@ class ModelManager:
             # Išsaugome statusą
             self._save_model_status()
             
-            # Išsaugome progresą
+            # Išsaugoame progresą
             self.training_progress[model_type] = {
                 'progress': 100,
                 'status': 'Baigta',
@@ -562,7 +562,7 @@ class ModelManager:
                 'history': self.training_progress[model_type].get('history', [])
             }
             
-            # Išsaugome istoriją
+            # Išsaugoame istoriją
             self.save_training_history(model_type, metrics, duration, params)
             
             # Bandome išsaugoti į duomenų bazę, jei ji prieinama
@@ -627,13 +627,13 @@ class ModelManager:
         Išsaugo modelio apmokymo istoriją
     
         Args:
-            model_type (str): Modelio tipas
-            metrics (dict): Apmokymo metrikos
-            duration (float): Apmokymo trukmė
-            params (dict): Apmokymo parametrai
+        model_type (str): Modelio tipas
+        metrics (dict): Apmokymo metrikos
+        duration (float): Apmokymo trukmė
+        params (dict): Apmokymo parametrai
         """
         try:
-            # Sukuriame istorijos įrašą
+            # Sukuriame istorijos įrašą su unikaliu ID
             history_entry = {
                 'id': datetime.now().strftime('%Y%m%d%H%M%S'),
                 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -641,11 +641,16 @@ class ModelManager:
                 'training_time': duration,
                 'metrics': metrics or {},
                 'parameters': params or {},
-                'is_active': True
+                'is_active': True  # Naujas modelis yra aktyvus
             }
             
             # Gauname esamą istoriją
             history = self.get_model_history(model_type)
+            
+            # Pažymime visus egzistuojančius modelius kaip neaktyvius
+            for entry in history:
+                if 'is_active' in entry:
+                    entry['is_active'] = False
             
             # Įtraukiame naują įrašą
             history.append(history_entry)
@@ -657,6 +662,131 @@ class ModelManager:
             with open(history_path, 'w') as f:
                 json.dump(history, f, indent=4)
             
+            # Atnaujinti modelio statusą aktyviu ID 
+            model_status = self.get_model_status(model_type)
+            model_status['active_model_id'] = history_entry['id']
+            self._save_model_status()
+            
             self.logger.info(f"Modelio {model_type} apmokymo istorija išsaugota: {history_path}")
         except Exception as e:
             self.logger.error(f"Klaida išsaugant modelio {model_type} apmokymo istoriją: {str(e)}")
+    
+    def delete_model_history(self, model_type, model_id):
+        """
+        Ištrina modelio istorijos įrašą
+    
+        Args:
+            model_type (str): Modelio tipas
+            model_id (str): Modelio ID
+        
+        Returns:
+            bool: Ar pavyko ištrinti įrašą
+        """
+        try:
+            # Tikriname, ar modelio tipas palaikomas
+            if model_type not in self.model_types:
+                self.logger.error(f"Modelio tipas {model_type} nepalaikomas")
+                return False
+            
+            # Gauname modelio istoriją
+            history = self.get_model_history(model_type)
+            
+            # Ieškome įrašo pagal ID
+            found_index = None
+            for i, entry in enumerate(history):
+                if entry.get('id') == model_id:
+                    found_index = i
+                    break
+            
+            if found_index is None:
+                self.logger.error(f"Modelio įrašas (ID: {model_id}) nerastas")
+                return False
+            
+            # Šaliname įrašą iš istorijos
+            removed_entry = history.pop(found_index)
+            
+            # Jei ištrintas aktyvus modelis, atnaujinkime būseną
+            model_status = self.get_model_status(model_type)
+            if model_status.get('active_model_id') == model_id:
+                model_status['active_model_id'] = None
+                model_status['status'] = 'Neaktyvus'
+                self._save_model_status()
+            
+            # Išsaugome atnaujintą istoriją
+            history_path = os.path.join(self.models_dir, "history", f"{model_type}_history.json")
+            os.makedirs(os.path.dirname(history_path), exist_ok=True)
+            
+            with open(history_path, 'w') as f:
+                json.dump(history, f, indent=4)
+            
+            self.logger.info(f"Modelio {model_type} įrašas (ID: {model_id}) ištrintas")
+            return True
+        
+        except Exception as e:
+            self.logger.error(f"Klaida trinant modelio {model_type} įrašą (ID: {model_id}): {str(e)}")
+            return False
+
+    def activate_model(self, model_type, model_id):
+        """
+        Aktyvuoja modelį
+    
+        Args:
+            model_type (str): Modelio tipas
+            model_id (str): Modelio ID
+        
+        Returns:
+            bool: Ar pavyko aktyvuoti modelį
+        """
+        try:
+            # Tikriname, ar modelio tipas palaikomas
+            if model_type not in self.model_types:
+                self.logger.error(f"Modelio tipas {model_type} nepalaikomas")
+                return False
+            
+            # Gauname modelio istoriją
+            history = self.get_model_history(model_type)
+            
+            # Ieškome įrašo pagal ID
+            model_entry = None
+            for entry in history:
+                if entry.get('id') == model_id:
+                    model_entry = entry
+                    break
+            
+            if not model_entry:
+                self.logger.error(f"Modelio įrašas (ID: {model_id}) nerastas")
+                return False
+            
+            # Pažymime visus įrašus kaip neaktyvius
+            for entry in history:
+                if 'is_active' in entry:
+                    entry['is_active'] = False
+            
+            # Pažymime aktyvuojamą modelį kaip aktyvų
+            model_entry['is_active'] = True
+            
+            # Atnaujinama modelio būsena
+            model_status = self.get_model_status(model_type)
+            model_status['active_model_id'] = model_id
+            model_status['status'] = 'Aktyvus'
+            model_status['last_trained'] = model_entry.get('timestamp', 'Nežinoma')
+            
+            if 'metrics' in model_entry and 'mae' in model_entry['metrics']:
+                model_status['performance'] = f"MAE: {model_entry['metrics']['mae']:.4f}"
+            
+            # Išsaugome atnaujintą istoriją
+            history_path = os.path.join(self.models_dir, "history", f"{model_type}_history.json")
+            os.makedirs(os.path.dirname(history_path), exist_ok=True)
+            
+            with open(history_path, 'w') as f:
+                json.dump(history, f, indent=4)
+            
+            # Išsaugome atnaujintą būseną
+            self._save_model_status()
+            
+            self.logger.info(f"Modelis {model_type} (ID: {model_id}) aktyvuotas")
+            return True
+        
+        except Exception as e:
+            self.logger.error(f"Klaida aktyvuojant modelį {model_type} (ID: {model_id}): {str(e)}")
+            return False
