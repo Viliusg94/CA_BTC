@@ -205,14 +205,53 @@ def delete_model_history(model_type, model_id):
     try:
         app.logger.info(f"Bandoma ištrinti modelio {model_type} įrašą (ID: {model_id})")
         
+        # Pirmiausia bandome per model_manager (jei jis egzistuoja)
         if model_manager:
-            success = model_manager.delete_model_history(model_type, model_id)
-            if success:
-                return jsonify({'success': True, 'message': 'Modelio įrašas ištrintas'})
+            try:
+                success = model_manager.delete_model_history(model_type, model_id)
+                if success:
+                    return jsonify({'success': True, 'message': 'Modelio įrašas ištrintas'})
+            except Exception as e:
+                app.logger.error(f"Klaida trinant per ModelManager: {str(e)}")
         
+        # Jei nepavyko per model_manager, bandome per duomenų bazę
+        if database_enabled:
+            try:
+                # Konvertuojame ID į integer
+                model_id_int = int(model_id)
+                
+                # Randam modelį pagal ID ir tipą
+                model = ModelHistory.query.filter_by(id=model_id_int, model_type=model_type).first()
+                if not model:
+                    model = ModelHistory.query.get(model_id_int)  # Bandome tiesiog pagal ID, jei tipas neatitinka
+                    if not model:
+                        return jsonify({'success': False, 'error': 'Modelis duomenų bazėje nerastas'}), 404
+                
+                # Išsaugome informaciją apie aktyvumą
+                is_active = model.is_active
+                model_type = model.model_type  # Atnaujiname model_type, jei radome pagal ID
+                
+                # Ištriname modelį
+                db.session.delete(model)
+                db.session.commit()
+                
+                # Jei modelis buvo aktyvus ir turime model_manager, atnaujinkime jo statusą
+                if is_active and model_manager:
+                    model_status = model_manager.get_model_status(model_type)
+                    model_status['status'] = 'Neaktyvus'
+                    model_status['active_model_id'] = None
+                    model_manager._save_model_status()
+                
+                return jsonify({'success': True, 'message': 'Modelis sėkmingai ištrintas'})
+            except Exception as e:
+                app.logger.error(f"Klaida trinant per DB: {str(e)}")
+                if database_enabled:
+                    db.session.rollback()
+        
+        # Jei abu būdai nepavyko
         return jsonify({'success': False, 'error': 'Nepavyko ištrinti modelio įrašo'}), 500
     except Exception as e:
-        app.logger.error(f"Klaida trinant modelio {model_type} įrašą (ID: {model_id}): {str(e)}")
+        app.logger.error(f"Klaida trinant modelį: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/use_model/<model_type>/<model_id>', methods=['POST'])
@@ -221,14 +260,56 @@ def use_model(model_type, model_id):
     try:
         app.logger.info(f"Bandoma aktyvuoti modelį {model_type} (ID: {model_id})")
         
+        # Pirmiausia bandome per model_manager
         if model_manager:
-            success = model_manager.activate_model(model_type, model_id)
-            if success:
-                return jsonify({'success': True, 'message': 'Modelis aktyvuotas'})
+            try:
+                success = model_manager.activate_model(model_type, model_id)
+                if success:
+                    return jsonify({'success': True, 'message': 'Modelis aktyvuotas'})
+            except Exception as e:
+                app.logger.error(f"Klaida aktyvuojant per ModelManager: {str(e)}")
         
+        # Jei nepavyko per model_manager, bandome per duomenų bazę
+        if database_enabled:
+            try:
+                # Konvertuojame ID į integer
+                model_id_int = int(model_id)
+                
+                # Randam modelį pagal ID ir tipą
+                model = ModelHistory.query.filter_by(id=model_id_int, model_type=model_type).first()
+                if not model:
+                    model = ModelHistory.query.get(model_id_int)  # Bandome tiesiog pagal ID
+                    if not model:
+                        return jsonify({'success': False, 'error': 'Modelis duomenų bazėje nerastas'}), 404
+                
+                model_type = model.model_type  # Atnaujiname model_type, jei radome pagal ID
+                
+                # Pažymime visus to tipo modelius kaip neaktyvius
+                ModelHistory.query.filter_by(model_type=model_type).update({'is_active': False})
+                
+                # Nustatome pasirinktą modelį kaip aktyvų
+                model.is_active = True
+                db.session.commit()
+                
+                # Atnaujinkime ir ModelManager'io statusą, jei jis egzistuoja
+                if model_manager:
+                    model_status = model_manager.get_model_status(model_type)
+                    model_status['status'] = 'Aktyvus'
+                    model_status['last_trained'] = model.timestamp.strftime('%Y-%m-%d %H:%M:%S') if model.timestamp else 'Unknown'
+                    model_status['performance'] = f"MAE: {model.mae:.4f}" if model.mae else 'Nežinoma'
+                    model_status['active_model_id'] = model.id
+                    model_manager._save_model_status()
+                
+                return jsonify({'success': True, 'message': 'Modelis sėkmingai aktyvuotas'})
+            except Exception as e:
+                app.logger.error(f"Klaida aktyvuojant per DB: {str(e)}")
+                if database_enabled:
+                    db.session.rollback()
+        
+        # Jei abu būdai nepavyko
         return jsonify({'success': False, 'error': 'Nepavyko aktyvuoti modelio'}), 500
     except Exception as e:
-        app.logger.error(f"Klaida aktyvuojant modelį {model_type} (ID: {model_id}): {str(e)}")
+        app.logger.error(f"Klaida aktyvuojant modelį: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/model_params/<int:model_id>')
@@ -696,6 +777,9 @@ def delete_db_model(model_id):
         return jsonify({'success': True, 'message': 'Modelis sėkmingai ištrintas'})
     except Exception as e:
         logger.error(f"Klaida trinant modelį: {str(e)}", exc_info=True)
+        # Atšaukiame transakcijos pakeitimus jei įvyko klaida
+        if database_enabled:
+            db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def get_real_bitcoin_price():
@@ -742,6 +826,107 @@ def calculate_price_change(current_price, previous_price):
         'percent': percent_change,
         'direction': direction
     }
+
+@app.route('/api/model_history_db')
+def get_model_history_db():
+    """API endpoint visų modelių istorijos gavimui iš duomenų bazės"""
+    try:
+        # Tikriname, ar duomenų bazė inicializuota
+        if not 'database_enabled' in globals() or not database_enabled or not 'ModelHistory' in globals():
+            return jsonify([])  # Grąžiname tuščią sąrašą, jei DB neprieinama
+        
+        # Filtravimo parametrai
+        model_type = request.args.get('model_type')
+        
+        # Užklausa
+        query = ModelHistory.query
+        
+        # Filtruojame pagal modelio tipą, jei pateiktas
+        if model_type and model_type != 'all':
+            query = query.filter_by(model_type=model_type)
+        
+        # Rikiuojame pagal laiką (naujausi viršuje)
+        query = query.order_by(ModelHistory.timestamp.desc())
+        
+        # Gauname įrašus
+        records = query.all()
+        
+        # Konvertuojame į JSON
+        result = []
+        for record in records:
+            record_dict = {}
+            
+            # Bandome naudoti to_dict() metodą, jei jis egzistuoja
+            if hasattr(record, 'to_dict'):
+                record_dict = record.to_dict()
+            else:
+                # Pridedame pagrindinius laukus
+                for field in ['id', 'model_type', 'epochs', 'batch_size', 'learning_rate', 
+                             'lookback', 'dropout', 'mae', 'mse', 'rmse', 'r2', 'is_active']:
+                    if hasattr(record, field):
+                        record_dict[field] = getattr(record, field)
+                
+                # Konvertuojame timestamp į string
+                if hasattr(record, 'timestamp') and record.timestamp:
+                    record_dict['timestamp'] = record.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Pridedame training_time
+                if hasattr(record, 'training_time'):
+                    record_dict['training_time'] = record.training_time
+            
+            result.append(record_dict)
+        
+        return jsonify(result)
+    except Exception as e:
+        app.logger.error(f"Klaida gaunant modelių istoriją: {str(e)}", exc_info=True)
+        return jsonify([])  # Saugiau grąžinti tuščią sąrašą nei 500 klaidą
+
+@app.route('/api/model/history_config')
+def model_history_config():
+    """API endpoint modelio konfigūracijos gavimui iš istorijos"""
+    try:
+        model_type = request.args.get('model_type')
+        model_id = request.args.get('model_id')
+        
+        app.logger.info(f"Gautas užklausimas modelio parametrams: model_type={model_type}, model_id={model_id}")
+        
+        if not model_type or not model_id:
+            return jsonify({'success': False, 'error': 'Nenurodytas modelio tipas arba ID'}), 400
+        
+        # Bandome konvertuoti model_id į integer
+        try:
+            model_id_int = int(model_id)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Neteisingas modelio ID formatas'}), 400
+        
+        # Tikriname, ar duomenų bazė inicializuota
+        if not database_enabled:
+            return jsonify({'success': False, 'error': 'Duomenų bazė nepasiekiama'}), 500
+        
+        # Gauname modelio įrašą
+        model = ModelHistory.query.get(model_id_int)
+        if not model:
+            return jsonify({'success': False, 'error': 'Modelis nerastas'}), 404
+        
+        # Sudarome konfigūracijos žodyną
+        config = {}
+        
+        # Įtraukiame visus galimus parametrus
+        for param in ['epochs', 'batch_size', 'learning_rate', 'lookback', 'dropout', 
+                     'recurrent_dropout', 'validation_split', 'num_heads', 'd_model',
+                     'filters', 'kernel_size', 'notes']:
+            if hasattr(model, param):
+                value = getattr(model, param)
+                if value is not None:  # Neįtraukiame None reikšmių
+                    config[param] = value
+        
+        return jsonify({
+            'success': True,
+            'config': config
+        })
+    except Exception as e:
+        app.logger.error(f"Klaida gaunant modelio konfigūraciją: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Paleidimo kodas
 if __name__ == '__main__':

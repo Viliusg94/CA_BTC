@@ -111,7 +111,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-table me-2"></i>Modelių mokymosi istorija</h5>
                     <div>
-                        <button class="btn btn-sm btn-light" onclick="loadHistoryFromAPI()">
+                        <button id="refreshDataBtn" class="btn btn-sm btn-light">
                             <i class="fas fa-sync-alt me-1"></i>Atnaujinti duomenis
                         </button>
                         <span class="badge bg-light text-primary ms-2">{{ records|length }} įrašai</span>
@@ -151,16 +151,16 @@
                                 <td>{{ record.training_time }}s</td>
                                 <td>
                                     <!-- Veiksmai -->
-                                    <button class="btn btn-sm btn-info" title="Parametrai" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
+                                    <button class="btn btn-sm btn-info js-params-btn" title="Parametrai" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
                                         <i class="fas fa-cogs"></i> Parametrai
                                     </button>
                                     
-                                    <button class="btn btn-sm btn-danger" title="Ištrinti" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
+                                    <button class="btn btn-sm btn-danger js-delete-btn" title="Ištrinti" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
                                         <i class="fas fa-trash"></i> Ištrinti
                                     </button>
                                     
                                     {% if not record.is_active %}
-                                    <button class="btn btn-sm btn-success" title="Aktyvuoti" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
+                                    <button class="btn btn-sm btn-success js-activate-btn" title="Aktyvuoti" data-model-type="{{ record.model_type }}" data-model-id="{{ record.id }}">
                                         <i class="fas fa-check"></i> Aktyvuoti
                                     </button>
                                     {% else %}
@@ -235,7 +235,7 @@
             console.log('Inicializuojami mygtukai...');
             
             // 1. Parametrų mygtukai
-            document.querySelectorAll('.btn[title="Parametrai"]').forEach(button => {
+            document.querySelectorAll('.js-params-btn').forEach(button => {
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
                     const modelType = this.getAttribute('data-model-type');
@@ -246,7 +246,7 @@
             });
             
             // 2. Ištrinti mygtukai
-            document.querySelectorAll('.btn[title="Ištrinti"]').forEach(button => {
+            document.querySelectorAll('.js-delete-btn').forEach(button => {
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
                     const modelType = this.getAttribute('data-model-type');
@@ -257,7 +257,7 @@
             });
             
             // 3. Aktyvuoti mygtukai
-            document.querySelectorAll('.btn[title="Aktyvuoti"]').forEach(button => {
+            document.querySelectorAll('.js-activate-btn').forEach(button => {
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
                     const modelType = this.getAttribute('data-model-type');
@@ -265,6 +265,12 @@
                     console.log(`Paspaustas aktyvavimo mygtukas: modelType=${modelType}, modelId=${modelId}`);
                     activateModelRecord(modelType, modelId);
                 });
+            });
+            
+            // Atnaujinimo mygtukas
+            document.getElementById('refreshDataBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                loadHistoryFromAPI();
             });
             
             // Inicializuojame DataTables
@@ -281,6 +287,8 @@
         
         // Funkcija modelio parametrų atvaizdavimui
         function showModelParameters(modelType, modelId) {
+            console.log(`Rodomi parametrai: modelType=${modelType}, modelId=${modelId}`);
+            
             // Rodome modalą
             const paramsModal = new bootstrap.Modal(document.getElementById('paramsModal'));
             paramsModal.show();
@@ -298,19 +306,36 @@
                 </div>
             `;
             
-            // Siunčiame užklausą
+            // Siunčiame užklausą - pirmiausia patikriname history_config endpoint'ą
             fetch(`/api/model/history_config?model_type=${modelType}&model_id=${modelId}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        // Jei endpoint neveikia, bandome alternatyvų
+                        console.log(`Bandome alternatyvų endpoint modeliui ${modelType}, id ${modelId}`);
+                        return fetch(`/api/model_config/${modelType}/${modelId}`);
+                    }
+                    return response;
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP klaida: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     console.log('Gauti parametrų duomenys:', data);
                     
-                    if (!data.success) {
-                        document.getElementById('paramsModalBody').innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-circle me-2"></i>${data.error || 'Įvyko klaida kraunant parametrus'}
-                            </div>
-                        `;
-                        return;
+                    // Patikriname, ar duomenys sėkmingai gauti
+                    if (data.error || (data.success === false)) {
+                        throw new Error(data.error || 'Nepavyko gauti parametrų');
+                    }
+                    
+                    // Išgauname konfigūraciją
+                    let config = data.config;
+                    
+                    // Jei config neegzistuoja, bandome rasti tiesiai objekte
+                    if (!config && typeof data === 'object') {
+                        config = data;
                     }
                     
                     // Rodome parametrus
@@ -344,17 +369,20 @@
                     };
                     
                     // Pridedame parametrus į lentelę
-                    const config = data.config;
-                    for (const [key, value] of Object.entries(config)) {
-                        if (value !== null && value !== undefined) {
-                            html += `
-                                <tr>
-                                    <td><strong>${key}</strong></td>
-                                    <td>${value}</td>
-                                    <td>${paramDescriptions[key] || ''}</td>
-                                </tr>
-                            `;
+                    if (config && Object.keys(config).length > 0) {
+                        for (const [key, value] of Object.entries(config)) {
+                            if (value !== null && value !== undefined) {
+                                html += `
+                                    <tr>
+                                        <td><strong>${key}</strong></td>
+                                        <td>${value}</td>
+                                        <td>${paramDescriptions[key] || ''}</td>
+                                    </tr>
+                                `;
+                            }
                         }
+                    } else {
+                        html += `<tr><td colspan="3" class="text-center">Nėra parametrų</td></tr>`;
                     }
                     
                     html += `
@@ -371,6 +399,9 @@
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-circle me-2"></i>Įvyko klaida kraunant parametrus: ${error.message}
                         </div>
+                        <div class="alert alert-info mt-2">
+                            <i class="fas fa-info-circle me-2"></i>Patikrinkite ar serveryje yra /api/model/history_config endpoint'as.
+                        </div>
                     `;
                 });
         }
@@ -386,17 +417,26 @@
                 `/api/delete_model_history/${modelType}/${modelId}` : 
                 `/api/delete_db_model/${modelId}`;
             
+            console.log(`Siunčiama DELETE užklausa į ${url}`);
+            
             // Siunčiame užklausą
             fetch(url, {
                 method: 'DELETE',
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP klaida: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('DELETE atsakymas:', data);
+                
                 if (data.success) {
                     alert('Modelis sėkmingai ištrintas!');
                     window.location.reload();
                 } else {
-                    alert(`Klaida: ${data.error || 'Nepavyko ištrinti modelio'}`);
+                    throw new Error(data.error || 'Nepavyko ištrinti modelio');
                 }
             })
             .catch(error => {
@@ -416,20 +456,30 @@
                 `/api/use_model/${modelType}/${modelId}` : 
                 `/api/activate_model/${modelId}`;
             
+            console.log(`Siunčiama POST užklausa į ${url}`);
+            
             // Siunčiame užklausą
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({}) // Tuščias JSON objektas, kad būtų teisingas Content-Type
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP klaida: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('POST atsakymas:', data);
+                
                 if (data.success) {
                     alert('Modelis sėkmingai aktyvuotas!');
                     window.location.reload();
                 } else {
-                    alert(`Klaida: ${data.error || 'Nepavyko aktyvuoti modelio'}`);
+                    throw new Error(data.error || 'Nepavyko aktyvuoti modelio');
                 }
             })
             .catch(error => {
@@ -444,24 +494,26 @@
             $('#historyTable tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Kraunama istorija...</p></td></tr>');
             
             // Užklausiame duomenų iš API
-            $.ajax({
-                url: '/api/model_history_db',
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    if (data.length === 0) {
+            fetch('/api/model_history_db')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP klaida: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data || data.length === 0) {
                         $('#historyTable tbody').html('<tr><td colspan="6" class="text-center">Modelių istorija tuščia</td></tr>');
                         return;
                     }
                     
                     // Perkrauname puslapį, kad atnaujinti duomenis
                     window.location.reload();
-                },
-                error: function(error) {
+                })
+                .catch(error => {
                     console.error('Klaida gaunant istoriją:', error);
-                    $('#historyTable tbody').html('<tr><td colspan="6" class="text-center text-danger">Klaida gaunant istoriją!</td></tr>');
-                }
-            });
+                    $('#historyTable tbody').html(`<tr><td colspan="6" class="text-center text-danger">Klaida gaunant istoriją: ${error.message}</td></tr>`);
+                });
         }
     </script>
 </body>
