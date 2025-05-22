@@ -29,12 +29,13 @@ class Charts:
 # Sukuriame objektą, kurį naudos importuojantis kodas
 create_charts = Charts()
 
-def create_price_history_chart(price_history):
+def create_price_history_chart(price_history, title='Bitcoin kaina'):
     """
-    Sukuria Bitcoin kainos istorijos grafiką
+    Sukuria Bitcoin kainos istorijos grafiką iš pateiktų duomenų
     
     Args:
         price_history (pd.DataFrame arba dict): Kainos istorijos duomenys
+        title (str): Grafiko pavadinimas (pasirinktinai)
         
     Returns:
         go.Figure: Plotly grafikas
@@ -124,7 +125,7 @@ def create_price_history_chart(price_history):
     
     # Atnaujinti išdėstymą
     fig.update_layout(
-        title="Bitcoin kainų istorija",
+        title=title,
         xaxis=dict(
             title=dict(
                 text="Data",

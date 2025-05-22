@@ -148,6 +148,55 @@
                     </div>
                 </div>
 
+                <!-- Kainų skirtumų grafikas (7d, 30d, 90d) -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Bitcoin kainos istorija</h5>
+                        <ul class="nav nav-tabs card-header-tabs mt-2" id="periodTabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="7d-tab" data-bs-toggle="tab" href="#period-7d" role="tab">7 dienos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="30d-tab" data-bs-toggle="tab" href="#period-30d" role="tab">30 dienų</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="90d-tab" data-bs-toggle="tab" href="#period-90d" role="tab">90 dienų</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="periodTabsContent">
+                            <div class="tab-pane fade show active" id="period-7d" role="tabpanel">
+                                <div id="priceChart7d" style="height: 300px;">
+                                    {% if time_period_charts and time_period_charts['7d'] %}
+                                    <!-- Grafiko konteineris 7d -->
+                                    {% else %}
+                                    <div class="alert alert-warning">7 dienų istorijos duomenys nepasiekiami.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="period-30d" role="tabpanel">
+                                <div id="priceChart30d" style="height: 300px;">
+                                    {% if time_period_charts and time_period_charts['30d'] %}
+                                    <!-- Grafiko konteineris 30d -->
+                                    {% else %}
+                                    <div class="alert alert-warning">30 dienų istorijos duomenys nepasiekiami.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="period-90d" role="tabpanel">
+                                <div id="priceChart90d" style="height: 300px;">
+                                    {% if time_period_charts and time_period_charts['90d'] %}
+                                    <!-- Grafiko konteineris 90d -->
+                                    {% else %}
+                                    <div class="alert alert-warning">90 dienų istorijos duomenys nepasiekiami.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Modelių metrikos ir palyginimas -->
                 <div class="row">
                     <div class="col-md-12">
@@ -215,17 +264,132 @@
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 
-    <!-- Perduodam kintamuosius per window objektą -->
+    <!-- Duomenų inicializacija -->
     <script>
-        // Grafikų duomenys, perduodami iš serverio
-        window.priceChartData = JSON.parse('{{ price_chart | tojson | safe }}');
-        window.comparisonChartData = JSON.parse('{{ comparison_chart | tojson | safe }}');
+        // Duomenų inicializacija - šią dalį negalima iškelti
+        // Sukuriame globalius kintamuosius, kuriuos naudos charts_app.js
+        window.appData = {
+            priceChart: null,
+            comparisonChart: null,
+            periodCharts: {}
+        };
+
+        // Inicializuojame duomenis iš serverio
+        {% if price_chart %}
+            window.appData.priceChart = {{ price_chart | safe }};
+        {% endif %}
+        
+        {% if comparison_chart %}
+            window.appData.comparisonChart = {{ comparison_chart | safe }};
+        {% endif %}
+        
+        {% if time_period_charts and time_period_charts['7d'] %}
+            window.appData.periodCharts['7d'] = {{ time_period_charts['7d'] | safe }};
+        {% endif %}
+        
+        {% if time_period_charts and time_period_charts['30d'] %}
+            window.appData.periodCharts['30d'] = {{ time_period_charts['30d'] | safe }};
+        {% endif %}
+        
+        {% if time_period_charts and time_period_charts['90d'] %}
+            window.appData.periodCharts['90d'] = {{ time_period_charts['90d'] | safe }};
+        {% endif %}
     </script>
 
-    <!-- Įtraukiame naują JS failą -->
-    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+    <!-- Įtraukiame JS failus -->
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts_app.js') }}"></script>
+
+    <!-- Tiesioginis grafikų atvaizdavimas (workaround) -->
+    <script>
+        // Duomenų išvalymo funkcija, kad išvengti klaidų
+        function safeJsonParse(jsonStr) {
+            try {
+                return JSON.parse(jsonStr);
+            } catch (e) {
+                console.error("Klaida apdorojant JSON:", e);
+                return null;
+            }
+        }
+
+        // Grafikų atvaizdavimas
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pagrindinis kainos grafikas
+            if (priceData) {
+                Plotly.newPlot('price-chart', priceData.data, priceData.layout);
+            }
+            
+            // Modelių palyginimo grafikas
+            if (comparisonData) {
+                Plotly.newPlot('comparison-chart', comparisonData.data, comparisonData.layout);
+            }
+            
+            // Periodų grafikai
+            if (periodData['7d']) {
+                Plotly.newPlot('priceChart7d', periodData['7d'].data, periodData['7d'].layout);
+            }
+            
+            if (periodData['30d']) {
+                Plotly.newPlot('priceChart30d', periodData['30d'].data, periodData['30d'].layout);
+            }
+            
+            if (periodData['90d']) {
+                Plotly.newPlot('priceChart90d', periodData['90d'].data, periodData['90d'].layout);
+            }
+            
+            // Aktyvių mokymų atnaujinimas
+            updateActiveTrainings();
+        });
+        
+        // Atnaujina aktyvių mokymų informaciją kas 5 sekundes
+        function updateActiveTrainings() {
+            setInterval(function() {
+                fetch('/api/training_status')
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('active-training-container');
+                        if (!container) return;
+                        
+                        if (Object.keys(data).length === 0) {
+                            container.innerHTML = '<div class="text-center p-3"><p class="text-muted mb-0">Šiuo metu nėra aktyvių mokymų.</p></div>';
+                        } else {
+                            let html = '<ul class="list-group list-group-flush">';
+                            
+                            for (const [jobId, job] of Object.entries(data)) {
+                                html += `
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <span>${job.model_type.toUpperCase()}</span>
+                                            <small>${job.status}</small>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-info" role="progressbar" 
+                                                 style="width: ${job.progress}%"
+                                                 aria-valuenow="${job.progress}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                    </li>
+                                `;
+                            }
+                            
+                            html += '</ul>';
+                            container.innerHTML = html;
+                        }
+                    })
+                    .catch(error => console.error('Klaida gaunant mokymų statusą:', error));
+            }, 5000);
+        }
+        
+        // Funkcija perjungianti kainos grafiką pagal laiko intervalą
+        function updateChart(days, buttonElement) {
+            // Pažymime aktyvų mygtuką
+            const buttons = buttonElement.parentElement.querySelectorAll('.btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+        }
+    </script>
 </body>
 </html>

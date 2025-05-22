@@ -1,392 +1,203 @@
 {% extends "base.html" %}
 
-{% block title %}Treniravimo sesijų istorija - BTC Prekybos Sistema{% endblock %}
-
-{% block styles %}
-<style>
-    .filter-section {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    
-    .session-card {
-        margin-bottom: 10px;
-        border-left: 4px solid #007bff;
-    }
-    
-    .session-card.completed {
-        border-left-color: #28a745;
-    }
-    
-    .session-card.failed {
-        border-left-color: #dc3545;
-    }
-    
-    .session-card.canceled {
-        border-left-color: #ffc107;
-    }
-    
-    .session-card:hover {
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    
-    .session-title {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .session-title h5 {
-        margin-bottom: 0;
-    }
-    
-    .tag {
-        font-size: 0.8rem;
-        padding: 2px 6px;
-        border-radius: 4px;
-        margin-right: 5px;
-    }
-    
-    .status-badge {
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-weight: bold;
-        font-size: 0.8rem;
-    }
-    
-    .status-badge.completed {
-        background-color: #d4edda;
-        color: #155724;
-    }
-    
-    .status-badge.failed {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-    
-    .status-badge.canceled {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-    
-    .status-badge.in-progress {
-        background-color: #cce5ff;
-        color: #004085;
-    }
-    
-    .metric-value {
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-    
-    .metric-label {
-        font-size: 0.8rem;
-        color: #6c757d;
-    }
-    
-    .dates {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-    
-    .chart-container {
-        height: 300px;
-        margin-bottom: 20px;
-    }
-    
-    .stats-card {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    
-    .stats-value {
-        font-size: 2rem;
-        font-weight: bold;
-    }
-    
-    .stats-label {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-    
-    .best-model-card {
-        background-color: #f8f9fa;
-        border-left: 4px solid #28a745;
-    }
-    
-    .pagination-container {
-        display: flex;
-        justify-content: center;
-        margin-top: 20px;
-    }
-    
-    .no-sessions {
-        padding: 30px;
-        text-align: center;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-    }
-    
-    .empty-state {
-        padding: 40px 20px;
-        text-align: center;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-    }
-</style>
-{% endblock %}
+{% block title %}Apmokymo istorija{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1>Treniravimo sesijų istorija</h1>
-            <p class="text-muted">Visų modelio treniravimo sesijų istorija ir statistika</p>
-        </div>
-    </div>
+<div class="container mt-4">
+    <h1 class="mb-4">Apmokymo istorija</h1>
     
-    <!-- Statistikos apžvalga -->
+    <!-- Statistikos kortelės -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card stats-card">
-                <div class="card-body">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-primary">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stats-title">Iš viso apmokymų</div>
                     <div class="stats-value">{{ history|length if history else 0 }}</div>
-                    <div class="stats-label">Viso sesijų</div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <div class="stats-value text-success">{{ history|selectattr('status', 'eq', 'Baigta')|list|length if history else 0 }}</div>
-                    <div class="stats-label">Sėkmingai baigta</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <div class="stats-value text-danger">{{ history|selectattr('status', 'search', 'Klaida')|list|length if history else 0 }}</div>
-                    <div class="stats-label">Nepavykusios</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <div class="stats-value text-warning">{{ history|selectattr('status', 'eq', 'Atšaukta')|list|length if history else 0 }}</div>
-                    <div class="stats-label">Atšauktos</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Geriausias modelis -->
-    {% if history and history|selectattr('metrics.mae', 'defined')|list|length > 0 %}
-    {% set best_model = (history|selectattr('metrics.mae', 'defined')|sort(attribute='metrics.mae'))[0] %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card best-model-card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h5>Geriausias modelis</h5>
-                            <h4>{{ best_model.model_type|upper }}</h4>
-                            <p class="text-muted">Mažiausia validavimo MAE: <strong>{{ best_model.metrics.mae|default(0)|round(6) }}</strong></p>
-                        </div>
-                        <div class="col-md-4 text-end d-flex align-items-center justify-content-end">
-                            <a href="{{ url_for('models_overview') }}" class="btn btn-primary">
-                                Peržiūrėti modelį
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Treniravimo statistikos grafikas -->
-    <div class="row mb-4">
-        <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Treniravimų statistika laike</h5>
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-success">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="stats-title">Sėkmingi</div>
+                    <div class="stats-value text-success">
+                        {% set success_count = 0 %}
+                        {% for job in history %}
+                            {% if job.status == 'Baigta' %}
+                                {% set success_count = success_count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ success_count }}
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="trainingChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-warning">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div class="stats-title">Vykdomi</div>
+                    <div class="stats-value text-warning">
+                        {% set running_count = 0 %}
+                        {% for job in history %}
+                            {% if job.status == 'Vykdoma' %}
+                                {% set running_count = running_count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ running_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stats-title">Klaidos</div>
+                    <div class="stats-value text-danger">
+                        {% set error_count = 0 %}
+                        {% for job in history %}
+                            {% if job.status == 'Klaida' %}
+                                {% set error_count = error_count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ error_count }}
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="row">
-        <!-- Filtrai -->
-        <div class="col-md-3">
-            <div class="filter-section">
-                <h5>Filtrai</h5>
-                <form id="filtersForm">
-                    <div class="mb-3">
-                        <label for="dateFrom" class="form-label">Data nuo:</label>
-                        <input type="date" class="form-control" id="dateFrom" name="date_from" value="{{ filters.date_from|default('') }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="dateTo" class="form-label">Data iki:</label>
-                        <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ filters.date_to|default('') }}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Modelio tipas:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="LSTM" id="typeLSTM" name="model_types" {% if filters is defined and 'LSTM' in filters.model_types %}checked{% endif %}>
-                            <label class="form-check-label" for="typeLSTM">LSTM</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="GRU" id="typeGRU" name="model_types" {% if filters is defined and 'GRU' in filters.model_types %}checked{% endif %}>
-                            <label class="form-check-label" for="typeGRU">GRU</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="CNN" id="typeCNN" name="model_types" {% if filters is defined and 'CNN' in filters.model_types %}checked{% endif %}>
-                            <label class="form-check-label" for="typeCNN">CNN</label>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Būsena:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="Completed" id="statusCompleted" name="statuses" {% if filters is defined and 'Completed' in filters.statuses %}checked{% endif %}>
-                            <label class="form-check-label" for="statusCompleted">Baigti</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="Failed" id="statusFailed" name="statuses" {% if filters is defined and 'Failed' in filters.statuses %}checked{% endif %}>
-                            <label class="form-check-label" for="statusFailed">Nepavykę</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="Canceled" id="statusCanceled" name="statuses" {% if filters is defined and 'Canceled' in filters.statuses %}checked{% endif %}>
-                            <label class="form-check-label" for="statusCanceled">Atšaukti</label>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <button type="submit" class="btn btn-primary">
-                            Taikyti filtrus
-                        </button>
-                    </div>
-                </form>
-            </div>
+    <!-- Filtravimo forma -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Filtruoti apmokymų istoriją</h2>
         </div>
-        
-        <!-- Treniruotės istorija -->
-        <div class="col-md-9">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Treniruočių sesijų istorija</h5>
+        <div class="card-body">
+            <form id="filterForm" method="get" action="{{ url_for('training_history') }}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="date_from">Nuo datos</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" value="{{ filters.date_from }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="date_to">Iki datos</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" value="{{ filters.date_to }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="model_types">Modelių tipai</label>
+                            <select class="form-control" id="model_types" name="model_types" multiple>
+                                <option value="lstm" {% if 'lstm' in filters.model_types %}selected{% endif %}>LSTM</option>
+                                <option value="gru" {% if 'gru' in filters.model_types %}selected{% endif %}>GRU</option>
+                                <option value="cnn" {% if 'cnn' in filters.model_types %}selected{% endif %}>CNN</option>
+                                <option value="transformer" {% if 'transformer' in filters.model_types %}selected{% endif %}>Transformer</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="statuses">Statusai</label>
+                            <select class="form-control" id="statuses" name="statuses" multiple>
+                                <option value="Baigta" {% if 'Baigta' in filters.statuses %}selected{% endif %}>Baigta</option>
+                                <option value="Vykdoma" {% if 'Vykdoma' in filters.statuses %}selected{% endif %}>Vykdoma</option>
+                                <option value="Klaida" {% if 'Klaida' in filters.statuses %}selected{% endif %}>Klaida</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Modelio tipas</th>
-                                    <th>Būsena</th>
-                                    <th>Trukmė (min)</th>
-                                    <th>MAE</th>
-                                    <th>RMSE</th>
-                                    <th>Veiksmai</th>
-                                </tr>
-                            </thead>
-                            
-                            <tbody>
-                                {% if history and history|length > 0 %}
-                                    {% for session in history %}
-                                    <tr>
-                                        <td>{{ session.start_time|default('-') }}</td>
-                                        <td>{{ session.model_type|upper }}</td>
-                                        <td>
-                                            <span class="badge {% if session.status == 'Baigta' %}bg-success{% elif 'Klaida' in session.status %}bg-danger{% else %}bg-info{% endif %}">
-                                                {{ session.status }}
-                                            </span>
-                                        </td>
-                                        <td>{{ session.duration|default('-') }}</td>
-                                        <td>{{ session.metrics.mae|default('-')|round(6) if session.metrics is defined else '-' }}</td>
-                                        <td>{{ session.metrics.rmse|default('-')|round(6) if session.metrics is defined else '-' }}</td>
-                                        <td>
-                                            <a href="{{ url_for('models_overview') }}" class="btn btn-sm btn-outline-primary">
-                                                Peržiūrėti
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Filtruoti</button>
+                    <a href="{{ url_for('training_history') }}" class="btn btn-secondary">Atstatyti</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Apmokymų istorijos lentelė -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Apmokymų istorija</h2>
+        </div>
+        <div class="card-body">
+            {% if history %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Modelis</th>
+                            <th>Pradėta</th>
+                            <th>Baigta</th>
+                            <th>Statusas</th>
+                            <th>Parametrai</th>
+                            <th>Metrika</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in history %}
+                        <tr>
+                            <td>{{ job.id }}</td>
+                            <td>{{ job.model_type|upper }}</td>
+                            <td>{{ job.start_time }}</td>
+                            <td>{{ job.end_time if job.end_time else 'N/A' }}</td>
+                            <td>
+                                {% if job.status == 'Baigta' %}
+                                <span class="badge bg-success">{{ job.status }}</span>
+                                {% elif job.status == 'Vykdoma' %}
+                                <span class="badge bg-warning">{{ job.status }}</span>
+                                {% elif job.status == 'Klaida' %}
+                                <span class="badge bg-danger">{{ job.status }}</span>
                                 {% else %}
-                                    <tr>
-                                        <td colspan="7" class="text-center">Nėra treniravimo sesijų istorijos</td>
-                                    </tr>
+                                <span class="badge bg-secondary">{{ job.status }}</span>
                                 {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            </td>
+                            <td>
+                                <small>
+                                    {% if job.epochs is defined %}
+                                    <!-- Tiesiogiai žodyne esantys parametrai -->
+                                    Epochs: {{ job.epochs }}<br>
+                                    Batch: {{ job.batch_size if job.batch_size is defined else 'N/A' }}<br>
+                                    Seq: {{ job.sequence_length if job.sequence_length is defined else 'N/A' }}
+                                    {% else %}
+                                    <!-- Parametrų duomenys nepasiekiami -->
+                                    Parametrai nepasiekiami
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                {% if job.metrics %}
+                                <small>
+                                    MSE: {{ "%.4f"|format(job.metrics.mse) }}<br>
+                                    MAE: {{ "%.4f"|format(job.metrics.mae) }}
+                                </small>
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% else %}
+            <p class="text-muted">Nėra apmokymų istorijos įrašų.</p>
+            {% endif %}
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Funkcija rikiuoti lentelę
-    function sortTable(field) {
-        // Gauname dabartinius parametrus
-        const currentSortBy = document.getElementById('sort_by') ? document.getElementById('sort_by').value : '';
-        const currentSortOrder = document.getElementById('sort_order') ? document.getElementById('sort_order').value : '';
-        
-        // Nustatome naujus parametrus
-        let newSortOrder = 'asc';
-        if (currentSortBy === field && currentSortOrder === 'asc') {
-            newSortOrder = 'desc';
-        }
-        
-        // Tikriname, ar egzistuoja elementai
-        if (document.getElementById('sort_by') && document.getElementById('sort_order')) {
-            // Atnaujiname paslėptus laukus
-            document.getElementById('sort_by').value = field;
-            document.getElementById('sort_order').value = newSortOrder;
-            
-            // Pateikiame formą, jei ji egzistuoja
-            if (document.getElementById('filterForm')) {
-                document.getElementById('filterForm').submit();
-            }
-        }
-    }
-    
-    // Trainingų grafiko inicializavimas (tik jei yra duomenų)
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('trainingChart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [/* čia pridedame datas */],
-                    datasets: [{
-                        label: 'Modelių treniravimo MAE',
-                        data: [/* čia pridedame MAE reikšmes */],
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-    });
-</script>
 {% endblock %}
