@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ model_info.name }} Modelio Nustatymai - Bitcoin Kainų Analizė</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- Chart.js biblioteka grafikams -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome ikonėlėms -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container my-4">
+        <h1 class="text-center mb-4">
+            <i class="fas fa-cogs me-2"></i> {{ model_info.name }} Modelio Nustatymai
+        </h1>
+        
+        <!-- Grįžimo mygtukas -->
+        <div class="mb-3">
+            <a href="/models" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Grįžti į modelių sąrašą
+            </a>
+        </div>
+        
+        <!-- Flash pranešimai -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Modelio informacija -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Modelio informacija</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>{{ model_info.name }}</h5>
+                        <p>{{ model_info.description }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Būsena:
+                                {% if status.status == 'Aktyvus' %}
+                                    <span class="badge bg-success">Aktyvus</span>
+                                {% elif status.status == 'Apmokomas' %}
+                                    <span class="badge bg-warning">Apmokomas</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Neprieinamas</span>
+                                {% endif %}
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Paskutinis apmokymas:
+                                <span>{{ status.last_trained }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Tikslumas:
+                                <span>{{ status.performance }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Apmokymo progresas, rodomas tik jei modelis apmokomas -->
+        <div id="training-progress-card" class="card mb-4" style="display: none;">
+            <div class="card-header bg-warning text-white">
+                <h3 class="mb-0">Apmokymo progresas</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="progress">
+                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" 
+                             style="width: 0%">0%</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Etapas:</strong> <span id="progress-stage">-</span></p>
+                        <p><strong>Epocha:</strong> <span id="progress-epoch">-</span></p>
+                        <p><strong>Laikas:</strong> <span id="progress-time">-</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Paklaida (loss):</strong> <span id="progress-loss">-</span></p>
+                        <p><strong>Validavimo paklaida (val_loss):</strong> <span id="progress-val-loss">-</span></p>
+                        <p><strong>Būsena:</strong> <span id="progress-message">-</span></p>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <button id="cancel-training-btn" class="btn btn-danger">
+                        <i class="fas fa-stop-circle"></i> Atšaukti apmokymą
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modelio nustatymai -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0">Modelio nustatymai</h3>
+            </div>
+            <div class="card-body">
+                <form id="model-settings-form">
+                    <!-- LSTM ir GRU nustatymai -->
+                    {% if model_type in ['lstm', 'gru'] %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lookback" class="form-label">Istorijos ilgis (dienos)</label>
+                                <input type="number" class="form-control" id="lookback" name="lookback" 
+                                       value="{{ config.lookback }}" min="1" max="365">
+                                <div class="form-text">Kiek praeities dienų naudojama apmokant modelį</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="forecast_days" class="form-label">Prognozuojamos dienos</label>
+                                <input type="number" class="form-control" id="forecast_days" name="forecast_days" 
+                                       value="{{ config.forecast_days }}" min="1" max="30">
+                                <div class="form-text">Kiek dienų į priekį prognozuoti</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="batch_size" class="form-label">Partijos dydis (batch size)</label>
+                                <input type="number" class="form-control" id="batch_size" name="batch_size" 
+                                       value="{{ config.batch_size }}" min="1" max="512">
+                                <div class="form-text">Kiek pavyzdžių apdorojama vienu metu</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="epochs" class="form-label">Epochų skaičius</label>
+                                <input type="number" class="form-control" id="epochs" name="epochs" 
+                                       value="{{ config.epochs }}" min="1" max="1000">
+                                <div class="form-text">Apmokymo ciklų skaičius</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="learning_rate" class="form-label">Mokymosi greitis</label>
+                                <input type="number" class="form-control" id="learning_rate" name="learning_rate" 
+                                       value="{{ config.learning_rate }}" min="0.0001" max="1" step="0.0001">
+                                <div class="form-text">Mokymosi greitis optimizatoriui</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="optimizer" class="form-label">Optimizatorius</label>
+                                <select class="form-select" id="optimizer" name="optimizer">
+                                    <option value="adam" {% if config.optimizer == 'adam' %}selected{% endif %}>Adam</option>
+                                    <option value="sgd" {% if config.optimizer == 'sgd' %}selected{% endif %}>SGD</option>
+                                    <option value="rmsprop" {% if config.optimizer == 'rmsprop' %}selected{% endif %}>RMSprop</option>
+                                </select>
+                                <div class="form-text">Optimizavimo algoritmas</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="layers" class="form-label">Sluoksnių struktūra</label>
+                        <input type="text" class="form-control" id="layers" name="layers" 
+                               value="{{ config.layers|join(',') }}">
+                        <div class="form-text">Neuronų skaičius kiekviename sluoksnyje, atskirti kableliais</div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Transformer nustatymai -->
+                    {% if model_type == 'transformer' %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lookback" class="form-label">Istorijos ilgis (dienos)</label>
+                                <input type="number" class="form-control" id="lookback" name="lookback" 
+                                       value="{{ config.lookback }}" min="1" max="365">
+                                <div class="form-text">Kiek praeities dienų naudojama apmokant modelį</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="forecast_days" class="form-label">Prognozuojamos dienos</label>
+                                <input type="number" class="form-control" id="forecast_days" name="forecast_days" 
+                                       value="{{ config.forecast_days }}" min="1" max="30">
+                                <div class="form-text">Kiek dienų į priekį prognozuoti</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="attention_heads" class="form-label">Dėmesio mechanizmo galvučių skaičius</label>
+                                <input type="number" class="form-control" id="attention_heads" name="attention_heads" 
+                                       value="{{ config.attention_heads }}" min="1" max="16">
+                                <div class="form-text">Kiek dėmesio galvučių naudoti Transformer modelyje</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="batch_size" class="form-label">Partijos dydis (batch size)</label>
+                                <input type="number" class="form-control" id="batch_size" name="batch_size" 
+                                       value="{{ config.batch_size }}" min="1" max="512">
+                                <div class="form-text">Kiek pavyzdžių apdorojama vienu metu</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="epochs" class="form-label">Epochų skaičius</label>
+                                <input type="number" class="form-control" id="epochs" name="epochs" 
+                                       value="{{ config.epochs }}" min="1" max="1000">
+                                <div class="form-text">Apmokymo ciklų skaičius</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="learning_rate" class="form-label">Mokymosi greitis</label>
+                                <input type="number" class="form-control" id="learning_rate" name="learning_rate" 
+                                       value="{{ config.learning_rate }}" min="0.0001" max="1" step="0.0001">
+                                <div class="form-text">Mokymosi greitis optimizatoriui</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- CNN nustatymai -->
+                    {% if model_type == 'cnn' %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lookback" class="form-label">Istorijos ilgis (dienos)</label>
+                                <input type="number" class="form-control" id="lookback" name="lookback" 
+                                       value="{{ config.lookback }}" min="1" max="365">
+                                <div class="form-text">Kiek praeities dienų naudojama apmokant modelį</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="forecast_days" class="form-label">Prognozuojamos dienos</label>
+                                <input type="number" class="form-control" id="forecast_days" name="forecast_days" 
+                                       value="{{ config.forecast_days }}" min="1" max="30">
+                                <div class="form-text">Kiek dienų į priekį prognozuoti</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="filters" class="form-label">Filtrų skaičius</label>
+                                <input type="text" class="form-control" id="filters" name="filters" 
+                                       value="{{ config.filters|join(',') }}">
+                                <div class="form-text">Filtrų skaičius kiekviename sluoksnyje, atskirti kableliais</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="batch_size" class="form-label">Partijos dydis (batch size)</label>
+                                <input type="number" class="form-control" id="batch_size" name="batch_size" 
+                                       value="{{ config.batch_size }}" min="1" max="512">
+                                <div class="form-text">Kiek pavyzdžių apdorojama vienu metu</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="epochs" class="form-label">Epochų skaičius</label>
+                                <input type="number" class="form-control" id="epochs" name="epochs" 
+                                       value="{{ config.epochs }}" min="1" max="1000">
+                                <div class="form-text">Apmokymo ciklų skaičius</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="learning_rate" class="form-label">Mokymosi greitis</label>
+                                <input type="number" class="form-control" id="learning_rate" name="learning_rate" 
+                                       value="{{ config.learning_rate }}" min="0.0001" max="1" step="0.0001">
+                                <div class="form-text">Mokymosi greitis optimizatoriui</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- ARIMA nustatymai -->
+                    {% if model_type == 'arima' %}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="p" class="form-label">p (Auto-regressive)</label>
+                                <input type="number" class="form-control" id="p" name="p" 
+                                       value="{{ config.p }}" min="0" max="10">
+                                <div class="form-text">Autoregresinių narių skaičius</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="d" class="form-label">d (Integrated)</label>
+                                <input type="number" class="form-control" id="d" name="d" 
+                                       value="{{ config.d }}" min="0" max="2">
+                                <div class="form-text">Diferencijavimo laipsnis</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="q" class="form-label">q (Moving average)</label>
+                                <input type="number" class="form-control" id="q" name="q" 
+                                       value="{{ config.q }}" min="0" max="10">
+                                <div class="form-text">Slenkančio vidurkio narių skaičius</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="forecast_days" class="form-label">Prognozuojamos dienos</label>
+                        <input type="number" class="form-control" id="forecast_days" name="forecast_days" 
+                               value="{{ config.forecast_days }}" min="1" max="30">
+                        <div class="form-text">Kiek dienų į priekį prognozuoti</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3 text-center">
+                        <button type="submit" class="btn btn-primary" id="save-settings-btn">
+                            <i class="fas fa-save"></i> Išsaugoti nustatymus
+                        </button>
+                        <button type="button" class="btn btn-success ms-2" id="start-training-btn">
+                            <i class="fas fa-play-circle"></i> Pradėti apmokymą
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle"></i> Nustatymų pakeitimai įsigalios po kito apmokymo.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS su Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- JavaScript naudojantis API -->
+    <script>
+        // Modelio tipas
+        const modelType = '{{ model_type }}';
+        
+        // Tikrinti apmokymo progresą
+        function checkTrainingProgress() {
+            fetch(`/api/models/progress/${modelType}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.data) {
+                        // Rodome progreso kortelę
+                        document.getElementById('training-progress-card').style.display = 'block';
+                        
+                        // Atnaujiname progreso juostą
+                        const progressBar = document.getElementById('progress-bar');
+                        progressBar.style.width = `${data.data.percent}%`;
+                        progressBar.setAttribute('aria-valuenow', data.data.percent);
+                        progressBar.textContent = `${Math.round(data.data.percent)}%`;
+                        
+                        // Atnaujiname progreso informaciją
+                        document.getElementById('progress-stage').textContent = data.data.stage;
+                        document.getElementById('progress-epoch').textContent = `${data.data.epoch}/${data.data.total_epochs}`;
+                        document.getElementById('progress-time').textContent = data.data.time_remaining;
+                        document.getElementById('progress-loss').textContent = data.data.loss.toFixed(4);
+                        document.getElementById('progress-val-loss').textContent = data.data.val_loss.toFixed(4);
+                        document.getElementById('progress-message').textContent = data.data.message;
+                        
+                        // Jei apmokymas baigtas
+                        if (data.data.stage === 'Baigta' && data.data.percent >= 100) {
+                            // Išjungiame atšaukimo mygtuką
+                            document.getElementById('cancel-training-btn').disabled = true;
+                            
+                            // Po 5 sekundžių atnaujinsime puslapį
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 5000);
+                        }
+                    } else {
+                        // Paslepiam progreso kortelę, jei nėra progreso
+                        document.getElementById('training-progress-card').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida gaunant apmokymo progresą:', error);
+                });
+        }
+        
+        // Nustatymų išsaugojimo funkcija
+        document.getElementById('model-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Gauname formos duomenis
+            const formData = new FormData(this);
+            const formDataObj = {};
+            
+            // Konvertuojame FormData į objektą
+            formData.forEach((value, key) => {
+                // Specialus apdorojimas sluoksniams ir filtrams
+                if (key === 'layers' || key === 'filters') {
+                    formDataObj[key] = value.split(',').map(Number);
+                } else if (key === 'learning_rate') {
+                    formDataObj[key] = parseFloat(value);
+                } else if (['lookback', 'forecast_days', 'batch_size', 'epochs', 'p', 'd', 'q', 'attention_heads'].includes(key)) {
+                    formDataObj[key] = parseInt(value);
+                } else {
+                    formDataObj[key] = value;
+                }
+            });
+            
+            // Siunčiame duomenis
+            fetch(`/api/models/config/${modelType}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formDataObj)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Nustatymai išsaugoti sėkmingai!');
+                } else {
+                    alert('Klaida išsaugant nustatymus: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Klaida išsaugant nustatymus:', error);
+                alert('Klaida išsaugant nustatymus. Patikrinkite konsolę.');
+            });
+        });
+        
+        // Apmokymo pradžios mygtukas
+        document.getElementById('start-training-btn').addEventListener('click', function() {
+            // Siunčiame užklausą apmokymo pradžiai
+            fetch('/train_model', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `model_type=${modelType}`
+            })
+            .then(response => {
+                if (response.redirected) {
+                    // Jei buvo peradresavimas, atnaujiname puslapį po 1 sekundės
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    return response.json();
+                }
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    alert('Apmokymas pradėtas!');
+                    // Pradedame tikrinti progresą
+                    checkTrainingProgress();
+                    // Reguliariai tikriname progresą
+                    setInterval(checkTrainingProgress, 1000);
+                } else if (data) {
+                    alert('Klaida pradedant apmokymą: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Klaida pradedant apmokymą:', error);
+                // Pradėsime tikrinti progresą net jei buvo klaida (gal apmokymas prasidėjo)
+                checkTrainingProgress();
+                setInterval(checkTrainingProgress, 1000);
+            });
+        });
+        
+        // Apmokymo atšaukimo mygtukas
+        document.getElementById('cancel-training-btn').addEventListener('click', function() {
+            if (confirm('Ar tikrai norite atšaukti apmokymo procesą?')) {
+                // Siunčiame užklausą apmokymo atšaukimui
+                fetch(`/api/models/cancel/${modelType}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Apmokymo procesas atšauktas!');
+                        // Atnaujintame puslapį po 1 sekundės
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        alert('Klaida atšaukiant apmokymą: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Klaida atšaukiant apmokymą:', error);
+                    alert('Klaida atšaukiant apmokymą. Patikrinkite konsolę.');
+                });
+            }
+        });
+        
+        // Tikriname progresą iš karto užkrovus puslapį
+        checkTrainingProgress();
+        
+        // Reguliariai tikriname progresą, jei modelis yra apmokomas
+        setInterval(checkTrainingProgress, 1000);
+    </script>
+</body>
+</html>

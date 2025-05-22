@@ -1,0 +1,23 @@
+{
+    "model_type": "gru",
+    "last_trained": "2025-05-22 11:44",
+    "performance": {
+        "mape": 5.82,
+        "rmse": 132.37,
+        "accuracy": 0.9257
+    },
+    "parameters": {
+        "lookback": 30,
+        "layers": [
+            60,
+            60,
+            32,
+            64,
+            1
+        ],
+        "batch_size": 32,
+        "epochs": 100,
+        "forecast_days": 7,
+        "learning_rate": 0.001
+    }
+}

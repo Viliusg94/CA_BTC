@@ -315,7 +315,7 @@ function initPortfolioChart() {
     });
 }
 
-// Gauna duomenis ir atnaujina grafikus
+// Gauna duomenis ir atnaujina grafikų
 function updateCharts() {
     // Gauname kainos duomenis
     fetch('/trading/api/price-data?interval=1h&limit=100')
@@ -517,6 +517,92 @@ if (typeof ChartAnnotation !== 'undefined') {
     console.warn('ChartAnnotation nerastas! Anotacijos grafikuose nebus rodomos.');
 }
 
+/**
+ * Atvaizduoja Bitcoin kainos grafiką
+ * @param {Object} priceHistory - Kainos istorijos duomenys
+ * @param {Object} predictions - Prognozių duomenys
+ */
+function renderPriceChart(priceHistory, predictions) {
+    console.log("Piešiamas Bitcoin kainos grafikas");
+    
+    // Gauname kontekstą
+    const ctx = document.getElementById('price-chart').getContext('2d');
+    
+    // Tikriname, ar turime duomenis
+    if (!priceHistory || !priceHistory.dates || !priceHistory.close || 
+        priceHistory.dates.length === 0 || priceHistory.close.length === 0) {
+        console.error('Trūksta kainos istorijos duomenų');
+        return;
+    }
+    
+    // Sukuriame datasets
+    const datasets = [
+        {
+            label: 'Bitcoin kaina (USD)',
+            data: priceHistory.close,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1,
+            fill: false
+        }
+    ];
+    
+    // Jei yra prognozių, pridedame jas prie grafiko
+    if (predictions && predictions.values && predictions.values.length > 0) {
+        // Paskutinė reali kaina
+        const lastRealPrice = priceHistory.close[priceHistory.close.length - 1];
+        
+        // Visos reikšmės prognozės grafikui (paskutinė reali + prognozuojamos)
+        const predictionData = [lastRealPrice, ...predictions.values];
+        
+        // Datos prognozių grafikui (paskutinė reali data + prognozių datos)
+        const predictionDates = [
+            priceHistory.dates[priceHistory.dates.length - 1], 
+            ...predictions.dates
+        ];
+        
+        // Pridedame prognozių dataset
+        datasets.push({
+            label: 'Prognozė',
+            data: predictionData,
+            borderColor: 'rgb(255, 99, 132)',
+            borderDash: [5, 5],
+            tension: 0.1,
+            fill: false
+        });
+    }
+    
+    // Sukuriame grafiką
+    window.priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: priceHistory.dates,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Bitcoin kainos istorija ir prognozė'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            },
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Kaina (USD)'
+                    },
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+}
+
 // Inicializuojame, kai dokumentas užkrautas
 document.addEventListener('DOMContentLoaded', function() {
     // Tikriname ar yra grafikų elementai
@@ -527,6 +613,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Inicializuojame grafikus
         initCharts();
     }
+    
+    console.log('Puslapis užkrautas, piešiamas grafikas');
+    
+    // Atvaizduojame grafiką
+    renderPriceChart(priceHistory, predictions);
 });
 
 // Patikrinkite, ar duomenys turi reikiamus laukus
@@ -534,3 +625,58 @@ if (trainingData.length > 0 && !trainingData[0].hasOwnProperty('loss')) {
     console.error('Neteisingas duomenų formatas - trūksta metrikų laukų!');
     return;
 }
+
+/**
+ * Siunčia užklausą modelio apmokymui ir prognozavimui
+ */
+function trainModel() {
+    // Rodome pranešimą apie apmokymo pradžią
+    document.getElementById('training-status').textContent = 'Vyksta apmokymas...';
+    
+    console.log("Siunčiama POST užklausa į /predict");
+    
+    // Siunčiame užklausą
+    fetch('/predict', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})  // Tuščias JSON objektas
+    })
+    .then(response => {
+        console.log("Gautas atsakymas:", response.status);
+        if (!response.ok) {
+            throw new Error('API atsakymas ne OK: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Gauti duomenys:", data);
+        if (data.status === 'success') {
+            document.getElementById('training-status').textContent = 'Apmokymas baigtas sėkmingai!';
+            
+            // Atnaujiname grafiką su naujomis prognozėmis
+            if (data.predictions) {
+                // Jei turime globalią priceHistory ir window.priceChart
+                if (window.priceHistory && window.priceChart) {
+                    // Naujos prognozės
+                    const newPredictions = data.predictions;
+                    
+                    // Sunaikinti esamą grafiką
+                    window.priceChart.destroy();
+                    
+                    // Atvaizduojame naują grafiką su naujomis prognozėmis
+                    renderPriceChart(window.priceHistory, newPredictions);
+                }
+            }
+        } else {
+            document.getElementById('training-status').textContent = 'Klaida: ' + data.message;
+        }
+    })
+    .catch(error => {
+        console.error('Klaida apmokant modelį:', error);
+        document.getElementById('training-status').textContent = 'Klaida siunčiant užklausą.';
+    });
+}
+
+// Kitos funkcijos lieka tos pačios

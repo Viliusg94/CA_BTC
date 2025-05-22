@@ -1,0 +1,53 @@
+{
+    "lstm": {
+        "lookback": 30,
+        "layers": [
+            50,
+            100,
+            1
+        ],
+        "batch_size": 16,
+        "epochs": 100,
+        "forecast_days": 7,
+        "learning_rate": 0.001
+    },
+    "gru": {
+        "lookback": 30,
+        "layers": [
+            60,
+            60,
+            32,
+            64,
+            1
+        ],
+        "batch_size": 32,
+        "epochs": 100,
+        "forecast_days": 7,
+        "learning_rate": 0.001
+    },
+    "transformer": {
+        "lookback": 30,
+        "attention_heads": 4,
+        "batch_size": 32,
+        "epochs": 100,
+        "forecast_days": 7,
+        "learning_rate": 0.001
+    },
+    "cnn": {
+        "lookback": 30,
+        "filters": [
+            64,
+            128
+        ],
+        "batch_size": 32,
+        "epochs": 100,
+        "forecast_days": 7,
+        "learning_rate": 0.001
+    },
+    "arima": {
+        "p": 5,
+        "d": 1,
+        "q": 0,
+        "forecast_days": 7
+    }
+}
