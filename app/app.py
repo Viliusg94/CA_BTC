@@ -928,6 +928,147 @@ def model_history_config():
         app.logger.error(f"Klaida gaunant modelio konfigūraciją: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/predict')
+def predict_page():
+    """
+    Bitcoin kainos prognozavimo puslapis
+    """
+    try:
+        logger.info("Užkraunamas prognozavimo puslapis")
+        
+        # Gauname esamą Bitcoin kainą
+        current_price = get_real_bitcoin_price()
+        if current_price is None:
+            current_price = 45000.0  # Numatytoji reikšmė jei nepavyksta gauti realios kainos
+        
+        # Tikriname, ar turime aktyvius modelius prognozavimui
+        active_models = []
+        available_models = []
+        
+        # Pirmiausia bandome gauti modelius iš ModelManager
+        if model_manager:
+            try:
+                for model_type in model_manager.model_types:
+                    status = model_manager.get_model_status(model_type)
+                    # Tikriname, ar modelis aktyvus ir turi modelio ID
+                    if status.get('status') == 'Aktyvus' and status.get('active_model_id'):
+                        active_models.append({
+                            'type': model_type,
+                            'name': model_type.upper(),
+                            'description': f"Active {model_type.upper()} model (ID: {status.get('active_model_id')})",
+                            'performance': status.get('performance', 'Unknown'),
+                            'id': status.get('active_model_id')
+                        })
+                    # Įtraukiame į galimus modelius
+                    available_models.append(model_type)
+            except Exception as e:
+                logger.error(f"Klaida gaunant aktyvius modelius iš ModelManager: {str(e)}")
+        
+        # Tada bandome gauti aktyvius modelius iš duomenų bazės (jei DB prieinama)
+        if database_enabled:
+            try:
+                db_active_models = ModelHistory.query.filter_by(is_active=True).all()
+                
+                for model in db_active_models:
+                    # Tikriname, ar šis modelis jau yra aktyvių modelių sąraše
+                    if not any(am['type'] == model.model_type and am['id'] == model.id for am in active_models):
+                        active_models.append({
+                            'type': model.model_type,
+                            'name': model.model_type.upper(),
+                            'description': f"Active {model.model_type.upper()} model from DB (ID: {model.id})",
+                            'performance': f"MAE: {model.mae:.4f}" if model.mae else 'Unknown',
+                            'id': model.id
+                        })
+                    
+                    # Tikriname, ar šis modelio tipas jau yra galimų modelių sąraše
+                    if model.model_type not in available_models:
+                        available_models.append(model.model_type)
+            except Exception as e:
+                logger.error(f"Klaida gaunant aktyvius modelius iš DB: {str(e)}")
+        
+        # Gauname prognozavimo parametrus
+        forecast_days = request.args.get('days', 7, type=int)
+        selected_models = request.args.getlist('models')
+        
+        # Paruošiame pranešimą, jei nėra aktyvių modelių
+        message = None
+        if not active_models:
+            message = "Nėra aktyvių modelių. Eikite į modelių puslapį ir aktyvuokite bent vieną modelį."
+        
+        # Rodyti prognozes tik jei buvo pateikta specifinė užklausa
+        show_predictions = 'predict' in request.args
+        
+        # Prognozes gausime tik jei yra aktyvių modelių ir vartotojas paprašė
+        predictions = []
+        if active_models and show_predictions:
+            try:
+                # Nusprendžiame, kuriuos modelius naudoti
+                models_to_use = selected_models if selected_models else [m['type'] for m in active_models]
+                
+                # Gauname prognozes iš kiekvieno pasirinkto modelio
+                for model_type in models_to_use:
+                    # Tikriname, ar modelis prieinamas ModelManager'yje
+                    if model_manager and model_type in model_manager.model_types:
+                        try:
+                            # Gauname prognozę
+                            prediction_data = model_manager.predict(model_type, days=forecast_days)
+                            
+                            if prediction_data:
+                                predictions.append({
+                                    'model': model_type.upper(),
+                                    'days': forecast_days,
+                                    'values': prediction_data.get('values', []),
+                                    'dates': prediction_data.get('dates', []),
+                                    'accuracy': prediction_data.get('accuracy', 'Unknown')
+                                })
+                        except Exception as e:
+                            logger.error(f"Klaida gaunant prognozę iš {model_type}: {str(e)}")
+                
+                # Jei nepavyko gauti prognozių, generuojame pavyzdines
+                if not predictions:
+                    # Generuojame pavyzdines prognozes (tik demonstracijai)
+                    for model in active_models:
+                        # Generuojame atsitiktinius skaičius aplink dabartinę kainą
+                        start_price = current_price
+                        values = [start_price]
+                        
+                        for _ in range(forecast_days - 1):
+                            # Atsitiktinis pokytis ±5%
+                            change = random.uniform(-0.05, 0.05)
+                            next_price = values[-1] * (1 + change)
+                            values.append(next_price)
+                        
+                        # Generuojame datas
+                        today = datetime.now()
+                        dates = [(today + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(forecast_days)]
+                        
+                        predictions.append({
+                            'model': model['name'],
+                            'days': forecast_days,
+                            'values': values,
+                            'dates': dates,
+                            'accuracy': f"Demo data (MAE: {random.uniform(500, 2000):.2f})"
+                        })
+            except Exception as e:
+                logger.error(f"Klaida generuojant prognozes: {str(e)}")
+                message = f"Klaida generuojant prognozes: {str(e)}"
+        
+        # Grąžiname šabloną su duomenimis
+        return render_template('predict.html',
+                      latest_price=current_price,  
+                      active_models=active_models,
+                      available_models=available_models,
+                      predictions=predictions,
+                      forecast_days=forecast_days,
+                      selected_models=selected_models,
+                      show_predictions=show_predictions,
+                      message=message,
+                      price_history=None)
+    
+    except Exception as e:
+        logger.error(f"Klaida prognozavimo puslapyje: {str(e)}", exc_info=True)
+        return render_template('error.html', error=str(e))
+
 # Paleidimo kodas
 if __name__ == '__main__':
     # Paleiskite aplikaciją režimu debug=True, kad matytumėte klaidas
