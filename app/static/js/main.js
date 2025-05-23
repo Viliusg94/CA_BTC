@@ -1,7 +1,7 @@
-// Pagrindinis JavaScript failas
+// Pagrindinio puslapio JavaScript funkcionalumas
 
 document.addEventListener("DOMContentLoaded", function() {
-    // Automatiškai paslepia pranešimų laukelius po 5 sekundžių
+    // Pranešimų automatinis pašalinimas po kelių sekundžių
     var alerts = document.querySelectorAll('.alert');
     alerts.forEach(function(alert) {
         setTimeout(function() {
@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 5000);
     });
     
-    // Atnaujina laikrodį kas sekundę
+    // Kas sekundę atnaujina laikrodį
     setInterval(function() {
         var timeElement = document.getElementById('current-time');
         if (timeElement) {
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 1000);
 });
 
-// Pagalbinė funkcija skaičiams su nuliu priekyje
+// Papildoma funkcija skaičiams su nuliu priekyje
 function pad(num) {
     return (num < 10) ? '0' + num : num;
 }

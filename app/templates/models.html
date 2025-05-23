@@ -12,6 +12,53 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    
+    {% if auto_refresh %}
+    <meta http-equiv="refresh" content="{{ refresh_interval }}">
+    {% endif %}
+
+    {% if training_now and training_now|length > 0 %}
+    <meta http-equiv="refresh" content="5">
+    {% endif %}
+    
+    <!-- Enhance the training status UI -->
+    <style>
+        .training-progress-container {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .training-status-banner {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigacija -->
@@ -42,12 +89,49 @@
     <!-- Puslapio turinys -->
     <div class="container mt-5 pt-5">
         <h1 class="mb-4"><i class="fas fa-brain me-2"></i>Modelių valdymas</h1>
-        
-        <!-- Informacijos kortelė -->
-        <div class="alert alert-info mb-4" role="alert">
-            <i class="fas fa-info-circle me-2"></i>
-            <strong>Informacija:</strong> Šiame puslapyje galite valdyti ir apmokyti įvairius prognozinius modelius.
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Training notification alert -->
+        {% if training_now and training_now|length > 0 %}
+        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+            <h4 class="alert-heading">
+                <i class="fas fa-cogs me-2"></i> Vyksta modelių apmokymas
+            </h4>
+            <hr>
+            <p>Šiuo metu apmokomi šie modeliai:</p>
+            <ul>
+                {% for model in training_now %}
+                <li>
+                    <strong>{{ model.model_type|upper }}</strong>: 
+                    Progresas {{ model.progress|round(1) }}%, 
+                    Epocha {{ model.current_epoch }}/{{ model.total_epochs }},
+                    Liko {{ model.time_remaining }}
+                </li>
+                {% endfor %}
+            </ul>
+            <hr>
+            <p class="mb-0">
+                <a href="{{ url_for('training_status_page') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-external-link-alt me-1"></i> Stebėti detaliai
+                </a>
+                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="location.reload()">
+                    <i class="fas fa-sync-alt me-1"></i> Atnaujinti
+                </button>
+            </p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        {% endif %}
         
         <!-- Modelių nustatymų kortelės -->
         <div class="row mt-4">
@@ -250,6 +334,60 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Display trained models if available -->
+                                {% if model_history and model_type in model_history and model_history[model_type]|length > 0 %}
+                                <div class="mb-4">
+                                    <h6>Apmokyti modeliai:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Data</th>
+                                                    <th>MAE</th>
+                                                    <th>Epochos</th>
+                                                    <th>Statusas</th>
+                                                    <th>Veiksmai</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for model in model_history[model_type] %}
+                                                <tr {% if model.is_active %}class="table-success"{% endif %}>
+                                                    <td>{{ model.timestamp }}</td>
+                                                    <td>{{ model.metrics.mae|round(4) if model.metrics and model.metrics.mae else 'N/A' }}</td>
+                                                    <td>{{ model.epochs }}</td>
+                                                    <td>
+                                                        {% if model.is_active %}
+                                                        <span class="badge bg-success">Aktyvus</span>
+                                                        {% else %}
+                                                        <span class="badge bg-secondary">Neaktyvus</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if not model.is_active %}
+                                                        <button class="btn btn-sm btn-primary activate-model-btn" 
+                                                                data-model-type="{{ model_type }}" 
+                                                                data-model-id="{{ model.id }}">
+                                                            <i class="fas fa-check"></i> Naudoti
+                                                        </button>
+                                                        {% endif %}
+                                                        <button class="btn btn-sm btn-danger delete-model-btn"
+                                                                data-model-type="{{ model_type }}"
+                                                                data-model-id="{{ model.id }}">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-light mb-4">
+                                    <i class="fas fa-info-circle me-2"></i> Nėra apmokytų modelių.
+                                </div>
+                                {% endif %}
+                                
                                 <!-- Apmokymo mygtukas -->
                                 <p>
                                     Spauskite žemiau esantį mygtuką, kad pradėtumėte modelio apmokymą su dabartiniais nustatymais.
@@ -391,212 +529,53 @@
             });
         }
         
-        // Funkcija modelio apmokymui su progresu
+        // Function to train a model
         function trainModel(modelType) {
-            if (!confirm(`Ar tikrai norite pradėti ${modelType.toUpperCase()} modelio apmokymą?`)) {
+            if (!confirm("Ar tikrai norite pradėti " + modelType.toUpperCase() + " modelio apmokymą?")) {
                 return;
             }
             
-            // Atnaujiname mygtuko būseną
-            const trainButton = document.getElementById(`${modelType}TrainBtn`);
-            const originalText = trainButton.innerHTML;
-            trainButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Pradedama...';
-            trainButton.disabled = true;
+            // Update button state
+            var trainButton = document.getElementById(modelType + "TrainBtn");
+            if (trainButton) {
+                trainButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Pradedama...';
+                trainButton.disabled = true;
+            }
             
-            // Sukuriame formą POST užklausai
-            const form = document.createElement('form');
+            // Create form for POST request
+            var form = document.createElement('form');
             form.method = 'POST';
             form.action = '/train_model';
             
-            // Pridedame modelio tipą
-            const input = document.createElement('input');
+            // Add model type
+            var input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'model_type';
             input.value = modelType;
             form.appendChild(input);
             
-            // Pridedame formą į dokumentą ir išsiunčiame
+            // Submit the form
             document.body.appendChild(form);
             form.submit();
         }
         
-        // Funkcija modelio progreso stebėjimui
-        function pollTrainingProgress(modelType) {
-            // Tikriname, ar modelis vis dar apmokomas
-            fetch(`/api/model/progress?model_type=${modelType}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Gauname progreso elementus
-                    const progressBar = document.getElementById(`${modelType}ProgressBar`);
-                    const progressStatus = document.getElementById(`${modelType}ProgressStatus`);
-                    const progressContainer = document.getElementById(`${modelType}ProgressContainer`);
-                    
-                    if (data.progress && data.progress.status !== 'Neaktyvus') {
-                        // Rodome progreso juostą
-                        progressContainer.style.display = 'block';
-                        
-                        // Atnaujiname progreso juostą
-                        const progress = data.progress.progress || 0;
-                        progressBar.style.width = `${progress}%`;
-                        progressBar.setAttribute('aria-valuenow', progress);
-                        
-                        // Atnaujiname būsenos tekstą
-                        let statusText = data.progress.status || 'Vykdoma';
-                        if (progress < 100) {
-                            statusText += ` (${progress}%)`;
-                        }
-                        progressStatus.textContent = statusText;
-                        
-                        // Jei apmokymas baigtas, atstatome mygtuką
-                        if (progress >= 100 || data.progress.status === 'Baigta') {
-                            setTimeout(() => {
-                                // Vietoj puslapio perkrovimo, atnaujinkime modelio būseną
-                                updateModelStatusAfterTraining(modelType);
-                                
-                                // Pašalinkime progress barą
-                                progressContainer.style.display = 'none';
-                                
-                                // Atstatome mygtuką
-                                const trainButton = document.getElementById(`${modelType}TrainBtn`);
-                                trainButton.innerHTML = '<i class="fas fa-play me-2"></i>Apmokyti modelį';
-                                trainButton.disabled = false;
-                                
-                                // Parodome sėkmės pranešimą
-                                const alertDiv = document.createElement('div');
-                                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-                                alertDiv.innerHTML = `
-                                    <i class="fas fa-check-circle me-2"></i>Modelio apmokymas baigtas sėkmingai!
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                `;
-                                document.getElementById(`${modelType}_train`).appendChild(alertDiv);
-                                
-                                // Pašaliname pranešimą po 5 sekundžių
-                                setTimeout(() => {
-                                    if (alertDiv.parentNode) {
-                                        alertDiv.parentNode.removeChild(alertDiv);
-                                    }
-                                }, 5000);
-                            }, 2000);
-                        } else {
-                            // Kitaip tęsiame apklausą
-                            setTimeout(() => pollTrainingProgress(modelType), 2000);
-                        }
-                    } else {
-                        // Jei modelis neapmokomas, slepiame progreso juostą
-                        progressContainer.style.display = 'none';
-                        
-                        // Atstatome mygtuką
-                        const trainButton = document.getElementById(`${modelType}TrainBtn`);
-                        if (trainButton.disabled) {
-                            trainButton.innerHTML = '<i class="fas fa-play me-2"></i>Apmokyti modelį';
-                            trainButton.disabled = false;
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Klaida tikrinant progresą:', error);
-                    
-                    // Atstatome mygtuką klaidos atveju
-                    const trainButton = document.getElementById(`${modelType}TrainBtn`);
-                    if (trainButton.disabled) {
-                        trainButton.innerHTML = '<i class="fas fa-play me-2"></i>Apmokyti modelį';
-                        trainButton.disabled = false;
-                    }
-                });
-        }
-        
-        // Įjungiame/išjungiame parametrus pagal pasirinktą modelį
-        function toggleModelSpecificFields(modelType) {
-            console.log(`Rodomi ${modelType} modelio specifiniai laukai`);
-            
-            const form = document.getElementById(`${modelType}ConfigForm`);
-            if (!form) {
-                console.error(`Form not found: ${modelType}ConfigForm`);
-                return;
-            }
-            
-            // Slepiame visus specifinius laukus
-            const lstmFields = form.querySelectorAll('.lstm-specific');
-            const transformerFields = form.querySelectorAll('.transformer-specific');
-            const cnnFields = form.querySelectorAll('.cnn-specific');
-            
-            console.log(`${modelType} - LSTM fields: ${lstmFields.length}, Transformer fields: ${transformerFields.length}, CNN fields: ${cnnFields.length}`);
-            
-            // Pirma slepiame visus
-            lstmFields.forEach(field => field.style.display = 'none');
-            transformerFields.forEach(field => field.style.display = 'none');
-            cnnFields.forEach(field => field.style.display = 'none');
-            
-            // Tada rodome tik reikiamus
-            if (modelType === 'lstm' || modelType === 'gru') {
-                console.log(`Rodomi LSTM/GRU laukai modeliui ${modelType}`);
-                lstmFields.forEach(field => field.style.display = 'block');
-            } else if (modelType === 'transformer') {
-                console.log(`Rodomi Transformer laukai modeliui ${modelType}`);
-                transformerFields.forEach(field => field.style.display = 'block');
-            } else if (modelType === 'cnn' || modelType === 'cnn_lstm') {
-                console.log(`Rodomi CNN laukai modeliui ${modelType}`);
-                cnnFields.forEach(field => field.style.display = 'block');
-            }
-        }
-        
-        // Pridėkite šią funkciją prieš document.addEventListener
-        function updateModelStatusAfterTraining(modelType) {
-            // Tiesiogiai atnaujinkime būsenos informaciją iš API
-            fetch(`/api/model/status?model_type=${modelType}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Atnaujinkime modelio informaciją puslapyje
-                        const statusElement = document.querySelector(`#${modelType}_train .alert-info .row .col-md-4:nth-child(1) strong`);
-                        const lastTrainedElement = document.querySelector(`#${modelType}_train .alert-info .row .col-md-4:nth-child(2) strong`);
-                        const performanceElement = document.querySelector(`#${modelType}_train .alert-info .row .col-md-4:nth-child(3) strong`);
-                        
-                        if (statusElement) statusElement.nextSibling.textContent = ` ${data.status}`;
-                        if (lastTrainedElement) lastTrainedElement.nextSibling.textContent = ` ${data.last_trained}`;
-                        if (performanceElement) performanceElement.nextSibling.textContent = ` ${data.performance}`;
-                        
-                        console.log(`Modelio ${modelType} būsena atnaujinta.`);
-                    } else {
-                        console.error(`Klaida gaunant modelio ${modelType} būseną:`, data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error(`Klaida atnaujinant modelio ${modelType} būseną:`, error);
-                });
-        }
-        
-        // Inicializuojame puslapį
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Modelių tipai:', {{ model_configs|tojson }});
-            
-            // Įsitikinkite, kad visų modelių konfigūracijos matomos
-            const modelTypes = Object.keys({{ model_configs|tojson }});
-            console.log('Turime šiuos modelių tipus:', modelTypes);
-            
-            // Inicializuojame visų modelių progreso stebėjimą
-            {% for model_type in model_configs %}
-            pollTrainingProgress('{{ model_type }}');
-            toggleModelSpecificFields('{{ model_type }}');
-            {% endfor %}
-            
-            // Pridėkime event listener'ius tab'ams
-            document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
-                tab.addEventListener('shown.bs.tab', function(event) {
-                    // Gauname modelio tipą iš tab ID
-                    const tabId = event.target.id;
-                    const modelType = tabId.split('_')[0]; // pvz., "lstm_config_tab" -> "lstm"
-                    
-                    console.log(`Tab changed to ${tabId}, model type: ${modelType}`);
-                    
-                    // Patikriname, ar tai yra konfigūracijos tab'as
-                    if (tabId.includes('_config_tab')) {
-                        // Jeigu taip, iškviečiame toggleModelSpecificFields
-                        toggleModelSpecificFields(modelType);
-                    }
-                });
-            });
-        });
+        // Add page auto-refresh if training is in progress
+        {% if training_now and training_now|length > 0 %}
+        setTimeout(function() {
+            console.log("Auto-refreshing page to update training status");
+            location.reload();
+        }, 5000);  // Refresh every 5 seconds
+        {% endif %}
     </script>
+    
+    <!-- Add a proper conditional auto-refresh banner if training is in progress -->
+    {% if auto_refresh %}
+    <div class="fixed-bottom bg-dark text-white text-center py-2">
+        <div class="container">
+            <i class="fas fa-sync-alt fa-spin me-2"></i> Puslapis bus automatiškai atnaujiniony po {{ refresh_interval }} sekund. 
+            <button class="btn btn-sm btn-light ms-2" onclick="location.reload()">Atnaujinti dabar</button>
+        </div>
+    </div>
+    {% endif %}
 </body>
 </html>

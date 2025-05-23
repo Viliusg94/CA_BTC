@@ -6,6 +6,7 @@ import requests
 from datetime import datetime
 import numpy as np
 import logging
+import random
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -124,18 +125,13 @@ def generate_dummy_price_history():
     }
 
 def generate_price_predictions():
-    """
-    Generuoja paprastas ateities prognozes
-    
-    Returns:
-        dict: Kainų prognozės
-    """
+    """Generuoja paprastas ateities prognozes"""
     # Generuojame 7 dienų prognozes
     dates = []
-    predictions = []
+    values = []
     
     # Bazinė kaina
-    base_price = 45000
+    base_price = get_real_bitcoin_price() or 45000
     
     for i in range(7):
         # Datos (nuo rytojaus iki 7 dienų į priekį)
@@ -163,11 +159,12 @@ def generate_price_predictions():
         dates.append(date_str)
         
         # Generuojame prognozuojamą kainą su tendencija kilti
-        variation = np.random.randint(-500, 1500)
+        variation = random.randint(-500, 1500)
         price = base_price + variation + (i * 100)
-        predictions.append(price)
+        values.append(price)
     
+    # PATAISYMAS: Grąžiname žodyną su "dates" ir "values" raktais, ne reikšme kaip atributą
     return {
         "dates": dates,
-        "values": predictions
+        "values": values
     }

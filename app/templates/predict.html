@@ -235,6 +235,57 @@
             </div>
         </div>
         
+        <!-- Model Selection Section - Updated to show all models -->
+        <div class="card mb-4 shadow">
+            <div class="card-header py-3">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-brain"></i> Pasirinkite ML modelį
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <!-- Updated to show all available models -->
+                        <div class="model-selection mb-3">
+                            <label for="model-select" class="form-label">Prognozavimo modelis:</label>
+                            <select id="model-select" class="form-select">
+                                <!-- Ensure we're iterating through all available models -->
+                                {% if models %}
+                                    {% for model in models %}
+                                        <option value="{{ model.id }}" data-type="{{ model.type }}">
+                                            {{ model.name }} ({{ model.type }})
+                                        </option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="" disabled>Modelių nerasta</option>
+                                {% endif %}
+                            </select>
+                            <div class="form-text" id="model-description"></div>
+                        </div>
+                        
+                        <!-- Add prediction time range selection -->
+                        <div class="time-range mb-3">
+                            <label for="prediction-days" class="form-label">Prognozuojamas laikotarpis (dienomis):</label>
+                            <select id="prediction-days" class="form-select">
+                                <option value="1">1 diena</option>
+                                <option value="3">3 dienos</option>
+                                <option value="7" selected>7 dienos</option>
+                                <option value="14">14 dienų</option>
+                                <option value="30">30 dienų</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Make sure the predict button has an id for the event handler -->
+                        <div class="text-center mt-4">
+                            <button id="predict-button" class="btn btn-primary btn-lg">
+                                <i class="fas fa-chart-line me-2"></i> Prognozuoti Bitcoin kainą
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Predictions Chart (Always show this section) -->
         <div class="card shadow mb-4">
             <div class="card-header py-3">
@@ -298,5 +349,196 @@
     
     <!-- Įtraukiame naują JS failą vietoj seno -->
     <script src="{{ url_for('static', filename='js/bitcoin-charts.js') }}"></script>
+    
+    <!-- JavaScript Section - Fix prediction functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ...existing initialization code...
+            
+            // Get references to UI elements
+            const modelSelect = document.getElementById('model-select');
+            const predictionDays = document.getElementById('prediction-days');
+            const predictButton = document.getElementById('predict-button');
+            const predictionResults = document.getElementById('prediction-results');
+            
+            // Set up model selection change handler
+            modelSelect.addEventListener('change', function() {
+                updateModelDescription(this.value);
+            });
+            
+            // Initialize model description
+            if (modelSelect.value) {
+                updateModelDescription(modelSelect.value);
+            }
+            
+            // Set up predict button click handler
+            predictButton.addEventListener('click', function() {
+                // Show loading state
+                predictButton.disabled = true;
+                predictButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Generuojama prognozė...';
+                
+                // Get selected model and days
+                const modelId = modelSelect.value;
+                const days = predictionDays.value;
+                
+                if (!modelId) {
+                    alert('Prašome pasirinkti modelį');
+                    resetPredictButton();
+                    return;
+                }
+                
+                // Make API request to get prediction
+                fetch(`/api/predict?model_id=${modelId}&days=${days}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Serverio klaida');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        // Process prediction data
+                        processPrediction(data);
+                        
+                        // Show results
+                        predictionResults.style.display = 'block';
+                        
+                        // Scroll to results
+                        predictionResults.scrollIntoView({ behavior: 'smooth' });
+                    })
+                    .catch(error => {
+                        console.error('Prediction error:', error);
+                        alert(`Klaida generuojant prognozę: ${error.message}`);
+                    })
+                    .finally(() => {
+                        resetPredictButton();
+                    });
+            });
+            
+            function resetPredictButton() {
+                predictButton.disabled = false;
+                predictButton.innerHTML = '<i class="fas fa-chart-line me-2"></i> Prognozuoti Bitcoin kainą';
+            }
+            
+            function updateModelDescription(modelId) {
+                // Update the model description based on selected model
+                // This would typically fetch model details from the server
+                // For now, just clear the description
+                document.getElementById('model-description').textContent = '';
+                
+                // Optionally fetch model details if needed
+                // fetch(`/api/models/${modelId}`)...
+            }
+            
+            function processPrediction(data) {
+                // Process and display prediction data
+                if (data.predictions && data.predictions.values) {
+                    // Update prediction chart
+                    updatePredictionChart(data.predictions);
+                    
+                    // Update prediction table
+                    updatePredictionTable(data.predictions);
+                    
+                    // Update summary statistics
+                    updatePredictionSummary(data.predictions);
+                }
+            }
+            
+            function updatePredictionChart(predictions) {
+                // Get the chart canvas
+                const chartCanvas = document.getElementById('prediction-chart');
+                if (!chartCanvas) return;
+                
+                // If a chart already exists, destroy it
+                if (window.predictionChart) {
+                    window.predictionChart.destroy();
+                }
+                
+                // Create the new chart
+                const ctx = chartCanvas.getContext('2d');
+                window.predictionChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: predictions.dates || [],
+                        datasets: [{
+                            label: 'Prognozuojama Bitcoin kaina (USD)',
+                            data: predictions.values || [],
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function updatePredictionTable(predictions) {
+                // Update prediction table with values
+                const tableBody = document.getElementById('prediction-table-body');
+                if (!tableBody) return;
+                
+                tableBody.innerHTML = '';
+                
+                if (predictions.values && predictions.dates) {
+                    for (let i = 0; i < predictions.values.length; i++) {
+                        const row = document.createElement('tr');
+                        
+                        const dateCell = document.createElement('td');
+                        dateCell.textContent = predictions.dates[i] || `Diena ${i+1}`;
+                        
+                        const valueCell = document.createElement('td');
+                        valueCell.textContent = `$${predictions.values[i].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                        
+                        row.appendChild(dateCell);
+                        row.appendChild(valueCell);
+                        tableBody.appendChild(row);
+                    }
+                }
+            }
+            
+            function updatePredictionSummary(predictions) {
+                // Update prediction summary statistics
+                if (!predictions.values || predictions.values.length === 0) return;
+                
+                const currentPrice = window.currentPrice || predictions.values[0];
+                const latestPrediction = predictions.values[predictions.values.length - 1];
+                
+                // Calculate change and percentage
+                const change = latestPrediction - currentPrice;
+                const percentChange = (change / currentPrice) * 100;
+                
+                // Update summary elements if they exist
+                const predictionValue = document.getElementById('prediction-value');
+                if (predictionValue) {
+                    predictionValue.textContent = `$${latestPrediction.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                }
+                
+                const predictionChange = document.getElementById('prediction-change');
+                if (predictionChange) {
+                    predictionChange.textContent = `${change >= 0 ? '+' : ''}$${change.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    predictionChange.className = change >= 0 ? 'text-success' : 'text-danger';
+                }
+                
+                const predictionPercent = document.getElementById('prediction-percent');
+                if (predictionPercent) {
+                    predictionPercent.textContent = `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%`;
+                    predictionPercent.className = percentChange >= 0 ? 'text-success' : 'text-danger';
+                }
+            }
+        });
+    </script>
 </body>
 </html>

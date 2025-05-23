@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Training Debug{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Training Status Debug</h1>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Start Training</h5>
+                </div>
+                <div class="card-body">
+                    <form id="directTrainingForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="modelType">Model Type:</label>
+                                    <select class="form-control" id="modelType" name="model_type">
+                                        <option value="lstm">LSTM</option>
+                                        <option value="gru">GRU</option>
+                                        <option value="transformer">Transformer</option>
+                                        <option value="cnn">CNN</option>
+                                        <option value="cnn_lstm">CNN-LSTM</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mt-md-4">
+                                    <button type="button" class="btn btn-primary" onclick="startTraining()">Start Training</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Training Thread Status</h5>
+                </div>
+                <div class="card-body" id="thread-status">
+                    Loading thread status...
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Training Progress</h5>
+                </div>
+                <div class="card-body" id="training-progress">
+                    Loading training progress...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Debug Log</h5>
+                </div>
+                <div class="card-body">
+                    <pre id="debug-log" style="max-height: 400px; overflow: auto;"></pre>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-secondary" onclick="clearLog()">Clear Log</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to add log entries
+    function logMessage(message) {
+        const now = new Date();
+        const timestamp = now.toLocaleTimeString();
+        const logEntry = `[${timestamp}] ${message}`;
+        
+        const logElement = document.getElementById('debug-log');
+        logElement.innerHTML += logEntry + '\n';
+        logElement.scrollTop = logElement.scrollHeight;
+    }
+    
+    // Function to clear log
+    function clearLog() {
+        document.getElementById('debug-log').innerHTML = '';
+    }
+    
+    // Function to start training
+    function startTraining() {
+        const modelType = document.getElementById('modelType').value;
+        logMessage(`Starting training for model type: ${modelType}`);
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('model_type', modelType);
+        
+        // Send training request
+        fetch('/train_model', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            
+            // Check for redirects
+            if (response.redirected) {
+                logMessage(`Redirected to: ${response.url}`);
+                return { success: true, redirected: true, url: response.url };
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            if (data.redirected) {
+                logMessage(`Training request successful, redirected to ${data.url}`);
+            } else {
+                logMessage(`Training response: ${JSON.stringify(data)}`);
+            }
+            
+            // Start polling for status updates
+            pollTrainingStatus(modelType);
+            pollThreadStatus();
+        })
+        .catch(error => {
+            logMessage(`Error starting training: ${error.message}`);
+        });
+    }
+    
+    // Poll for training status updates
+    function pollTrainingStatus(modelType) {
+        fetch(`/api/training_status/${modelType}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const progressElement = document.getElementById('training-progress');
+                    progressElement.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    
+                    // Log progress update
+                    logMessage(`Training progress for ${modelType}: ${data.progress_percentage}%`);
+                    
+                    // If still training, continue polling
+                    if (data.is_training) {
+                        setTimeout(() => pollTrainingStatus(modelType), 2000);
+                    } else {
+                        logMessage(`Training for ${modelType} is not active`);
+                    }
+                } else {
+                    document.getElementById('training-progress').innerHTML = 
+                        `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    logMessage(`Error getting training status: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                document.getElementById('training-progress').innerHTML = 
+                    `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                logMessage(`Error polling training status: ${error.message}`);
+            });
+    }
+    
+    // Poll for thread status
+    function pollThreadStatus() {
+        fetch('/api/thread_status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const threadElement = document.getElementById('thread-status');
+                    threadElement.innerHTML = `<pre>${JSON.stringify(data.threads, null, 2)}</pre>`;
+                    
+                    // Check if any threads are alive
+                    let anyThreadAlive = false;
+                    for (const [modelType, status] of Object.entries(data.threads)) {
+                        if (status.alive) {
+                            anyThreadAlive = true;
+                            logMessage(`Thread for ${modelType} is running`);
+                        }
+                    }
+                    
+                    // Continue polling if any thread is alive
+                    if (anyThreadAlive) {
+                        setTimeout(pollThreadStatus, 2000);
+                    } else {
+                        logMessage('No active training threads');
+                    }
+                } else {
+                    document.getElementById('thread-status').innerHTML = 
+                        `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    logMessage(`Error getting thread status: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                document.getElementById('thread-status').innerHTML = 
+                    `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                logMessage(`Error polling thread status: ${error.message}`);
+            });
+    }
+    
+    // Initialize polling
+    document.addEventListener('DOMContentLoaded', function() {
+        logMessage('Training debug page loaded');
+        pollThreadStatus();
+        
+        // Poll training status for all model types
+        ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm'].forEach(modelType => {
+            pollTrainingStatus(modelType);
+        });
+    });
+</script>
+{% endblock %}

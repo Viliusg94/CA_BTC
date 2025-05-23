@@ -62,17 +62,28 @@
         
         try {
             {% if predictions is defined and predictions %}
-                console.log("Setting predictions from template: {{ predictions|length }} predictions");
-                var predictionsData = {{ predictions|tojson|safe }};
+                console.log("Setting predictions from template");
+                // Jei predictions.values yra apibrėžtas
+                {% if predictions.values is defined %}
+                    // naujas formatas
+                    var predictionsData = {
+                        values: {{ predictions.values|tojson|safe }},
+                        dates: {% if predictions.dates is defined %}{{ predictions.dates|tojson|safe }}{% else %}[]{% endif %}
+                    };
+                {% else %}
+                    // senas formatas
+                    var predictionsData = {{ predictions|tojson|safe }};
+                {% endif %}
+                
                 window.predictions = predictionsData;
                 console.log("predictions set successfully:", window.predictions);
             {% else %}
                 console.log("No predictions from template");
-                window.predictions = [];
+                window.predictions = {values: [], dates: []};
             {% endif %}
         } catch(e) {
             console.error("Error setting predictions:", e);
-            window.predictions = [];
+            window.predictions = {values: [], dates: []};
         }
     })();
     </script>
@@ -114,26 +125,50 @@
                             {% endif %}
                         </h1>
                         
-                        <!-- Price Change -->
-                        {% if price_change %}
-                            {% if price_change.direction == 'up' %}
-                                <h5 class="text-success">
-                                    <i class="fas fa-arrow-up"></i> 
-                                    +${{ "%.2f"|format(price_change.value) }} 
-                                    (+{{ "%.2f"|format(price_change.percent) }}%)
-                                </h5>
-                            {% elif price_change.direction == 'down' %}
-                                <h5 class="text-danger">
-                                    <i class="fas fa-arrow-down"></i> 
-                                    ${{ "%.2f"|format(price_change.value) }} 
-                                    ({{ "%.2f"|format(price_change.percent) }}%)
-                                </h5>
+                        <!-- Price Change - Poprawione dla zgodności z typem liczbowym zamiast obiektu -->
+                        {% if price_change is defined %}
+                            {% if price_change is number %}
+                                {% if price_change > 0 %}
+                                    <h5 class="text-success">
+                                        <i class="fas fa-arrow-up"></i> 
+                                        +${{ "%.2f"|format(price_change) }} 
+                                        (+{{ "%.2f"|format((price_change/latest_price)*100) }}%)
+                                    </h5>
+                                {% elif price_change < 0 %}
+                                    <h5 class="text-danger">
+                                        <i class="fas fa-arrow-down"></i> 
+                                        ${{ "%.2f"|format(price_change) }} 
+                                        ({{ "%.2f"|format((price_change/latest_price)*100) }}%)
+                                    </h5>
+                                {% else %}
+                                    <h5 class="text-light">
+                                        <i class="fas fa-minus"></i> 
+                                        $0.00 (0.00%)
+                                    </h5>
+                                {% endif %}
                             {% else %}
-                                <h5 class="text-light">
-                                    <i class="fas fa-minus"></i> 
-                                    ${{ "%.2f"|format(price_change.value) }} 
-                                    ({{ "%.2f"|format(price_change.percent) }}%)
-                                </h5>
+                                <!-- Jeśli price_change ma stary format obiektu -->
+                                {% if price_change.direction is defined and price_change.value is defined %}
+                                    {% if price_change.direction == 'up' %}
+                                        <h5 class="text-success">
+                                            <i class="fas fa-arrow-up"></i> 
+                                            +${{ "%.2f"|format(price_change.value) }} 
+                                            (+{{ "%.2f"|format(price_change.percent) }}%)
+                                        </h5>
+                                    {% elif price_change.direction == 'down' %}
+                                        <h5 class="text-danger">
+                                            <i class="fas fa-arrow-down"></i> 
+                                            ${{ "%.2f"|format(price_change.value) }} 
+                                            ({{ "%.2f"|format(price_change.percent) }}%)
+                                        </h5>
+                                    {% else %}
+                                        <h5 class="text-light">
+                                            <i class="fas fa-minus"></i> 
+                                            ${{ "%.2f"|format(price_change.value) }} 
+                                            ({{ "%.2f"|format(price_change.percent) }}%)
+                                        </h5>
+                                    {% endif %}
+                                {% endif %}
                             {% endif %}
                         {% endif %}
                         

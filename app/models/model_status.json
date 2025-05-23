@@ -1,20 +1,32 @@
 {
-  "lstm": {
-    "status": "Aktyvus",
-    "last_trained": "2025-05-22 18:49:33",
-    "performance": "MAE: 450.0",
-    "active_model_id": "9"
-  },
-  "gru": {
-    "status": "Aktyvus",
-    "last_trained": "2025-05-22 18:49:33",
-    "performance": "MAE: 470.0",
-    "active_model_id": "1"
-  },
-  "transformer": {
-    "status": "Aktyvus",
-    "last_trained": "2025-05-22 18:49:33",
-    "performance": "MAE: 510.0",
-    "active_model_id": "2"
-  }
+    "lstm": {
+        "status": "Apmokomas",
+        "last_trained": "2025-05-22 18:49:33",
+        "performance": "MAE: 450.0",
+        "active_model_id": "9"
+    },
+    "gru": {
+        "status": "Apmokomas",
+        "last_trained": "2025-05-22 18:49:33",
+        "performance": "MAE: 470.0",
+        "active_model_id": "1"
+    },
+    "transformer": {
+        "status": "Aktyvus",
+        "last_trained": "2025-05-22 18:49:33",
+        "performance": "MAE: 510.0",
+        "active_model_id": "2"
+    },
+    "cnn": {
+        "status": "Apmokomas",
+        "last_trained": "Niekada",
+        "performance": "Ne\u017einoma",
+        "active_model_id": null
+    },
+    "cnn_lstm": {
+        "status": "Apmokomas",
+        "last_trained": "Niekada",
+        "performance": "Ne\u017einoma",
+        "active_model_id": null
+    }
 }
