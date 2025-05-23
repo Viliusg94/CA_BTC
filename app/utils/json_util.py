@@ -1,4 +1,5 @@
 import json
+import numpy as np
 from datetime import datetime, date
 import logging
 
@@ -6,28 +7,35 @@ logger = logging.getLogger(__name__)
 
 def serialize_for_template(data):
     """
-    Konvertuoja visus duomenis, kad būtų tinkama perduoti į Flask šabloną.
-    Sprendžia datetime ir function tipo objektų serializacijos problemas.
+    Serialize data for use in templates, handling numpy arrays and datetime objects
     """
-    if data is None:
-        return None
+    def json_serializer(obj):
+        """JSON serializer for objects not serializable by default json code"""
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif hasattr(obj, 'to_dict'):
+            return obj.to_dict()
+        elif hasattr(obj, '__dict__'):
+            return obj.__dict__
+        return str(obj)
     
-    # Jei yra žodynas, apdorojame kiekvieną reikšmę
-    if isinstance(data, dict):
-        return {k: serialize_for_template(v) for k, v in data.items()}
-    
-    # Jei yra sąrašas arba tuple, apdorojame kiekvieną elementą
-    if isinstance(data, (list, tuple)):
-        return [serialize_for_template(item) for item in data]
-    
-    # Apdorojame datetime objektus
-    if isinstance(data, (datetime, date)):
-        return data.isoformat()
-    
-    # Apdorojame callable objektus (funkcijas ar metodus)
-    if callable(data):
-        logger.warning(f"Found callable object in template data: {data}")
-        return str(data)
-    
-    # Grąžiname nekeistą reikšmę, jei nebuvo poreikio konvertuoti
-    return data
+    try:
+        return json.dumps(data, default=json_serializer, ensure_ascii=False)
+    except (TypeError, ValueError) as e:
+        logger.error(f"JSON serialization error: {e}")
+        return json.dumps({})
+
+def safe_json_loads(json_string):
+    """
+    Safely load JSON string with error handling
+    """
+    try:
+        return json.loads(json_string)
+    except (json.JSONDecodeError, TypeError):
+        return {}

@@ -6760,3 +6760,129 @@ AttributeError: 'ModelManager' object has no attribute 'predict'
 2025-05-23 14:12:17,103 - __main__ - INFO - Successfully processed 100 price data points
 2025-05-23 14:12:17,104 - __main__ - INFO - Successfully retrieved 100 data points
 2025-05-23 14:12:17,105 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:12:17] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:15:12,781 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:15:13,249 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:15:13,249 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112104.2632, 113214.20640000001, 114324.1496, 115434.09280000001, 116544.03600000001, 117653.97920000002, 118763.92240000001]}
+2025-05-23 14:15:13,249 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110994.32
+2025-05-23 14:15:13,250 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:15:13] "GET / HTTP/1.1" 200 -
+2025-05-23 14:15:13,311 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:15:13] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:15:13,464 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:15:13] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:15:13,465 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:15:13] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:16:00,594 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:16:00] "GET /predict HTTP/1.1" 200 -
+2025-05-23 14:16:00,638 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:16:00] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:16:00,696 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:16:00] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:16:00,700 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:16:00] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:18:45,021 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:18:45] "GET /predict HTTP/1.1" 200 -
+2025-05-23 14:18:45,066 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:18:45] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:18:45,391 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:18:45] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:18:45,394 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:18:45] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:18:59,569 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:19:00,193 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:19:00,193 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112110.0, 113220.0, 114330.0, 115440.0, 116550.0, 117660.0, 118770.0]}
+2025-05-23 14:19:00,194 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111000.0
+2025-05-23 14:19:00,240 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:19:00] "GET / HTTP/1.1" 200 -
+2025-05-23 14:19:00,280 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:19:00] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:19:00,301 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:19:00] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:19:00,304 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:19:00] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:22:13,080 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:22:13,507 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:22:13,507 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111817.5242, 112924.6284, 114031.7326, 115138.8368, 116245.941, 117353.04520000001, 118460.14940000001]}
+2025-05-23 14:22:13,507 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110710.42
+2025-05-23 14:22:13,559 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:22:13] "GET / HTTP/1.1" 200 -
+2025-05-23 14:22:13,619 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:22:13] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:22:13,969 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:22:13] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:22:13,971 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:22:13] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:22:22,564 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:22:22,853 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:22:22,853 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111833.0984, 112940.3568, 114047.6152, 115154.8736, 116262.132, 117369.3904, 118476.64880000001]}
+2025-05-23 14:22:22,853 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110725.84
+2025-05-23 14:22:22,854 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:22:22] "GET / HTTP/1.1" 200 -
+2025-05-23 14:22:22,874 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:22:22] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:22:22,900 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:22:22] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:22:22,901 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:22:22] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:25:36,264 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:25:36,771 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:25:36,771 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111857.88380000001, 112965.3876, 114072.89140000001, 115180.39520000001, 116287.899, 117395.40280000001, 118502.90660000002]}
+2025-05-23 14:25:36,773 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110750.38
+2025-05-23 14:25:36,836 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:25:36] "GET / HTTP/1.1" 200 -
+2025-05-23 14:25:36,902 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:25:36] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:25:37,213 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:25:37] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:25:37,215 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:25:37] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:29:22,848 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:29:23,304 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:29:23,305 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111969.43830000001, 113078.0466, 114186.65490000001, 115295.2632, 116403.87150000001, 117512.4798, 118621.08810000001]}
+2025-05-23 14:29:23,305 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110860.83
+2025-05-23 14:29:23,359 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:23] "GET / HTTP/1.1" 200 -
+2025-05-23 14:29:23,416 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:23] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:29:23,734 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:23] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:29:23,736 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:23] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:29:38,006 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:38] "GET /predict HTTP/1.1" 200 -
+2025-05-23 14:29:38,056 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:38] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:29:38,070 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:38] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:29:38,073 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:38] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:29:39,104 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:29:39,394 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:29:39,394 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111969.43830000001, 113078.0466, 114186.65490000001, 115295.2632, 116403.87150000001, 117512.4798, 118621.08810000001]}
+2025-05-23 14:29:39,395 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110860.83
+2025-05-23 14:29:39,395 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:39] "GET / HTTP/1.1" 200 -
+2025-05-23 14:29:39,437 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:39] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:29:39,457 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:39] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:29:39,460 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:29:39] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:33:58,719 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:33:59,235 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:33:59,235 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111942.8349, 113051.17980000001, 114159.52470000001, 115267.8696, 116376.21450000002, 117484.55940000001, 118592.90430000001]}
+2025-05-23 14:33:59,236 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110834.49
+2025-05-23 14:33:59,297 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:33:59] "GET / HTTP/1.1" 200 -
+2025-05-23 14:33:59,353 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:33:59] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:33:59,809 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:33:59] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:33:59,811 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:33:59] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:36:15,907 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:36:16,392 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:36:16,393 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111955.5912, 113064.0624, 114172.5336, 115281.0048, 116389.476, 117497.9472, 118606.4184]}
+2025-05-23 14:36:16,393 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110847.12
+2025-05-23 14:36:16,459 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:36:16] "GET / HTTP/1.1" 200 -
+2025-05-23 14:36:16,526 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:36:16] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:36:16,966 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:36:16] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:36:16,968 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:36:16] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:38:15,696 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:38:16,199 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:38:16,199 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111869.115, 112976.73, 114084.345, 115191.96, 116299.57500000001, 117407.19, 118514.80500000001]}
+2025-05-23 14:38:16,199 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110761.5
+2025-05-23 14:38:16,231 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:38:16] "GET / HTTP/1.1" 200 -
+2025-05-23 14:38:16,296 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:38:16] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:38:16,920 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:38:16] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:38:16,923 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:38:16] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:39:10,077 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:10] "GET /predict HTTP/1.1" 200 -
+2025-05-23 14:39:10,135 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:10] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:39:10,201 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:10] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:39:10,205 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:10] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:39:12,930 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:12] "GET /models HTTP/1.1" 200 -
+2025-05-23 14:39:12,987 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:12] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 14:39:15,046 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:15] "[33mGET /history HTTP/1.1[0m" 404 -
+2025-05-23 14:39:16,824 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 14:39:16,826 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:16] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 14:39:16,876 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:16] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 14:39:21,072 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:39:21,510 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:39:21,511 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111945.58210000001, 113053.95420000001, 114162.32630000002, 115270.69840000001, 116379.07050000002, 117487.44260000001, 118595.81470000002]}
+2025-05-23 14:39:21,511 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110837.21
+2025-05-23 14:39:21,513 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:21] "GET / HTTP/1.1" 200 -
+2025-05-23 14:39:21,565 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:21] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:39:21,628 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:21] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:39:21,648 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:39:21] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:40:22,662 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:40:23,155 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:40:23,155 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [111945.572, 113053.944, 114162.316, 115270.688, 116379.06, 117487.432, 118595.804]}
+2025-05-23 14:40:23,155 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110837.2
+2025-05-23 14:40:23,216 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:40:23] "GET / HTTP/1.1" 200 -
+2025-05-23 14:40:23,268 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:40:23] "GET /static/js/bitcoin-charts.js HTTP/1.1" 200 -
+2025-05-23 14:40:23,794 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:40:23] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:40:23,795 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:40:23] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:41:12,510 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:41:12] "GET /predict HTTP/1.1" 200 -
+2025-05-23 14:41:12,559 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:41:12] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:41:12,597 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:41:12] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:41:12,600 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:41:12] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:43:16,343 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:43:16] "GET /predict HTTP/1.1" 200 -
+2025-05-23 14:43:16,399 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:43:16] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:43:16,887 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:43:16] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:43:16,891 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:43:16] "[33mGET /api/predictions HTTP/1.1[0m" 404 -

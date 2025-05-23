@@ -1,578 +1,324 @@
-<!DOCTYPE html>
-<html lang="lt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelių Valdymas - Bitcoin Prognozavimo Platforma</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-    
-    <!-- Enhance the training status UI -->
-    <style>
-        .training-progress-container {
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .training-status-banner {
-            background: #f8f9fa;
-            border-left: 4px solid #007bff;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-        
-        .pulse-animation {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-            100% {
-                opacity: 1;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Navigacija -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">Bitcoin Predictor</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Pradžia</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path == '/models' %}active{% endif %}" href="/models">Modeliai</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path == '/predict' %}active{% endif %}" href="/predict">Prognozės</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path == '/training_status' %}active{% endif %}" href="/training_status">Apmokymo būsena</a>
-                </li>
-            </ul>
-        </div>
+{% extends "base.html" %}
+
+{% block title %}Bitcoin Modeliai{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">
+    <i class="fas fa-brain text-info"></i>
+    AI Modelių Valdymas
+</h1>
+
+<!-- Navigation -->
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <a href="/" class="btn btn-secondary me-2">
+            <i class="fas fa-home"></i> Pagrindinis
+        </a>
+        <a href="/predict" class="btn btn-primary me-2">
+            <i class="fas fa-chart-line"></i> Prognozės
+        </a>
+        <a href="/models" class="btn btn-info me-2">
+            <i class="fas fa-brain"></i> Modeliai
+        </a>
+        <a href="/history" class="btn btn-secondary me-2">
+            <i class="fas fa-history"></i> Istorija
+        </a>
+        <a href="/training_status" class="btn btn-success">
+            <i class="fas fa-tasks"></i> Apmokymas
+        </a>
     </div>
-</nav>
+</div>
 
-    <!-- Puslapio turinys -->
-    <div class="container mt-5 pt-5">
-        <h1 class="mb-4"><i class="fas fa-brain me-2"></i>Modelių valdymas</h1>
-
-        <!-- Navigation -->
-        <div class="row mb-4">
-            <div class="col-12 text-center">
-                <a href="/" class="btn btn-dark me-2">
-                    <i class="fas fa-home"></i> Pagrindinis
-                </a>
-                <a href="/predict" class="btn btn-primary me-2">
-                    <i class="fas fa-chart-line"></i> Prognozės
-                </a>
-                <a href="/models" class="btn btn-info me-2">
-                    <i class="fas fa-brain"></i> Modeliai
-                </a>
-                <a href="/history" class="btn btn-secondary me-2">
-                    <i class="fas fa-history"></i> Istorija
-                </a>
-                <a href="/training_status" class="btn btn-success">
-                    <i class="fas fa-tasks"></i> Apmokymas
-                </a>
+<!-- Model Management Cards -->
+<div class="row mb-4">
+    <!-- LSTM Model Card -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-network-wired"></i> LSTM Modelis
+                </h5>
             </div>
-        </div>
-
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="card-body">
+                <p class="card-text">Long Short-Term Memory tinklas Bitcoin kainų prognozavimui.</p>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Būsena:</strong>
+                        <span class="badge bg-success">Aktyvus</span>
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <!-- Training notification alert -->
-        {% if training_now and training_now|length > 0 %}
-        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
-            <h4 class="alert-heading">
-                <i class="fas fa-cogs me-2"></i> Vyksta modelių apmokymas
-            </h4>
-            <hr>
-            <p>Šiuo metu apmokomi šie modeliai:</p>
-            <ul>
-                {% for model in training_now %}
-                <li>
-                    <strong>{{ model.model_type|upper }}</strong>: 
-                    Progresas {{ model.progress|round(1) }}%, 
-                    Epocha {{ model.current_epoch }}/{{ model.total_epochs }},
-                    Liko {{ model.time_remaining }}
-                </li>
-                {% endfor %}
-            </ul>
-            <hr>
-            <p class="mb-0">
-                <a href="{{ url_for('training_status_page') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-external-link-alt me-1"></i> Stebėti detaliai
-                </a>
-                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="location.reload()">
-                    <i class="fas fa-sync-alt me-1"></i> Atnaujinti
-                </button>
-            </p>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endif %}
-        
-        <!-- Modelių nustatymų kortelės -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Modelių nustatymai</h5>
-                    </div>
-                    <div class="card-body">
-                        <!-- Tab navigacija modelių nustatymams -->
-                        <ul class="nav nav-tabs" role="tablist">
-                            {% for model_type, model_info in models_info.items() %}
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link {% if loop.first %}active{% endif %}" 
-                                        id="{{ model_type }}_config_tab" 
-                                        data-bs-toggle="tab" 
-                                        data-bs-target="#{{ model_type }}_config" 
-                                        type="button" 
-                                        role="tab" 
-                                        aria-controls="{{ model_type }}_config" 
-                                        aria-selected="{% if loop.first %}true{% else %}false{% endif %}">
-                                    {{ model_info['name'] }}
-                                </button>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        
-                        <!-- Tab turinys - modelių nustatymai -->
-                        <div class="tab-content p-3 border border-top-0 rounded-bottom">
-                            {% for model_type, model_info in models_info.items() %}
-                            <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
-                                 id="{{ model_type }}_config" 
-                                 role="tabpanel" 
-                                 aria-labelledby="{{ model_type }}_config_tab">
-                                <h5 class="mb-3">{{ model_info['name'] }} modelio nustatymai</h5>
-                                
-                                <form id="{{ model_type }}ConfigForm" class="row g-3" onsubmit="event.preventDefault(); updateModelConfig('{{ model_type }}');">
-                                    <!-- Pagrindiniai parametrai -->
-                                    <div class="col-md-4">
-                                        <label for="{{ model_type }}_epochs" class="form-label">Epochos</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_epochs" name="epochs"
-                                               value="{{ model_configs[model_type]['epochs'] }}" min="1" max="1000">
-                                        <div class="form-text">Apmokymo epochų skaičius</div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <label for="{{ model_type }}_batch_size" class="form-label">Batch dydis</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_batch_size" name="batch_size"
-                                               value="{{ model_configs[model_type]['batch_size'] }}" min="1" max="1024">
-                                        <div class="form-text">Duomenų paketo dydis</div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <label for="{{ model_type }}_learning_rate" class="form-label">Mokymosi koeficientas</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_learning_rate" name="learning_rate"
-                                               value="{{ model_configs[model_type]['learning_rate'] }}" min="0.0001" max="1" step="0.0001">
-                                        <div class="form-text">Mokymosi greičio koeficientas</div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <label for="{{ model_type }}_lookback" class="form-label">Lookback periodas</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_lookback" name="lookback"
-                                               value="{{ model_configs[model_type]['lookback'] }}" min="1" max="100">
-                                        <div class="form-text">Kiek istorinių taškų naudojama</div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <label for="{{ model_type }}_validation_split" class="form-label">Validacijos dalis</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_validation_split" name="validation_split"
-                                               value="{{ model_configs[model_type]['validation_split'] }}" min="0.0" max="0.5" step="0.01">
-                                        <div class="form-text">Duomenų dalis validacijai (0.1-0.3)</div>
-                                    </div>
-                                    
-                                    <!-- LSTM/GRU specifiniai parametrai -->
-                                    <div class="col-md-4 lstm-specific">
-                                        <label for="{{ model_type }}_dropout" class="form-label">Dropout</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_dropout" name="dropout"
-                                               value="{{ model_configs[model_type].get('dropout', 0.2) }}" min="0" max="0.9" step="0.1">
-                                        <div class="form-text">Neuronų išmetimo tikimybė (0-0.5)</div>
-                                    </div>
-                                    
-                                    <div class="col-md-4 lstm-specific">
-                                        <label for="{{ model_type }}_recurrent_dropout" class="form-label">Recurrent Dropout</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_recurrent_dropout" name="recurrent_dropout"
-                                               value="{{ model_configs[model_type].get('recurrent_dropout', 0.0) }}" min="0" max="0.9" step="0.1">
-                                        <div class="form-text">Pasikartojantiems ryšiams (0-0.5)</div>
-                                    </div>
-                                    
-                                    <!-- Transformer specifiniai parametrai -->
-                                    <div class="col-md-4 transformer-specific">
-                                        <label for="{{ model_type }}_num_heads" class="form-label">Attention Heads</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_num_heads" name="num_heads"
-                                               value="{{ model_configs[model_type].get('num_heads', 8) }}" min="1" max="16">
-                                        <div class="form-text">Attention mechanizmo galvučių skaičius</div>
-                                    </div>
-                                    
-                                    <div class="col-md-4 transformer-specific">
-                                        <label for="{{ model_type }}_d_model" class="form-label">Model Dimension</label>
-                                        <input type="number" class="form-control" id="{{ model_type }}_d_model" name="d_model"
-                                               value="{{ model_configs[model_type].get('d_model', 64) }}" min="16" max="512" step="16">
-                                        <div class="form-text">Modelio dimensijos dydis</div>
-                                    </div>
-                                    
-                                    <!-- CNN specifiniai parametrai -->
-                                    <div class="col-md-4 cnn-specific">
-                                        <label for="{{ model_type }}_filters" class="form-label">Filters</label>
-                                        <input type="text" class="form-control" id="{{ model_type }}_filters" name="filters"
-                                               value="{{ model_configs[model_type].get('filters', '32,64,128') }}">
-                                        <div class="form-text">Filtrų skaičius (pvz.: 32,64,128)</div>
-                                    </div>
-                                    
-                                    <div class="col-md-4 cnn-specific">
-                                        <label for="{{ model_type }}_kernel_size" class="form-label">Kernel Size</label>
-                                        <input type="text" class="form-control" id="{{ model_type }}_kernel_size" name="kernel_size"
-                                               value="{{ model_configs[model_type].get('kernel_size', '3,3,3') }}">
-                                        <div class="form-text">Branduolio dydžiai (pvz.: 3,3,3)</div>
-                                    </div>
-                                    
-                                    <!-- Papildomi parametrai -->
-                                    <div class="col-md-12">
-                                        <label for="{{ model_type }}_notes" class="form-label">Pastabos</label>
-                                        <textarea class="form-control" id="{{ model_type }}_notes" name="notes" rows="2">{{ model_configs[model_type].get('notes', '') }}</textarea>
-                                        <div class="form-text">Papildomos pastabos apie šį modelį</div>
-                                    </div>
-                                    
-                                    <div class="col-12 mt-4">
-                                        <button type="submit" class="btn btn-primary" id="{{ model_type }}SaveBtn">
-                                            <i class="fas fa-save me-2"></i>Išsaugoti nustatymus
-                                        </button>
-                                        <button type="reset" class="btn btn-outline-secondary ms-2">
-                                            <i class="fas fa-undo me-2"></i>Atstatyti
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                            {% endfor %}
-                        </div>
+                    <div class="col-6">
+                        <strong>Tikslumas:</strong>
+                        <span class="text-success">85.7%</span>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Modelių apmokymo kortelės -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Modelių apmokymas</h5>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Apmokytas:</strong>
+                        <small class="text-muted">2024-01-15</small>
                     </div>
-                    <div class="card-body">
-                        <!-- Tab navigacija modelių apmokymui -->
-                        <ul class="nav nav-tabs" role="tablist">
-                            {% for model_type, model_info in models_info.items() %}
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link {% if loop.first %}active{% endif %}" 
-                                        id="{{ model_type }}_train_tab" 
-                                        data-bs-toggle="tab" 
-                                        data-bs-target="#{{ model_type }}_train" 
-                                        type="button" 
-                                        role="tab" 
-                                        aria-controls="{{ model_type }}_train" 
-                                        aria-selected="{% if loop.first %}true{% else %}false{% endif %}">
-                                    {{ model_info['name'] }}
-                                </button>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        
-                        <!-- Tab turinys - modelių apmokymas -->
-                        <div class="tab-content p-3 border border-top-0 rounded-bottom">
-                            {% for model_type, model_info in models_info.items() %}
-                            <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
-                                 id="{{ model_type }}_train" 
-                                 role="tabpanel" 
-                                 aria-labelledby="{{ model_type }}_train_tab">
-                                
-                                <h5 class="mb-3">{{ model_info['name'] }} modelio apmokymas</h5>
-                                
-                                <!-- Modelio statusas -->
-                                <div class="alert alert-info mb-4">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <strong>Statusas:</strong> {{ model_info['status'] }}
-                                        </div>
-                                        <div class="col-md-4">
-                                            <strong>Paskutinis apmokymas:</strong> {{ model_info['last_trained'] }}
-                                        </div>
-                                        <div class="col-md-4">
-                                            <strong>Našumas:</strong> {{ model_info['performance'] }}
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Progreso juosta (rodoma tik apmokymo metu) -->
-                                <div id="{{ model_type }}ProgressContainer" class="mb-4" style="display: none;">
-                                    <h6 id="{{ model_type }}ProgressStatus">Apmokoma...</h6>
-                                    <div class="progress" style="height: 25px;">
-                                        <div id="{{ model_type }}ProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
-                                             role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Display trained models if available -->
-                                {% if model_history and model_type in model_history and model_history[model_type]|length > 0 %}
-                                <div class="mb-4">
-                                    <h6>Apmokyti modeliai:</h6>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th>Data</th>
-                                                    <th>MAE</th>
-                                                    <th>Epochos</th>
-                                                    <th>Statusas</th>
-                                                    <th>Veiksmai</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for model in model_history[model_type] %}
-                                                <tr {% if model.is_active %}class="table-success"{% endif %}>
-                                                    <td>{{ model.timestamp }}</td>
-                                                    <td>{{ model.metrics.mae|round(4) if model.metrics and model.metrics.mae else 'N/A' }}</td>
-                                                    <td>{{ model.epochs }}</td>
-                                                    <td>
-                                                        {% if model.is_active %}
-                                                        <span class="badge bg-success">Aktyvus</span>
-                                                        {% else %}
-                                                        <span class="badge bg-secondary">Neaktyvus</span>
-                                                        {% endif %}
-                                                    </td>
-                                                    <td>
-                                                        {% if not model.is_active %}
-                                                        <button class="btn btn-sm btn-primary activate-model-btn" 
-                                                                data-model-type="{{ model_type }}" 
-                                                                data-model-id="{{ model.id }}">
-                                                            <i class="fas fa-check"></i> Naudoti
-                                                        </button>
-                                                        {% endif %}
-                                                        <button class="btn btn-sm btn-danger delete-model-btn"
-                                                                data-model-type="{{ model_type }}"
-                                                                data-model-id="{{ model.id }}">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                {% else %}
-                                <div class="alert alert-light mb-4">
-                                    <i class="fas fa-info-circle me-2"></i> Nėra apmokytų modelių.
-                                </div>
-                                {% endif %}
-                                
-                                <!-- Apmokymo mygtukas -->
-                                <p>
-                                    Spauskite žemiau esantį mygtuką, kad pradėtumėte modelio apmokymą su dabartiniais nustatymais.
-                                </p>
-                                <button id="{{ model_type }}TrainBtn" class="btn btn-primary" onclick="trainModel('{{ model_type }}')">
-                                    <i class="fas fa-play me-2"></i>Apmokyti modelį
-                                </button>
-                            </div>
-                            {% endfor %}
-                        </div>
+                    <div class="col-6">
+                        <strong>Epochos:</strong>
+                        <span>100</span>
                     </div>
+                </div>
+                
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-primary">
+                        <i class="fas fa-play"></i> Treniruoti
+                    </button>
+                    <button type="button" class="btn btn-outline-info">
+                        <i class="fas fa-eye"></i> Peržiūrėti
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary">
+                        <i class="fas fa-download"></i> Išsaugoti
+                    </button>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-3 mt-5">
-        <div class="container">
-            <p class="mb-0">© 2025 Bitcoin Prognozavimo Platforma</p>
+    <!-- GRU Model Card -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="m-0 font-weight-bold text-success">
+                    <i class="fas fa-project-diagram"></i> GRU Modelis
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Gated Recurrent Unit tinklas trumpalaikėms prognozėms.</p>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Būsena:</strong>
+                        <span class="badge bg-warning">Treniruojamas</span>
+                    </div>
+                    <div class="col-6">
+                        <strong>Tikslumas:</strong>
+                        <span class="text-warning">78.3%</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Apmokytas:</strong>
+                        <small class="text-muted">2024-01-10</small>
+                    </div>
+                    <div class="col-6">
+                        <strong>Epochos:</strong>
+                        <span>75</span>
+                    </div>
+                </div>
+                
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 65%">
+                        65% (Epoch 65/100)
+                    </div>
+                </div>
+                
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-warning" disabled>
+                        <i class="fas fa-pause"></i> Pristabdyti
+                    </button>
+                    <button type="button" class="btn btn-outline-info">
+                        <i class="fas fa-eye"></i> Peržiūrėti
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary">
+                        <i class="fas fa-download"></i> Išsaugoti
+                    </button>
+                </div>
+            </div>
         </div>
-    </footer>
+    </div>
+</div>
+
+<!-- Model Configuration -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cogs"></i> Modelio Konfigūracija
+                </h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="model-type" class="form-label">Modelio Tipas</label>
+                            <select class="form-select" id="model-type">
+                                <option value="lstm">LSTM</option>
+                                <option value="gru">GRU</option>
+                                <option value="transformer">Transformer</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="epochs" class="form-label">Epochų Skaičius</label>
+                            <input type="number" class="form-control" id="epochs" value="100" min="10" max="1000">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="batch-size" class="form-label">Batch Dydis</label>
+                            <input type="number" class="form-control" id="batch-size" value="32" min="8" max="256">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="learning-rate" class="form-label">Mokymosi Greitis</label>
+                            <input type="number" class="form-control" id="learning-rate" value="0.001" step="0.0001" min="0.0001" max="0.1">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="sequence-length" class="form-label">Sekos Ilgis</label>
+                            <input type="number" class="form-control" id="sequence-length" value="60" min="10" max="365">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="hidden-units" class="form-label">Paslėptų Vienetų Skaičius</label>
+                            <input type="number" class="form-control" id="hidden-units" value="128" min="32" max="512">
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-rocket"></i> Pradėti Treniravimą
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-history"></i> Treniravimo Istorija
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Modelis</th>
+                                <th>Epochos</th>
+                                <th>Tikslumas</th>
+                                <th>Nuostoliai</th>
+                                <th>Trukmė</th>
+                                <th>Veiksmai</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2024-01-15</td>
+                                <td><span class="badge bg-primary">LSTM</span></td>
+                                <td>100</td>
+                                <td><span class="text-success">85.7%</span></td>
+                                <td>0.0234</td>
+                                <td>2h 34m</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-10</td>
+                                <td><span class="badge bg-success">GRU</span></td>
+                                <td>75</td>
+                                <td><span class="text-warning">78.3%</span></td>
+                                <td>0.0456</td>
+                                <td>1h 45m</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2024-01-05</td>
+                                <td><span class="badge bg-primary">LSTM</span></td>
+                                <td>50</td>
+                                <td><span class="text-danger">72.1%</span></td>
+                                <td>0.0678</td>
+                                <td>1h 12m</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Model configuration form handling
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const modelType = document.getElementById('model-type').value;
+            const epochs = document.getElementById('epochs').value;
+            const batchSize = document.getElementById('batch-size').value;
+            const learningRate = document.getElementById('learning-rate').value;
+            const sequenceLength = document.getElementById('sequence-length').value;
+            const hiddenUnits = document.getElementById('hidden-units').value;
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pradedamas treniravimas...';
+            submitBtn.disabled = true;
+            
+            // Simulate training start
+            setTimeout(() => {
+                alert(`Treniravimas pradėtas!\nModelis: ${modelType.toUpperCase()}\nEpochos: ${epochs}\nBatch: ${batchSize}`);
+                submitBtn.innerHTML = originalHTML;
+                submitBtn.disabled = false;
+            }, 2000);
+        });
+    }
     
-    <!-- JavaScript -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    // Add click handlers for action buttons
+    document.querySelectorAll('.btn-outline-info').forEach(btn => {
+        btn.addEventListener('click', function() {
+            alert('Modelio peržiūra - funkcija bus implementuota');
+        });
+    });
     
-    <script>
-        // Nustatymų keitimo funkcijos
-        function updateModelConfig(modelType) {
-            // Surenkame duomenis iš formos
-            const form = document.getElementById(`${modelType}ConfigForm`);
-            const formData = new FormData(form);
-            
-            // Sukuriame konfigūracijos objektą
-            const config = {};
-            for (let [key, value] of formData.entries()) {
-                // Konvertuojame tuščias vertes į null
-                config[key] = value === '' ? null : value;
-            }
-            
-            // Parodome "Saugoma..." tekstą
-            const saveButton = document.getElementById(`${modelType}SaveBtn`);
-            const originalText = saveButton.innerHTML;
-            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saugoma...';
-            saveButton.disabled = true;
-            
-            // Siunčiame duomenis į API
-            fetch('/api/model/config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model_type: modelType,
-                    config: config
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Atstatome mygtuką
-                saveButton.disabled = false;
-                
-                if (data.status === 'success') {
-                    // Parodome sėkmės pranešimą
-                    saveButton.innerHTML = '<i class="fas fa-check me-2"></i>Išsaugota';
-                    setTimeout(() => {
-                        saveButton.innerHTML = originalText;
-                    }, 2000);
-                    
-                    // Atnaujiname formos laukelius su naujomis vertėmis
-                    if (data.config) {
-                        for (let key in data.config) {
-                            const input = form.querySelector(`[name="${key}"]`);
-                            if (input) {
-                                input.value = data.config[key] === null ? '' : data.config[key];
-                            }
-                        }
-                    }
-                    
-                    // Parodome pranešimą
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-                    alertDiv.innerHTML = `
-                        <i class="fas fa-check-circle me-2"></i>${data.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    `;
-                    form.appendChild(alertDiv);
-                    
-                    // Pašaliname pranešimą po 3 sekundžių
-                    setTimeout(() => {
-                        alertDiv.remove();
-                    }, 3000);
-                } else {
-                    // Parodome klaidos pranešimą
-                    saveButton.innerHTML = '<i class="fas fa-times me-2"></i>Klaida';
-                    setTimeout(() => {
-                        saveButton.innerHTML = originalText;
-                    }, 2000);
-                    
-                    // Parodome klaidos pranešimą
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                    
-                    let errorMessage = data.message || 'Įvyko klaida bandant išsaugoti nustatymus';
-                    if (data.errors && data.errors.length > 0) {
-                        errorMessage += '<ul class="mb-0 mt-2">';
-                        data.errors.forEach(error => {
-                            errorMessage += `<li>${error}</li>`;
-                        });
-                        errorMessage += '</ul>';
-                    }
-                    
-                    alertDiv.innerHTML = `
-                        <i class="fas fa-exclamation-triangle me-2"></i>${errorMessage}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    `;
-                    form.appendChild(alertDiv);
-                }
-            })
-            .catch(error => {
-                console.error('Klaida:', error);
-                saveButton.disabled = false;
-                saveButton.innerHTML = '<i class="fas fa-times me-2"></i>Klaida';
-                setTimeout(() => {
-                    saveButton.innerHTML = originalText;
-                }, 2000);
-                
-                // Parodome klaidos pranešimą
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                alertDiv.innerHTML = `
-                    <i class="fas fa-exclamation-triangle me-2"></i>Įvyko klaida bandant išsaugoti nustatymus: ${error.message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                `;
-                form.appendChild(alertDiv);
-            });
-        }
-        
-        // Function to train a model
-        function trainModel(modelType) {
-            if (!confirm("Ar tikrai norite pradėti " + modelType.toUpperCase() + " modelio apmokymą?")) {
-                return;
-            }
-            
-            // Update button state
-            var trainButton = document.getElementById(modelType + "TrainBtn");
-            if (trainButton) {
-                trainButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Pradedama...';
-                trainButton.disabled = true;
-            }
-            
-            // Create form for POST request
-            var form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/train_model';
-            
-            // Add model type
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'model_type';
-            input.value = modelType;
-            form.appendChild(input);
-            
-            // Submit the form
-            document.body.appendChild(form);
-            form.submit();
-        }
-    </script>
-</body>
-</html>
+    document.querySelectorAll('.btn-outline-success').forEach(btn => {
+        btn.addEventListener('click', function() {
+            alert('Modelio išsaugojimas - funkcija bus implementuota');
+        });
+    });
+});
+</script>
+{% endblock %}

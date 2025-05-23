@@ -7,7 +7,25 @@ import datetime as dt
 from datetime import datetime, timedelta
 import random
 import time
-from app.utils.json_util import serialize_for_template
+from flask import Flask, render_template, request, jsonify
+
+# Simple JSON serialization function to replace the missing utility
+def serialize_for_template(data):
+    """
+    Simple JSON serialization for template use
+    """
+    try:
+        return json.dumps(data, default=str)
+    except (TypeError, ValueError):
+        return json.dumps({})
+
+# Create json_util module compatibility
+class JsonUtil:
+    @staticmethod
+    def serialize_for_template(data):
+        return serialize_for_template(data)
+
+json_util = JsonUtil()
 
 # konfigūruojame logerį
 logging.basicConfig(
@@ -601,10 +619,10 @@ def index():
         }
         
         # Serialize all data for the template
-        serialized_template_data = json_util.serialize_for_template(template_data)
+        serialized_template_data = serialize_for_template(template_data)
         
         # Pass serialized data to the template
-        return render_template('index.html', **serialized_template_data)
+        return render_template('index.html', **template_data)
                             
     except Exception as e:
         logger.error(f"Klaida index endpoint'e: {str(e)}", exc_info=True)
@@ -1120,8 +1138,8 @@ def api_price_history():
             
         logger.info(f"API: Requesting Bitcoin price history for {days} days")
         
-        # Get fresh price history data
-        history_data = get_bitcoin_price_history(days)
+        # Get fresh price history data directly from Binance
+        history_data = get_live_bitcoin_ohlc_data(days)
         
         if not history_data:
             logger.error("Failed to get Bitcoin price history")
@@ -1142,30 +1160,74 @@ def api_price_history():
             'message': str(e)
         }), 500
 
-@app.route('/api/predictions')
-def api_predictions():
-    """API endpoint for predictions data"""
+def get_live_bitcoin_ohlc_data(days=30):
+    """
+    Get live Bitcoin OHLC data directly from Binance API
+    """
     try:
-        # Get current price for baseline
-        current_price = get_real_bitcoin_price()
+        logger.info(f"Fetching live Bitcoin OHLC data for {days} days")
         
-        # Generate sample predictions for the next 7 days
-        predictions = {
-            'dates': [(datetime.now() + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(1, 8)],
-            'values': [current_price * (1 + 0.005 * i) for i in range(1, 8)]  # Small upward trend
+        # Calculate time range
+        end_time = int(datetime.now().timestamp() * 1000)
+        start_time = int((datetime.now() - timedelta(days=days + 1)).timestamp() * 1000)
+        
+        # Use daily interval for OHLC data
+        url = f"https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&startTime={start_time}&endTime={end_time}&limit={days + 5}"
+        
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+        
+        if response.status_code != 200:
+            logger.error(f"Binance API error: {response.status_code}")
+            return generate_current_mock_bitcoin_data(days)
+            
+        klines = response.json()
+        
+        if not klines:
+            logger.warning("Empty response from Binance API")
+            return generate_current_mock_bitcoin_data(days)
+        
+        # Process the kline data
+        dates = []
+        opens = []
+        highs = []
+        lows = []
+        closes = []
+        volumes = []
+        
+        for kline in klines:
+            # Binance kline format: [timestamp, open, high, low, close, volume, ...]
+            timestamp = kline[0] / 1000
+            date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+            
+            open_price = float(kline[1])
+            high_price = float(kline[2])
+            low_price = float(kline[3])
+            close_price = float(kline[4])
+            volume = float(kline[5])
+            
+            dates.append(date)
+            opens.append(open_price)
+            highs.append(high_price)
+            lows.append(low_price)
+            closes.append(close_price)
+            volumes.append(volume)
+        
+        logger.info(f"Successfully processed {len(dates)} OHLC data points")
+        
+        return {
+            'dates': dates,
+            'open': opens,
+            'high': highs,
+            'low': lows,
+            'close': closes,
+            'prices': closes,  # Backward compatibility
+            'volumes': volumes,
+            'success': True
         }
         
-        return jsonify({
-            'status': 'success',
-            'data': predictions
-        })
-        
     except Exception as e:
-        logger.error(f"Error in API predictions: {str(e)}", exc_info=True)
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
+        logger.error(f"Error getting live Bitcoin OHLC data: {str(e)}", exc_info=True)
+        return generate_current_mock_bitcoin_data(days)
 
 # Update the existing get_bitcoin_price_history function to include current data
 def get_bitcoin_price_history(days=30):

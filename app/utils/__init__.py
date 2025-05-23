@@ -1,5 +1,3 @@
 """
-Pagalbinių įrankių paketas
------------------------
-Šis paketas turi įvairias pagalbines funkcijas, filtrus ir validatorius
+Utility functions for the Bitcoin prediction app
 """

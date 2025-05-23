@@ -2,604 +2,577 @@
  * Supaprastinta, garantuotai veikianti Bitcoin grafikų versija
  */
 
-// Paleidžiame, kai puslapis užkrautas
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("Puslapis užkrautas - kuriami grafikai");
-    
-    // Add debugging for global variables with safety checks
-    console.log("=== GLOBAL VARIABLES DEBUG ===");
-    console.log("window.priceHistory exists:", typeof window.priceHistory !== 'undefined');
-    console.log("window.predictions exists:", typeof window.predictions !== 'undefined');
-    
-    // Safely access global variables
-    const priceHistory = (typeof window.priceHistory !== 'undefined') ? window.priceHistory : {"dates":[], "prices":[], "close":[], "volumes":[]};
-    const predictions = (typeof window.predictions !== 'undefined') ? window.predictions : [];
-    
-    console.log("priceHistory:", priceHistory);
-    console.log("predictions:", predictions);
-    console.log("================================");
-    
-    // Render candlestick chart
-    const candlestickElement = document.getElementById('candlestick-chart');
-    if (candlestickElement) {
-        console.log("Bandoma užkrauti žvakių grafiką...");
-        
-        // Try primary endpoint first, then fallback
-        const tryFetchCandlestickData = (url) => {
-            return fetch(url)
-                .then(response => {
-                    console.log(`API response from ${url}:`, response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                    return response.json();
-                });
-        };
-        
-        // Start with the working endpoint directly
-        tryFetchCandlestickData('/api/btc_price/history?days=100')
-            .then(data => {
-                console.log("Gauti žvakių duomenys:", data);
-                
-                // Handle different response formats
-                let chartData = {};
-                if (data.labels && data.open && data.high && data.low && data.close) {
-                    // Candlestick format
-                    chartData = data;
-                } else if (data.dates && data.open && data.high && data.low && data.prices) {
-                    // History API format
-                    chartData = {
-                        labels: data.dates,
-                        open: data.open,
-                        high: data.high,
-                        low: data.low,
-                        close: data.prices,
-                        volume: data.volumes || []
-                    };
-                } else if (data.dates && data.close) {
-                    // Simplified format - create missing data
-                    chartData = {
-                        labels: data.dates,
-                        open: data.close,  // Use close as open
-                        high: data.close.map(price => price * 1.01), // Simulate high
-                        low: data.close.map(price => price * 0.99),  // Simulate low
-                        close: data.close,
-                        volume: data.volumes || []
-                    };
-                } else if (data.dates && data.prices) {
-                    // Use prices as close
-                    chartData = {
-                        labels: data.dates,
-                        open: data.prices,
-                        high: data.prices.map(price => price * 1.01),
-                        low: data.prices.map(price => price * 0.99),
-                        close: data.prices,
-                        volume: data.volumes || []
-                    };
-                } else {
-                    throw new Error("Invalid data format received");
-                }
-                
-                if (!chartData.labels || !chartData.close || chartData.labels.length === 0) {
-                    console.error("Netinkami žvakių duomenys:", chartData);
-                    createFallbackChart(candlestickElement, 'Bitcoin Historical Price (Demo Data)');
-                    return;
-                }
-                
-                // Set chart container size
-                candlestickElement.style.width = '100%';
-                candlestickElement.style.height = '400px';
-                candlestickElement.width = candlestickElement.offsetWidth;
-                candlestickElement.height = 400;
-                
-                // Always use line chart (more reliable than candlestick plugin)
-                new Chart(candlestickElement.getContext('2d'), {
-                    type: 'line',
-                    data: { 
-                        labels: chartData.labels, 
-                        datasets: [
-                            {
-                                label: 'BTC Close Price',
-                                data: chartData.close,
-                                borderColor: '#F7931A',
-                                backgroundColor: '#F7931A20',
-                                borderWidth: 2,
-                                fill: false,
-                                tension: 0.1
-                            },
-                            {
-                                label: 'BTC High',
-                                data: chartData.high,
-                                borderColor: '#28a745',
-                                backgroundColor: '#28a74520',
-                                borderWidth: 1,
-                                fill: false,
-                                tension: 0.1
-                            },
-                            {
-                                label: 'BTC Low',
-                                data: chartData.low,
-                                borderColor: '#dc3545',
-                                backgroundColor: '#dc354520',
-                                borderWidth: 1,
-                                fill: false,
-                                tension: 0.1
-                            }
-                        ]
-                    },
-                    options: { 
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { 
-                            title: { 
-                                display: true, 
-                                text: 'Bitcoin Historical Price (OHLC)' 
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.dataset.label + ': $' + 
-                                            parseFloat(context.raw).toLocaleString(undefined, {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2
-                                            });
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                ticks: {
-                                    callback: function(value) {
-                                        return '$' + parseInt(value).toLocaleString();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                console.log("Žvakių grafikas sukurtas sėkmingai!");
-            })
-            .catch(error => {
-                console.error("Klaida užkraunant žvakių duomenis:", error);
-                createFallbackChart(candlestickElement, 'Bitcoin Historical Price (Demo Data)');
-            });
-    }
+// Global chart variables
+let candlestickChart = null;
+let predictionsChart = null;
 
-    // Render predictions chart (with historical price) - ALWAYS try to render this
-    const predictionsElement = document.getElementById('predictionsChart');
-    if (predictionsElement) {
-        console.log("Bandoma sukurti prognozių grafiką...");
-        renderPredictionsChart(predictionsElement, predictions, priceHistory);
-    } else {
-        console.log("Prognozių grafiko elementas nerastas - ID: predictionsChart");
-    }
+// Initialize charts when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing charts...');
     
-    // Always try to render prediction table
-    renderPredictionTable(predictions);
+    // Small delay to ensure all dependencies are loaded
+    setTimeout(() => {
+        initializeCandlestickChart();
+        initializePredictionsChart();
+        
+        // Auto-refresh candlestick data every 30 seconds
+        setInterval(updateCandlestickData, 30000);
+    }, 500);
 });
 
-function renderPredictionsChart(canvas, predictions, priceHistory) {
-    // Išsamūs debugging pranešimai
-    console.log("== PROGNOZIŲ GRAFIKO KŪRIMAS: PRADŽIA ==");
-    console.log("Canvas elementas:", canvas);
-    console.log("Predictions parameter:", predictions);
-    console.log("PriceHistory parameter:", priceHistory);
-    
-    // Fix canvas sizing first
-    canvas.style.width = '100%';
-    canvas.style.height = '400px';
-    canvas.width = canvas.offsetWidth;
-    canvas.height = 400;
-    
-    // Patikriname, ar turime Chart.js
-    if (typeof Chart === 'undefined') {
-        console.error("Chart.js biblioteka neužkrauta!");
+// Function to initialize the candlestick chart with fallback
+function initializeCandlestickChart() {
+    const canvas = document.getElementById('candlestick-chart');
+    if (!canvas) {
+        console.warn('Canvas element not found');
         return;
     }
     
-    console.log("Chart.js biblioteka rasta");
+    const ctx = canvas.getContext('2d');
+    console.log('Initializing candlestick chart...');
     
-    // Use parameters instead of global variables
-    const safePredictions = predictions || [];
-    const safePriceHistory = priceHistory || {};
-    
-    // Check if we have predictions - if not, show a message or historical data
-    if (!safePredictions || safePredictions.length === 0) {
-        console.log("Nėra prognozių duomenų - bandoma rodyti istorinę kainą");
-        
-        // Try to show historical price data if available
-        if (safePriceHistory && safePriceHistory.dates && safePriceHistory.dates.length > 0) {
-            const historicalPrices = safePriceHistory.prices || safePriceHistory.close || [];
-            if (historicalPrices.length > 0) {
-                console.log("Rodoma istorinė kaina:", historicalPrices.length, "taškų");
-                
-                new Chart(canvas, {
-                    type: 'line',
-                    data: {
-                        labels: safePriceHistory.dates,
-                        datasets: [{
-                            label: 'Istorinė Bitcoin kaina',
-                            data: historicalPrices,
-                            borderColor: '#F7931A',
-                            backgroundColor: '#F7931A20',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Bitcoin kainos istorija - pasirinkite modelius prognozėms'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.dataset.label + ': $' + 
-                                            parseInt(context.raw).toLocaleString();
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                display: true,
-                                title: {
-                                    display: true,
-                                    text: 'Data'
-                                }
-                            },
-                            y: {
-                                display: true,
-                                title: {
-                                    display: true,
-                                    text: 'Kaina (USD)'
-                                },
-                                ticks: {
-                                    callback: function(value) {
-                                        return '$' + parseInt(value).toLocaleString();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                console.log("Istorinės kainos grafikas sukurtas sėkmingai!");
-                return;
-            }
-        }
-        
-        // Create a simple chart with a message if no data at all
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: ['Nėra duomenų'],
-                datasets: [{
-                    label: 'Prognozės',
-                    data: [0],
-                    borderColor: '#ddd',
-                    backgroundColor: '#f8f9fa',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Nėra prognozių duomenų - pasirinkite modelius ir generuokite prognozes'
-                    }
-                },
-                scales: {
-                    y: {
-                        display: false
-                    },
-                    x: {
-                        display: false
-                    }
-                }
-            }
-        });
-        return;
-    }
-    
-    console.log("Predictions duomenys:", predictions);
-    
-    // Sukuriame grafiką su prognozėmis
-    try {
-        // Prepare datasets: historical price + each model prediction
-        const datasets = [];
-        
-        // Fix historical price data handling
-        if (typeof priceHistory !== 'undefined' && priceHistory) {
-            console.log("Price history objektas:", priceHistory);
-            
-            // Check different possible structures
-            let historicalPrices = null;
-            let historicalDates = null;
-            
-            if (priceHistory.prices && priceHistory.dates) {
-                historicalPrices = priceHistory.prices;
-                historicalDates = priceHistory.dates;
-            } else if (priceHistory.close && priceHistory.dates) {
-                historicalPrices = priceHistory.close;
-                historicalDates = priceHistory.dates;
-            }
-            
-            if (historicalPrices && historicalDates && historicalPrices.length > 0 && historicalDates.length > 0) {
-                console.log("Pridedama istorinė kaina:", historicalPrices.length, "taškų");
-                datasets.push({
-                    label: 'Istorinė kaina',
-                    data: historicalPrices,
-                    borderColor: '#888',
-                    backgroundColor: '#8882',
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: false,
-                    pointRadius: 1
-                });
-            } else {
-                console.warn("Netinkami istorinės kainos duomenys");
-            }
-        }
-        
-        // Spalvos
-        const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-        
-        // Pridedame kiekvieno modelio prognozę
-        predictions.forEach((pred, index) => {
-            if (!pred || !pred.values || !pred.dates) {
-                console.warn(`Prognozė ${index} netinkama:`, pred);
-                return;
-            }
-            
-            const values = Array.isArray(pred.values) ? pred.values : [];
-            const dates = Array.isArray(pred.dates) ? pred.dates : [];
-            
-            if (values.length === 0 || dates.length === 0) {
-                console.warn(`Prognozė ${index} turi tuščius masyvus`);
-                return;
-            }
-            
-            // Paprastas duomenų valymas
-            const cleanValues = values.map(v => {
-                const num = parseFloat(v);
-                return isNaN(num) ? 0 : num;
-            });
-            
-            console.log(`Pridedama prognozė ${index}: ${pred.model}, ${cleanValues.length} reikšmės`);
-            
-            datasets.push({
-                label: pred.model || `Modelis ${index + 1}`,
-                data: cleanValues,
-                borderColor: colors[index % colors.length],
-                backgroundColor: colors[index % colors.length] + '33',
-                borderWidth: 2,
-                tension: 0.1,
-                fill: false
-            });
-        });
-        
-        if (datasets.length === 0) {
-            console.error("Nėra tinkamų duomenų grafikui!");
-            return;
-        }
-        
-        // Gauname visas datas - prioritetas prognozių datoms
-        let allDates = [];
-        if (predictions.length > 0 && predictions[0].dates) {
-            allDates = predictions[0].dates;
-        } else if (typeof priceHistory !== 'undefined' && priceHistory && priceHistory.dates && priceHistory.dates.length > 0) {
-            allDates = priceHistory.dates;
-        }
-        
-        console.log("Naudojamos datos grafikui:", allDates.length, "elementų");
-        
-        // Sukuriame prognozių grafiką
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: allDates,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    intersect: false,
-                },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Bitcoin kainų prognozės ir istorija'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': $' + 
-                                    parseInt(context.raw).toLocaleString();
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        display: true,
-                        title: {
-                            display: true,
-                            text: 'Data'
-                        }
-                    },
-                    y: {
-                        display: true,
-                        title: {
-                            display: true,
-                            text: 'Kaina (USD)'
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + parseInt(value).toLocaleString();
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        console.log("Prognozių grafikas sukurtas sėkmingai!");
-    } catch (error) {
-        console.error("Klaida kuriant prognozių grafiką:", error);
-    }
-    
-    console.log("== PROGNOZIŲ GRAFIKO KŪRIMAS: PABAIGA ==");
+    // Use fallback implementation as the financial plugin may not work properly
+    initializeFallbackCandlestickChart(ctx);
 }
 
-/**
- * Atvaizduoja prognozių lentelę
- */
-function renderPredictionTable(predictions) {
-    const tableBody = document.getElementById('prediction-table-body');
-    if (!tableBody) return;
+// Fallback implementation using custom drawing
+function initializeFallbackCandlestickChart(ctx) {
+    console.log('Using fallback candlestick implementation');
     
-    tableBody.innerHTML = '';
-    
-    // Use parameter instead of global variable
-    const safePredictions = predictions || [];
-    
-    // Tikriname, ar turime duomenis
-    if (!safePredictions || !Array.isArray(safePredictions) || safePredictions.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Nėra prognozių duomenų</td></tr>';
-        return;
-    }
-    
-    // Filtruojame validžias prognozes
-    const validPredictions = safePredictions.filter(p => 
-        p && p.model && Array.isArray(p.values) && p.values.length > 0 && Array.isArray(p.dates) && p.dates.length > 0
-    );
-    
-    if (validPredictions.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Nėra tinkamų prognozių duomenų</td></tr>';
-        return;
-    }
-    
-    // Naudojame pirmo modelio datas kaip bazę
-    const firstPred = validPredictions[0];
-    const dates = firstPred.dates;
-    
-    // Sukuriame eilutę kiekvienai datai
-    dates.forEach((date, i) => {
-        const row = document.createElement('tr');
-        
-        // Datos stulpelis
-        const dateCell = document.createElement('td');
-        dateCell.textContent = date;
-        row.appendChild(dateCell);
-        
-        // Stulpelis kiekvienam modeliui
-        validPredictions.forEach(pred => {
-            const cell = document.createElement('td');
-            
-            if (i < pred.values.length) {
-                const value = parseFloat(pred.values[i]);
-                if (!isNaN(value)) {
-                    cell.textContent = '$' + value.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                    
-                    // Rodyklė pagal tendenciją
-                    if (i > 0 && i < pred.values.length) {
-                        const prevValue = parseFloat(pred.values[i-1]);
-                        if (!isNaN(prevValue)) {
-                            if (value > prevValue) {
-                                cell.classList.add('text-success');
-                                cell.innerHTML += ' <i class="fas fa-arrow-up"></i>';
-                            } else if (value < prevValue) {
-                                cell.classList.add('text-danger');
-                                cell.innerHTML += ' <i class="fas fa-arrow-down"></i>';
-                            }
-                        }
-                    }
-                } else {
-                    cell.textContent = 'N/A';
-                }
-            } else {
-                cell.textContent = 'N/A';
-            }
-            
-            row.appendChild(cell);
-        });
-        
-        tableBody.appendChild(row);
-    });
-}
-
-// Add fallback chart function
-function createFallbackChart(canvas, title) {
-    // Create mock data for demonstration
-    const mockData = generateMockBitcoinData();
-    
-    canvas.style.width = '100%';
-    canvas.style.height = '400px';
-    canvas.width = canvas.offsetWidth;
-    canvas.height = 400;
-    
-    new Chart(canvas.getContext('2d'), {
-        type: 'line',
+    candlestickChart = new Chart(ctx, {
+        type: 'scatter',
         data: {
-            labels: mockData.dates,
             datasets: [{
-                label: 'BTC Price (Demo)',
-                data: mockData.prices,
-                borderColor: '#F7931A',
-                backgroundColor: '#F7931A20',
-                borderWidth: 2,
-                fill: false,
-                tension: 0.1
+                label: 'Bitcoin Price',
+                data: [],
+                pointRadius: 0,
+                showLine: false,
+                backgroundColor: 'transparent'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            onHover: function(event, elements, chart) {
+                const canvas = chart.canvas;
+                canvas.style.cursor = elements.length > 0 ? 'crosshair' : 'default';
+                
+                if (elements.length > 0) {
+                    const element = elements[0];
+                    const dataIndex = element.index;
+                    
+                    createEnhancedCrosshair(canvas, event);
+                    updateChartInfoPanel(dataIndex);
+                } else {
+                    removeCrosshair();
+                    resetChartInfoPanel();
+                }
+            },
             plugins: {
                 title: {
                     display: true,
-                    text: title + ' - Демонстрационные данные'
+                    text: 'Bitcoin Live Candlestick Chart',
+                    font: { size: 20, weight: 'bold' },
+                    color: '#f3f4f6'
+                },
+                legend: { 
+                    display: false 
+                },
+                tooltip: { 
+                    enabled: false // Disable default tooltip as we use custom
                 }
             },
             scales: {
+                x: {
+                    type: 'linear',
+                    title: { 
+                        display: true, 
+                        text: '📅 Date', 
+                        color: '#d1d5db',
+                        font: { weight: 'bold' } 
+                    },
+                    grid: { color: 'rgba(156, 163, 175, 0.2)' },
+                    ticks: { 
+                        color: '#9ca3af',
+                        callback: function(value, index) {
+                            if (window.candlestickData && window.candlestickData[Math.floor(value)]) {
+                                const item = window.candlestickData[Math.floor(value)];
+                                return new Date(item.x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            }
+                            return '';
+                        }
+                    }
+                },
                 y: {
+                    title: { 
+                        display: true, 
+                        text: '💰 Price (USD)', 
+                        color: '#d1d5db',
+                        font: { weight: 'bold' } 
+                    },
+                    grid: { color: 'rgba(156, 163, 175, 0.2)' },
                     ticks: {
+                        color: '#9ca3af',
                         callback: function(value) {
-                            return '$' + parseInt(value).toLocaleString();
+                            return '$' + value.toLocaleString();
                         }
                     }
                 }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            }
+        },
+        plugins: [{
+            id: 'candlestick-draw',
+            afterDatasetsDraw: function(chart) {
+                drawCandlesticks(chart);
+            }
+        }]
+    });
+    
+    updateCandlestickData();
+}
+
+// Custom candlestick drawing function
+function drawCandlesticks(chart) {
+    const ctx = chart.ctx;
+    const chartArea = chart.chartArea;
+    
+    if (!window.candlestickData || window.candlestickData.length === 0) {
+        console.log('No candlestick data to draw');
+        return;
+    }
+    
+    const candleWidth = Math.max(4, (chartArea.right - chartArea.left) / window.candlestickData.length * 0.6);
+    
+    window.candlestickData.forEach((candle, index) => {
+        const x = chart.scales.x.getPixelForValue(index);
+        const yHigh = chart.scales.y.getPixelForValue(candle.h);
+        const yLow = chart.scales.y.getPixelForValue(candle.l);
+        const yOpen = chart.scales.y.getPixelForValue(candle.o);
+        const yClose = chart.scales.y.getPixelForValue(candle.c);
+        
+        const isBullish = candle.c >= candle.o;
+        const color = isBullish ? '#34d399' : '#f87171';
+        const fillColor = isBullish ? 'rgba(52, 211, 153, 0.8)' : 'rgba(248, 113, 113, 0.8)';
+        
+        // Draw wick (high-low line)
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, yHigh);
+        ctx.lineTo(x, yLow);
+        ctx.stroke();
+        
+        // Draw body (open-close rectangle)
+        const bodyTop = Math.min(yOpen, yClose);
+        const bodyHeight = Math.abs(yClose - yOpen) || 1;
+        
+        ctx.fillStyle = fillColor;
+        ctx.fillRect(x - candleWidth/2, bodyTop, candleWidth, bodyHeight);
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x - candleWidth/2, bodyTop, candleWidth, bodyHeight);
+    });
+}
+
+// Enhanced crosshair with better styling
+function createEnhancedCrosshair(canvas, event) {
+    removeCrosshair();
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    const crosshair = document.createElement('div');
+    crosshair.id = 'chart-crosshair';
+    crosshair.className = 'chart-crosshair';
+    crosshair.style.position = 'absolute';
+    crosshair.style.pointerEvents = 'none';
+    crosshair.style.zIndex = '999';
+    crosshair.innerHTML = `
+        <div class="crosshair-line" style="position: absolute; left: ${x}px; top: 0; width: 2px; height: ${canvas.height}px;"></div>
+        <div class="crosshair-line" style="position: absolute; left: 0; top: ${y}px; width: ${canvas.width}px; height: 2px;"></div>
+        <div style="position: absolute; left: ${x - 4}px; top: ${y - 4}px; width: 8px; height: 8px; background: #60a5fa; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(96, 165, 250, 0.8);"></div>
+    `;
+    
+    canvas.parentElement.style.position = 'relative';
+    canvas.parentElement.appendChild(crosshair);
+}
+
+// Update the chart information panel with candlestick data
+function updateChartInfoPanel(dataIndex) {
+    if (!window.candlestickData || !window.candlestickData[dataIndex]) {
+        console.log('No data for index:', dataIndex);
+        return;
+    }
+    
+    const data = window.candlestickData[dataIndex];
+    const change = data.c - data.o;
+    const changePercent = data.o > 0 ? ((change / data.o) * 100) : 0;
+    
+    // Calculate technical indicators
+    const bodySize = Math.abs(data.c - data.o);
+    const shadowSize = data.h - data.l;
+    const upperShadow = data.h - Math.max(data.o, data.c);
+    const lowerShadow = Math.min(data.o, data.c) - data.l;
+    
+    const panel = document.getElementById('chart-info-panel');
+    if (!panel) return;
+    
+    panel.className = 'chart-info-panel active';
+    
+    panel.innerHTML = `
+        <div style="text-align: center; margin-bottom: 12px;">
+            <h6 style="color: ${change >= 0 ? '#34d399' : '#f87171'}; margin: 0; font-size: 16px; font-weight: bold;">
+                ${change >= 0 ? '🚀 KYLANTIS TRENDAS' : '📉 KRINTANTIS TRENDAS'}
+            </h6>
+            <p style="margin: 5px 0 0 0; font-size: 13px; color: #9ca3af;">
+                ${new Date(data.x).toLocaleDateString('lt-LT', { 
+                    weekday: 'long',
+                    month: 'long', 
+                    day: 'numeric',
+                    year: 'numeric'
+                })}
+            </p>
+        </div>
+        
+        <div class="chart-info-content">
+            <div class="info-group">
+                <div class="info-label">Atidarymas</div>
+                <div class="info-value" style="color: #60a5fa;">$${data.o.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+            </div>
+            
+            <div class="info-group">
+                <div class="info-label">Aukščiausias</div>
+                <div class="info-value" style="color: #34d399;">$${data.h.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+            </div>
+            
+            <div class="info-group">
+                <div class="info-label">Žemiausias</div>
+                <div class="info-value" style="color: #f87171;">$${data.l.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+            </div>
+            
+            <div class="info-group">
+                <div class="info-label">Uždarymas</div>
+                <div class="info-value" style="color: #fbbf24;">$${data.c.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                <div class="info-change" style="color: ${change >= 0 ? '#34d399' : '#f87171'};">
+                    ${change >= 0 ? '+' : ''}$${change.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #4b5563;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center;">
+                <div>
+                    <div class="info-label">Amplitudė</div>
+                    <div style="color: #d1d5db; font-weight: bold; font-size: 13px;">$${(data.h - data.l).toFixed(2)}</div>
+                </div>
+                
+                <div>
+                    <div class="info-label">Kūnas</div>
+                    <div style="color: #d1d5db; font-weight: bold; font-size: 13px;">$${bodySize.toFixed(2)}</div>
+                </div>
+                
+                <div>
+                    <div class="info-label">Šešėliai</div>
+                    <div style="color: #d1d5db; font-weight: bold; font-size: 13px;">$${(upperShadow + lowerShadow).toFixed(2)}</div>
+                </div>
+                
+                <div>
+                    <div class="info-label">Signalas</div>
+                    <div style="color: ${bodySize > shadowSize * 0.7 ? '#34d399' : '#f87171'}; font-weight: bold; font-size: 13px;">
+                        ${bodySize > shadowSize * 0.7 ? '💪 Stiprus' : '⚖️ Silpnas'}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Reset chart information panel to default state
+function resetChartInfoPanel() {
+    const panel = document.getElementById('chart-info-panel');
+    if (!panel) return;
+    
+    panel.className = 'chart-info-panel';
+    panel.innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-chart-line" style="font-size: 24px; color: var(--text-muted); margin-bottom: 8px;"></i>
+            <h6 style="margin: 8px 0 4px 0; color: var(--text-secondary); font-size: 14px;">Realaus laiko Bitcoin analizė</h6>
+            <p style="margin: 0; color: var(--text-muted); font-size: 12px;">Pasirinkite bet kurią žvakę grafike detalesnei informacijai</p>
+        </div>
+    `;
+}
+
+// Remove the old hover info functions since we're using the panel now
+function updateDetailedHoverInfo(dataIndex, event, chart) {
+    // This function is no longer needed as we use the panel
+    // But keep it for compatibility
+}
+
+function removeHoverInfo() {
+    // This function is no longer needed as we use the panel
+    // But keep it for compatibility
+}
+
+// Function to fetch and update candlestick data from Binance
+async function updateCandlestickData() {
+    try {
+        console.log('Fetching candlestick data from Binance...');
+        
+        const endTime = Date.now();
+        const startTime = endTime - (30 * 24 * 60 * 60 * 1000);
+        
+        const url = `https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&startTime=${startTime}&endTime=${endTime}&limit=30`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`Binance API error: ${response.status}`);
+        }
+        
+        const klineData = await response.json();
+        
+        if (!klineData || klineData.length === 0) {
+            throw new Error('No data received from Binance');
+        }
+        
+        const processedData = processKlineDataForCandlesticks(klineData);
+        
+        if (candlestickChart) {
+            updateCandlestickChartData(candlestickChart, processedData);
+        }
+        
+        const errorDiv = document.getElementById('candlestickError');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+        
+        console.log('Candlestick chart updated successfully with', processedData.length, 'data points');
+        
+    } catch (error) {
+        console.error('Error fetching candlestick data:', error);
+        
+        const errorDiv = document.getElementById('candlestickError');
+        if (errorDiv) {
+            errorDiv.textContent = `Error loading chart data: ${error.message}`;
+            errorDiv.style.display = 'block';
+        }
+        
+        // Try to use fallback data from the API
+        try {
+            const response = await fetch('/api/price_history?days=30');
+            const data = await response.json();
+            
+            if (data && data.status === 'success' && data.data) {
+                const fallbackData = processFallbackDataForCandlesticks(data.data);
+                if (candlestickChart) {
+                    updateCandlestickChartData(candlestickChart, fallbackData);
+                }
+                console.log('Using fallback data from server API');
+            }
+        } catch (fallbackError) {
+            console.error('Fallback data also failed:', fallbackError);
+        }
+    }
+}
+
+// Process Binance data for candlestick format
+function processKlineDataForCandlesticks(klineData) {
+    console.log('Processing', klineData.length, 'kline data points');
+    
+    return klineData.map((kline, index) => ({
+        x: new Date(kline[0]),
+        o: parseFloat(kline[1]), // open
+        h: parseFloat(kline[2]), // high
+        l: parseFloat(kline[3]), // low
+        c: parseFloat(kline[4])  // close
+    }));
+}
+
+// Process fallback data for candlestick format
+function processFallbackDataForCandlesticks(data) {
+    const result = [];
+    
+    for (let i = 0; i < data.dates.length; i++) {
+        result.push({
+            x: new Date(data.dates[i]),
+            o: data.open ? data.open[i] : data.prices[i],
+            h: data.high ? data.high[i] : data.prices[i],
+            l: data.low ? data.low[i] : data.prices[i],
+            c: data.close ? data.close[i] : data.prices[i]
+        });
+    }
+    
+    return result;
+}
+
+// Update chart with candlestick data
+function updateCandlestickChartData(chart, data) {
+    if (!chart || !data) {
+        console.warn('Chart or data is missing');
+        return;
+    }
+    
+    console.log('Updating chart with', data.length, 'data points');
+    
+    // Store data globally for drawing
+    window.candlestickData = data;
+    
+    // Update scatter chart data for interaction
+    chart.data.datasets[0].data = data.map((item, index) => ({
+        x: index,
+        y: item.c
+    }));
+    
+    chart.update('none');
+}
+
+// Enhanced remove functions
+function removeCrosshair() {
+    const crosshair = document.getElementById('chart-crosshair');
+    if (crosshair) crosshair.remove();
+}
+
+function removeHoverInfo() {
+    const hoverInfo = document.getElementById('detailed-hover-info');
+    if (hoverInfo) hoverInfo.remove();
+}
+
+// Initialize predictions chart (enhanced implementation)
+function initializePredictionsChart() {
+    const canvas = document.getElementById('prediction-chart');
+    if (!canvas) {
+        console.log('Prediction chart canvas not found - probably not on predict page');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    console.log('Initializing predictions chart...');
+    
+    predictionsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: 'Istorinės Kainos',
+                data: [],
+                borderColor: '#60a5fa',
+                backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                tension: 0.4,
+                pointRadius: 1,
+                pointHoverRadius: 4
+            }, {
+                label: 'AI Prognozės',
+                data: [],
+                borderColor: '#34d399',
+                backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                tension: 0.4,
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                borderDash: [10, 5]
+            }, {
+                label: 'Patikimumo Intervalas',
+                data: [],
+                borderColor: 'rgba(251, 191, 36, 0.3)',
+                backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                fill: '+1',
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Bitcoin Kainų Prognozės su AI',
+                    font: { size: 18, weight: 'bold' },
+                    color: '#f3f4f6'
+                },
+                legend: {
+                    labels: {
+                        color: '#d1d5db',
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#f3f4f6',
+                    bodyColor: '#d1d5db',
+                    borderColor: '#60a5fa',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': $' + context.parsed.y.toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'MMM dd'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: '📅 Data',
+                        color: '#d1d5db',
+                        font: { weight: 'bold' }
+                    },
+                    grid: { color: 'rgba(156, 163, 175, 0.2)' },
+                    ticks: { color: '#9ca3af' }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: '💰 Kaina (USD)',
+                        color: '#d1d5db',
+                        font: { weight: 'bold' }
+                    },
+                    grid: { color: 'rgba(156, 163, 175, 0.2)' },
+                    ticks: {
+                        color: '#9ca3af',
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
             }
         }
     });
 }
 
-// Generate mock Bitcoin data
-function generateMockBitcoinData() {
-    const dates = [];
-    const prices = [];
-    let currentPrice = 45000;
-    
-    for (let i = 30; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        dates.push(date.toISOString().split('T')[0]);
-        
-        // Add some random variation
-        currentPrice *= (1 + (Math.random() - 0.5) * 0.02);
-        prices.push(Math.round(currentPrice));
+// Global function to update charts
+function updateCharts() {
+    if (window.priceHistory && candlestickChart) {
+        const data = processFallbackDataForCandlesticks(window.priceHistory);
+        updateCandlestickChartData(candlestickChart, data);
     }
-    
-    return { dates, prices };
 }
+
+// Export functions
+window.updateCharts = updateCharts;
+window.updateCandlestickData = updateCandlestickData;
