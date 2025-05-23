@@ -42,41 +42,6 @@
     </style>
 </head>
 <body>
-    <script>
-    // Set up global variables for charts - same as predict.html
-    (function() {
-        try {
-            {% if price_history is defined and price_history %}
-                console.log("Setting priceHistory from template");
-                var priceHistoryData = {{ price_history|tojson|safe }};
-                window.priceHistory = priceHistoryData;
-                console.log("priceHistory set successfully:", window.priceHistory);
-            {% else %}
-                console.log("No price_history from template, using empty object");
-                window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
-            {% endif %}
-        } catch(e) {
-            console.error("Error setting priceHistory:", e);
-            window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
-        }
-        
-        try {
-            {% if predictions is defined and predictions %}
-                console.log("Setting predictions from template: {{ predictions|length }} predictions");
-                var predictionsData = {{ predictions|tojson|safe }};
-                window.predictions = predictionsData;
-                console.log("predictions set successfully:", window.predictions);
-            {% else %}
-                console.log("No predictions from template");
-                window.predictions = [];
-            {% endif %}
-        } catch(e) {
-            console.error("Error setting predictions:", e);
-            window.predictions = [];
-        }
-    })();
-    </script>
-
     <div class="container-fluid py-4">
         <h1 class="text-center mb-4">
             <i class="fab fa-bitcoin text-warning"></i>
@@ -160,6 +125,53 @@
                             <canvas id="candlestick-chart"></canvas>
                         </div>
                         <div id="candlestickError" class="alert alert-warning mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add this block after the main chart, before the statistics cards -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h5 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-robot"></i> Modelių prognozės (debug)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if predictions %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Modelis</th>
+                                            <th>Prognozės reikšmės</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for prediction in predictions %}
+                                        <tr>
+                                            <td>{{ prediction.model if prediction.model is defined else 'N/A' }}</td>
+                                            <td>
+                                                {% if prediction.values is defined and prediction.values is not none and prediction.values|length > 0 %}
+                                                    {% for v in prediction.values %}
+                                                        ${{ v|round(2) }} {% if not loop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                {% elif prediction.value is defined %}
+                                                    ${{ prediction.value|round(2) }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">Nėra prognozių duomenų.</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -341,6 +353,12 @@
             document.getElementById('market-cap').textContent = 'N/A';
         }
     });
+    </script>
+    <script>
+        window.priceHistory = {{ price_history|default({'dates':[], 'prices':[], 'close':[], 'volumes':[]})|tojson|safe }};
+        window.predictions = {{ predictions|default([])|tojson|safe }};
+        console.log("priceHistory set:", window.priceHistory);
+        console.log("predictions set:", window.predictions);
     </script>
 </body>
 </html>

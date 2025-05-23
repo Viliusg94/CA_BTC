@@ -1,5 +1,5 @@
 {
-    "epochs": 50,
+    "epochs": 10,
     "batch_size": 32,
     "learning_rate": 0.001,
     "lookback": 30,
@@ -9,5 +9,10 @@
     "layers": [
         64,
         32
-    ]
+    ],
+    "num_heads": "8",
+    "d_model": "64",
+    "filters": "32,64,128",
+    "kernel_size": "3,3,3",
+    "notes": null
 }
