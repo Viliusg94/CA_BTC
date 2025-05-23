@@ -5920,3 +5920,843 @@ AttributeError: 'ModelManager' object has no attribute 'predict'
 2025-05-23 13:07:38,393 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:38] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
 2025-05-23 13:07:43,441 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:43] "GET /models HTTP/1.1" 200 -
 2025-05-23 13:07:43,473 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:43] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:07:48,525 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:48] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:07:48,571 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:48] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:07:53,611 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:53] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:07:53,639 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:53] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:07:58,667 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:58] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:07:58,690 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:07:58] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:08:03,732 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:08:03] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:08:03,769 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:08:03] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:08:06,281 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:08:06] "GET /predict HTTP/1.1" 200 -
+2025-05-23 13:08:06,325 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:08:06] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:08:06,378 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:08:06,378 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:08:06,899 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:08:06,900 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:08:06,901 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:08:06] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:13:03,264 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:03] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:03,312 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:03] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:08,509 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:08] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:08,545 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:08] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:13,599 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:13] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:13,635 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:13] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:18,677 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:18] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:18,712 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:18] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:23,749 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:23] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:23,775 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:23] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:28,824 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:28] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:28,852 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:28] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:33,893 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:33] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:33,925 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:33] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:38,959 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:38] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:38,991 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:38] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:44,043 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:44] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:44,074 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:44] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:46,722 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:46] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:46,745 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:46] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:51,684 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:13:51,686 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:51] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:13:51,728 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:51] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:56,762 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:13:56,763 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:56] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:13:56,802 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:56] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:13:59,111 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:59] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:13:59,155 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:13:59] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:04,193 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:04] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:04,226 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:04] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:08,294 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:14:08,296 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:08] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:14:08,335 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:08] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:13,390 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:14:13,391 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:13] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:14:13,429 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:13] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:18,477 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:14:18,478 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:18] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:14:18,513 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:18] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:23,430 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:23] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:23,481 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:23] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:28,507 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:28] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:28,539 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:28] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:33,569 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:33] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:33,595 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:33] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:38,639 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:38] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:38,672 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:38] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:43,710 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:43] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:43,742 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:43] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:48,777 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:48] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:48,811 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:48] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:53,843 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:53] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:53,875 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:53] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:14:58,907 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:58] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:14:58,941 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:14:58] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:03,975 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:03] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:04,006 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:04] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:09,045 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:09] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:09,077 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:09] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:14,111 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:14] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:14,144 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:14] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:19,176 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:19] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:19,207 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:19] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:24,237 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:24] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:24,263 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:24] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:29,311 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:29] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:29,348 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:29] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:34,378 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:34] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:34,412 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:34] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:39,444 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:39] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:39,476 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:39] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:44,507 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:44] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:44,540 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:44] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:49,576 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:49] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:49,607 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:49] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:54,639 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:54] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:54,676 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:54] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:15:59,714 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:59] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:15:59,741 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:15:59] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:04,785 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:04] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:04,809 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:04] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:09,859 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:09] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:09,890 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:09] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:14,923 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:14] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:14,955 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:14] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:19,996 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:19] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:20,030 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:20] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:25,060 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:25] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:25,091 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:25] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:30,125 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:30] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:30,154 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:30] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:35,193 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:35] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:35,225 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:35] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:40,273 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:40] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:40,302 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:40] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:45,333 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:45] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:45,357 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:45] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:50,398 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:50] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:50,427 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:50] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:16:55,461 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:55] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:16:55,495 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:16:55] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:00,527 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:00] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:00,557 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:00] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:05,613 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:05] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:05,655 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:05] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:10,707 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:10] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:10,741 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:10] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:15,771 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:15] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:15,791 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:15] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:20,854 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:20] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:20,873 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:20] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:20,899 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:20] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:25,951 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:25] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:25,981 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:25] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:31,046 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:31] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:31,069 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:31] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:36,128 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:36] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:36,154 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:36] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:41,210 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:41] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:41,235 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:41] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:46,290 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:46] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:46,313 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:46] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:51,374 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:51] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:51,401 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:51] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:17:56,457 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:56] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:17:56,488 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:17:56] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:01,547 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:01] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:01,577 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:01] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:06,623 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:06] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:06,646 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:06] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:11,703 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:11] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:11,729 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:11] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:16,777 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:16] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:16,806 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:16] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:21,852 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:21] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:21,877 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:21] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:21,906 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:21] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:26,959 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:26] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:26,985 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:26] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:32,041 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:32] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:32,067 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:32] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:37,123 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:37] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:37,145 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:37] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:42,197 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:42] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:42,221 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:42] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:47,277 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:47] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:47,302 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:47] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:52,354 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:52] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:52,377 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:52] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:18:57,436 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:57] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:18:57,458 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:18:57] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:02,504 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:02] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:02,526 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:02] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:07,572 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:07] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:07,595 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:07] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:12,650 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:12] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:12,686 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:12] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:17,760 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:17] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:17,787 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:17] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:22,843 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:22] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:22,869 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:22] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:27,925 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:27] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:27,951 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:27] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:33,004 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:33] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:33,027 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:33] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:38,092 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:38] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:38,119 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:38] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:43,167 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:43] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:43,193 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:43] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:48,252 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:48] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:48,275 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:48] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:53,331 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:53] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:53,355 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:53] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:19:58,411 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:58] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:19:58,436 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:19:58] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:03,485 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:03] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:03,507 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:03] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:08,553 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:08] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:08,577 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:08] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:13,632 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:13] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:13,656 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:13] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:18,822 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:18] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:18,862 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:18] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:23,906 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:23] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:23,929 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:23] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:28,996 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:28] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:29,026 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:29] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:34,086 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:34] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:34,112 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:34] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:39,159 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:39] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:39,186 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:39] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:44,237 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:44] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:44,262 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:44] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:49,319 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:49] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:49,343 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:49] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:54,403 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:54] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:54,444 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:54] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:20:59,550 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:59] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:20:59,573 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:20:59] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:04,624 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:04] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:04,652 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:04] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:09,707 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:09] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:09,734 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:09] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:14,797 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:14] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:14,829 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:14] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:19,877 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:19] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:19,906 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:19] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:24,960 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:24] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:24,989 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:24] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:30,127 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:30] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:30,166 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:30] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:35,235 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:35] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:35,257 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:35] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:40,313 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:40] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:40,339 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:40] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:45,398 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:45] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:45,424 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:45] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:50,462 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:50] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:50,489 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:50] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:21:55,537 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:55] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:21:55,562 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:21:55] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:00,619 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:00] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:00,643 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:00] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:05,703 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:05] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:05,726 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:05] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:10,774 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:10] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:10,801 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:10] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:15,854 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:15] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:15,873 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:15] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:15,896 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:15] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:20,953 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:20] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:20,980 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:20] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:26,041 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:26] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:26,069 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:26] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:31,118 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:31] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:31,141 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:31] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:36,195 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:36] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:36,223 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:36] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:41,289 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:41] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:41,317 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:41] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:46,366 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:46] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:46,388 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:46] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:51,448 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:51] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:51,473 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:51] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:22:56,532 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:56] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:22:56,555 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:22:56] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:01,644 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:01] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:01,670 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:01] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:06,735 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:06] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:06,757 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:06] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:11,825 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:11] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:11,850 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:11] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:16,904 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:16] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:16,934 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:16] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:22,003 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:22] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:22,027 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:22] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:27,079 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:27] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:27,105 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:27] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:32,153 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:32] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:32,177 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:32] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:37,237 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:37] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:37,268 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:37] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:42,323 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:42] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:42,346 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:42] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:47,400 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:47] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:47,422 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:47] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:52,470 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:52] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:52,492 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:52] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:23:57,616 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:57] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:23:57,641 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:23:57] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:02,703 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:02] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:02,728 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:02] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:07,784 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:07] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:07,805 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:07] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:12,852 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:12] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:12,874 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:12] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:12,895 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:12] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:17,952 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:17] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:17,975 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:17] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:18,506 - __main__ - INFO - === APPLICATION STARTUP INITIATED ===
+2025-05-23 13:24:18,715 - __main__ - INFO - Attempting to initialize database...
+2025-05-23 13:24:19,281 - __main__ - INFO - Attempting to initialize ModelManager...
+2025-05-23 13:24:23,035 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:23] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:23,057 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:23] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:26,035 - model_manager - INFO - Initializing ModelManager...
+2025-05-23 13:24:26,035 - model_manager - INFO - TensorFlow 2.19.0 is available
+2025-05-23 13:24:26,036 - model_manager - INFO - Created directory for cnn: d:\CA_BTC\app\models\cnn
+2025-05-23 13:24:26,036 - model_manager - INFO - Created directory for cnn_lstm: d:\CA_BTC\app\models\cnn_lstm
+2025-05-23 13:24:26,037 - model_manager - INFO - ModelManager initialization complete
+2025-05-23 13:24:26,043 - __main__ - INFO - Duomenø bazë sëkmingai inicializuota
+2025-05-23 13:24:26,044 - model_manager - INFO - Initializing ModelManager...
+2025-05-23 13:24:26,044 - model_manager - INFO - TensorFlow 2.19.0 is available
+2025-05-23 13:24:26,045 - model_manager - INFO - ModelManager initialization complete
+2025-05-23 13:24:26,045 - __main__ - INFO - ModelManager sëkmingai inicializuotas
+2025-05-23 13:24:26,058 - __main__ - INFO - === APPLICATION STARTUP COMPLETE in 7.55 seconds ===
+2025-05-23 13:24:26,058 - __main__ - INFO - Database enabled: True
+2025-05-23 13:24:26,058 - __main__ - INFO - ModelManager available: True
+2025-05-23 13:24:26,058 - __main__ - INFO - Application ready to serve requests
+2025-05-23 13:24:26,059 - __main__ - INFO - Starting Flask development server...
+2025-05-23 13:24:26,094 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.228:5000
+2025-05-23 13:24:26,094 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-05-23 13:24:28,107 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:28] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:28,133 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:28] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:33,193 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:33] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:33,218 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:33] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:38,269 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:38] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:38,291 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:38] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:43,355 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:43] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:43,377 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:43] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:43,902 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:43] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:43,923 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:43] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:44,739 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:44] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:44,773 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:44] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:45,124 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:45] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:45,144 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:45] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:45,432 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:45] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:45,460 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:45] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:45,740 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:45] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:45,763 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:45] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:47,532 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:24:47,533 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:47] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:24:47,573 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:47] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:49,342 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:49] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:24:49,395 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:49] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:24:50,127 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:50] "GET /predict HTTP/1.1" 200 -
+2025-05-23 13:24:50,169 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:50] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:24:50,364 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:24:50,365 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:24:50,825 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:24:50,826 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:24:50,827 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:50] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:24:57,692 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:24:57,982 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:24:57,983 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112110.71710000001, 113220.72420000001, 114330.73130000001, 115440.73840000002, 116550.7455, 117660.7526, 118770.75970000001]}
+2025-05-23 13:24:57,983 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111000.71
+2025-05-23 13:24:58,055 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:24:58,055 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:58] "GET / HTTP/1.1" 200 -
+2025-05-23 13:24:58,805 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:24:59,087 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:24:59,087 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112110.71710000001, 113220.72420000001, 114330.73130000001, 115440.73840000002, 116550.7455, 117660.7526, 118770.75970000001]}
+2025-05-23 13:24:59,087 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111000.71
+2025-05-23 13:24:59,087 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:24:59,089 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:24:59] "GET / HTTP/1.1" 200 -
+2025-05-23 13:34:13,796 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:34:14,259 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:34:14,259 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112135.69440000001, 113245.9488, 114356.2032, 115466.45760000001, 116576.71200000001, 117686.9664, 118797.22080000001]}
+2025-05-23 13:34:14,259 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111025.44
+2025-05-23 13:34:14,261 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:34:14,262 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:34:14] "GET / HTTP/1.1" 200 -
+2025-05-23 13:36:41,248 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:36:41,749 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:36:41,749 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112128.75570000001, 113238.94140000001, 114349.12710000001, 115459.31280000001, 116569.49850000002, 117679.68420000002, 118789.86990000002]}
+2025-05-23 13:36:41,749 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111018.57
+2025-05-23 13:36:41,751 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:36:41,751 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:36:41] "GET / HTTP/1.1" 200 -
+2025-05-23 13:37:04,269 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:37:04,547 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:37:04,547 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112125.2005, 113235.35100000001, 114345.50150000001, 115455.652, 116565.8025, 117675.95300000001, 118786.10350000001]}
+2025-05-23 13:37:04,547 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111015.05
+2025-05-23 13:37:04,603 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:37:04,604 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:37:04] "GET / HTTP/1.1" 200 -
+2025-05-23 13:38:10,802 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:38:11,258 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:38:11,259 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112034.0884, 113143.3368, 114252.5852, 115361.8336, 116471.082, 117580.3304, 118689.5788]}
+2025-05-23 13:38:11,259 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110924.84
+2025-05-23 13:38:11,259 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:38:11,261 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:11] "GET / HTTP/1.1" 200 -
+2025-05-23 13:38:15,248 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:15] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:15,297 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:15] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:20,509 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:20] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:20,540 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:20] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:25,796 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:25] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:25,831 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:25] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:30,884 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:30] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:30,906 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:30] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:35,964 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:35] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:35,995 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:35] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:41,054 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:41] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:41,077 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:41] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:46,132 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:46] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:46,156 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:46] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:48,162 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:48] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:48,191 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:48] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:51,741 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:51] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:51,762 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:51] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:38:56,793 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:56] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:38:56,824 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:38:56] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:01,878 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:01] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:01,906 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:01] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:06,958 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:06] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:06,992 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:06] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:12,041 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:12] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:12,080 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:12] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:17,133 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:17] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:17,157 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:17] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:22,211 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:22] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:22,247 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:22] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:27,279 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:27] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:27,307 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:27] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:32,342 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:32] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:32,377 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:32] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:37,486 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:37] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:37,577 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:37] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:42,626 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:42] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:42,661 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:42] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:47,691 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:47] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:47,726 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:47] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:52,759 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:52] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:52,796 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:52] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:39:57,854 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:57] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:57,883 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:57] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:39:57,905 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:39:57] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:02,970 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:02] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:02,994 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:02] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:08,061 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:08] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:08,094 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:08] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:13,154 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:13] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:13,178 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:13] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:18,246 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:18] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:18,277 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:18] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:23,331 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:23] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:23,357 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:23] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:28,416 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:28] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:28,441 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:28] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:33,509 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:33] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:33,544 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:33] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:38,604 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:38] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:38,628 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:38] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:43,681 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:43] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:43,714 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:43] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:48,776 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:48] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:48,812 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:48] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:53,896 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:53] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:53,946 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:53] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:40:59,097 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:59] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:40:59,134 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:40:59] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:41:11,717 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:11] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:41:11,741 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:11] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:41:19,244 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:19] "POST /api/model/config HTTP/1.1" 200 -
+2025-05-23 13:41:25,909 - __main__ - INFO - Training request received for model: lstm
+2025-05-23 13:41:25,909 - __main__ - WARNING - Modelis lstm jau yra apmokomas
+2025-05-23 13:41:25,911 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:25] "[32mPOST /train_model HTTP/1.1[0m" 302 -
+2025-05-23 13:41:25,921 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:41:25,922 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:25] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:41:25,967 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:25] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:41:30,149 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:30] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:41:30,191 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:30] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:41:34,741 - __main__ - INFO - Training request received for model: transformer
+2025-05-23 13:41:34,742 - __main__ - INFO - Starting training for model: transformer
+2025-05-23 13:41:34,744 - model_manager - INFO - Pradedamas modelio transformer apmokymas
+2025-05-23 13:41:34,744 - model_manager - INFO - Modelio transformer apmokymas pradëtas sëkmingai
+2025-05-23 13:41:34,745 - __main__ - INFO - Training initiated: Success
+2025-05-23 13:41:34,746 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:34] "[32mPOST /train_model HTTP/1.1[0m" 302 -
+2025-05-23 13:41:34,746 - model_manager - INFO - Config loaded for transformer: {'epochs': 50, 'batch_size': 32, 'learning_rate': 0.001, 'lookback': 30, 'dropout': 0.2, 'validation_split': 0.2, 'num_heads': 2, 'd_model': 64, 'layers': [64, 32]}
+2025-05-23 13:41:34,746 - model_manager - INFO - TensorFlow version: 2.19.0
+2025-05-23 13:41:34,747 - model_manager - INFO - Ruoðiami duomenys apmokymui (lookback=30, validation_split=0.2)
+2025-05-23 13:41:34,747 - model_manager - ERROR - Duomenø failas nerastas: d:\CA_BTC\app\data\btc_data_1y_15m.csv
+2025-05-23 13:41:34,747 - model_manager - ERROR - Klaida ruoðiant duomenis: Duomenø failas nerastas: d:\CA_BTC\app\data\btc_data_1y_15m.csv
+2025-05-23 13:41:34,747 - model_manager - ERROR - Klaida ruoðiant duomenis: Duomenø failas nerastas: d:\CA_BTC\app\data\btc_data_1y_15m.csv
+2025-05-23 13:41:34,753 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:41:34,755 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:34] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:41:34,799 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:34] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:41:39,854 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:41:39,856 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:39] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:41:39,878 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:39] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:41:45,880 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:41:45,882 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:45] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:41:45,946 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:45] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:41:52,892 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:41:52,894 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:52] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:41:52,930 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:52] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:41:59,886 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:41:59,887 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:59] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:41:59,912 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:41:59] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:42:08,872 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:42:08,873 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:42:08] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:42:08,910 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:42:08] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:42:14,877 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:42:14,878 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:42:14] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:42:14,916 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:42:14] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:42:16,832 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:42:17,315 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:42:17,315 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112048.7637, 113158.1574, 114267.5511, 115376.9448, 116486.3385, 117595.7322, 118705.1259]}
+2025-05-23 13:42:17,316 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110939.37
+2025-05-23 13:42:17,316 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:42:17,317 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:42:17] "GET / HTTP/1.1" 200 -
+2025-05-23 13:42:21,443 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:42:21] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:42:21,486 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:42:21] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:42:23,539 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:42:23,820 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:42:23,820 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112048.77380000001, 113158.1676, 114267.5614, 115376.95520000001, 116486.34900000002, 117595.7428, 118705.13660000001]}
+2025-05-23 13:42:23,820 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110939.38
+2025-05-23 13:42:23,821 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:42:23,821 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:42:23] "GET / HTTP/1.1" 200 -
+2025-05-23 13:43:16,239 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:43:16,518 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:43:16,520 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112075.6903, 113185.3506, 114295.01090000001, 115404.6712, 116514.3315, 117623.9918, 118733.6521]}
+2025-05-23 13:43:16,520 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110966.03
+2025-05-23 13:43:16,576 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:43:16,577 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:43:16] "GET / HTTP/1.1" 200 -
+2025-05-23 13:43:38,298 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:43:38,786 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:43:38,786 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112075.6903, 113185.3506, 114295.01090000001, 115404.6712, 116514.3315, 117623.9918, 118733.6521]}
+2025-05-23 13:43:38,787 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110966.03
+2025-05-23 13:43:38,787 - __main__ - ERROR - Klaida index endpoint'e: Object of type builtin_function_or_method is not JSON serializable
+2025-05-23 13:43:38,788 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:43:38] "GET / HTTP/1.1" 200 -
+2025-05-23 13:44:55,953 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:44:56,373 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:44:56,373 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112153.9047, 113264.3394, 114374.77410000001, 115485.20880000001, 116595.6435, 117706.0782, 118816.5129]}
+2025-05-23 13:44:56,373 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111043.47
+2025-05-23 13:44:56,428 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:44:56] "GET / HTTP/1.1" 200 -
+2025-05-23 13:44:56,465 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:44:56] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:44:56,631 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:44:56] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:44:56,633 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:44:56] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:44:56,635 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:44:56,636 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:44:56,917 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:44:56,918 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:44:56,919 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:44:56] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:45:04,254 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:45:04,537 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:45:04,537 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112160.4798, 113270.97959999999, 114381.4794, 115491.9792, 116602.479, 117712.9788, 118823.4786]}
+2025-05-23 13:45:04,537 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111049.98
+2025-05-23 13:45:04,538 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:04] "GET / HTTP/1.1" 200 -
+2025-05-23 13:45:04,573 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:04] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:45:04,637 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:04] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:45:04,640 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:04] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:45:04,643 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:45:04,644 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:45:04,929 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:45:04,931 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:45:04,932 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:04] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:45:05,622 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:05] "GET /predict HTTP/1.1" 200 -
+2025-05-23 13:45:05,666 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:05] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:45:05,677 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:45:05,677 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:45:05,966 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:45:05,966 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:45:05,968 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:05] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:45:10,829 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:10] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:45:10,869 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:10] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:45:18,496 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:45:18] "[33mGET /history HTTP/1.1[0m" 404 -
+2025-05-23 13:48:17,947 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:48:18,472 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:48:18,472 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112152.40990000001, 113262.8298, 114373.24970000001, 115483.66960000001, 116594.08950000002, 117704.50940000001, 118814.92930000002]}
+2025-05-23 13:48:18,472 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111041.99
+2025-05-23 13:48:18,528 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:48:18] "GET / HTTP/1.1" 200 -
+2025-05-23 13:48:18,562 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:48:18] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:48:19,025 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:48:19] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:48:19,028 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:48:19] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:48:19,030 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:48:19,031 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:48:19,324 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:48:19,325 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:48:19,326 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:48:19] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:49:10,041 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:49:10,337 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:49:10,338 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112179.3163, 113290.0026, 114400.68890000001, 115511.37520000001, 116622.06150000001, 117732.74780000001, 118843.43410000001]}
+2025-05-23 13:49:10,338 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111068.63
+2025-05-23 13:49:10,339 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:49:10] "GET / HTTP/1.1" 200 -
+2025-05-23 13:49:10,377 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:49:10] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:49:10,416 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:49:10] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:49:10,419 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:49:10] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:49:10,423 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:49:10,423 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:49:10,713 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:49:10,714 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:49:10,715 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:49:10] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:50:13,989 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:50:14,454 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:50:14,455 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112192.6786, 113303.4972, 114414.3158, 115525.13440000001, 116635.95300000001, 117746.77160000001, 118857.5902]}
+2025-05-23 13:50:14,455 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111081.86
+2025-05-23 13:50:14,512 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:50:14] "GET / HTTP/1.1" 200 -
+2025-05-23 13:50:14,547 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:50:14] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:50:14,984 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:50:14] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:50:14,987 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:50:14] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:50:14,990 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:50:14,990 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:50:15,278 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:50:15,278 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:50:15,280 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:50:15] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:50:47,070 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:50:47] "GET /predict HTTP/1.1" 200 -
+2025-05-23 13:50:47,114 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:50:47] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:50:47,164 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:50:47,165 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:50:47,455 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:50:47,456 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:50:47,457 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:50:47] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:52:55,481 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:52:55] "GET /predict HTTP/1.1" 200 -
+2025-05-23 13:52:55,514 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:52:55] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:52:55,964 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:52:55] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:52:55,967 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:52:55] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:52:55,969 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:52:55,970 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:52:56,438 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:52:56,439 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:52:56,440 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:52:56] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:53:02,279 - __main__ - INFO - Checking training status for models: ['lstm', 'gru', 'transformer', 'cnn', 'cnn_lstm']
+2025-05-23 13:53:02,280 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:02] "GET /training_status HTTP/1.1" 200 -
+2025-05-23 13:53:02,328 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:02] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:53:04,537 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:04] "[33mGET /history HTTP/1.1[0m" 404 -
+2025-05-23 13:53:07,054 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:53:07,351 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:53:07,353 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112206.1924, 113317.14480000001, 114428.0972, 115539.04960000001, 116650.00200000001, 117760.95440000002, 118871.90680000001]}
+2025-05-23 13:53:07,353 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111095.24
+2025-05-23 13:53:07,354 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:07] "GET / HTTP/1.1" 200 -
+2025-05-23 13:53:07,396 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:07] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:53:07,454 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:07] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:53:07,458 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:07] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:53:07,461 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:53:07,463 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:53:07,751 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:53:07,751 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:53:07,754 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:07] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:53:09,065 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:09] "GET /models HTTP/1.1" 200 -
+2025-05-23 13:53:09,107 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:09] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-05-23 13:53:11,686 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:11] "[33mGET /history HTTP/1.1[0m" 404 -
+2025-05-23 13:53:13,779 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:13] "GET /predict HTTP/1.1" 200 -
+2025-05-23 13:53:13,824 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:13] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:53:13,844 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:13] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:53:13,847 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:13] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:53:13,850 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:53:13,850 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:53:14,156 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:53:14,157 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:53:14,158 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:53:14] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:55:39,866 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:55:39] "GET /predict HTTP/1.1" 200 -
+2025-05-23 13:55:39,891 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:55:39] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:55:40,231 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:55:40] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:55:40,233 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:55:40] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:55:40,236 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:55:40,236 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:55:40,715 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:55:40,715 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:55:40,717 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:55:40] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:57:00,362 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:57:00,814 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:57:00,815 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112149.592, 113259.984, 114370.376, 115480.768, 116591.16, 117701.552, 118811.944]}
+2025-05-23 13:57:00,815 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111039.2
+2025-05-23 13:57:00,816 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:57:00] "GET / HTTP/1.1" 200 -
+2025-05-23 13:57:00,881 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:57:00] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:57:01,065 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:57:01] "[33mGET /api/price_history HTTP/1.1[0m" 404 -
+2025-05-23 13:57:01,068 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:57:01] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:57:01,072 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:57:01,073 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:57:01,364 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:57:01,364 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:57:01,366 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:57:01] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:58:15,680 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:58:16,155 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:58:16,155 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112178.2255, 113288.901, 114399.57650000001, 115510.25200000001, 116620.9275, 117731.603, 118842.27850000001]}
+2025-05-23 13:58:16,156 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111067.55
+2025-05-23 13:58:16,209 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:16] "GET / HTTP/1.1" 200 -
+2025-05-23 13:58:16,238 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:16] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:58:16,294 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:16] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 13:58:16,296 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:16] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:58:16,299 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:58:16,299 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:58:16,601 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:58:16,603 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:58:16,604 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:16] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:58:19,642 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:19] "GET /predict HTTP/1.1" 200 -
+2025-05-23 13:58:19,683 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:19] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:58:19,699 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:19] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 13:58:19,704 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:19] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:58:19,707 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:58:19,709 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:58:20,004 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:58:20,004 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:58:20,005 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:20] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 13:58:23,842 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 13:58:24,125 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 13:58:24,125 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112178.2255, 113288.901, 114399.57650000001, 115510.25200000001, 116620.9275, 117731.603, 118842.27850000001]}
+2025-05-23 13:58:24,126 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111067.55
+2025-05-23 13:58:24,126 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:24] "GET / HTTP/1.1" 200 -
+2025-05-23 13:58:24,168 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:24] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 13:58:24,187 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:24] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 13:58:24,190 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:24] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 13:58:24,194 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 13:58:24,196 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 13:58:24,488 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 13:58:24,489 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 13:58:24,491 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 13:58:24] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:01:35,340 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:01:35,846 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:01:35,846 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112146.7034, 113257.0668, 114367.4302, 115477.7936, 116588.157, 117698.52040000001, 118808.8838]}
+2025-05-23 14:01:35,847 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111036.34
+2025-05-23 14:01:35,910 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:35] "GET / HTTP/1.1" 200 -
+2025-05-23 14:01:35,940 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:35] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:01:36,286 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:36] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:01:36,288 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:36] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:01:36,291 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:01:36,292 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:01:36,584 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:01:36,584 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:01:36,585 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:36] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:01:40,708 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:40] "GET /predict HTTP/1.1" 200 -
+2025-05-23 14:01:40,749 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:40] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:01:40,762 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:40] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:01:40,766 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:40] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:01:40,768 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:01:40,770 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:01:41,054 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:01:41,055 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:01:41,057 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:41] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:01:51,913 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:01:52,211 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:01:52,211 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112146.7034, 113257.0668, 114367.4302, 115477.7936, 116588.157, 117698.52040000001, 118808.8838]}
+2025-05-23 14:01:52,211 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111036.34
+2025-05-23 14:01:52,213 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:52] "GET / HTTP/1.1" 200 -
+2025-05-23 14:01:52,254 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:52] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:01:52,280 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:52] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:01:52,285 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:52] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:01:52,306 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:01:52,306 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:01:52,589 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:01:52,590 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:01:52,591 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:01:52] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:03:37,221 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:03:37,729 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:03:37,729 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112121.24130000001, 113231.35260000001, 114341.4639, 115451.5752, 116561.68650000001, 117671.79780000001, 118781.90910000002]}
+2025-05-23 14:03:37,730 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111011.13
+2025-05-23 14:03:37,795 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:03:37] "GET / HTTP/1.1" 200 -
+2025-05-23 14:03:37,824 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:03:37] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:03:38,147 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:03:38] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:03:38,149 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:03:38] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:03:38,151 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:03:38,151 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:03:38,463 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:03:38,463 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:03:38,464 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:03:38] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:04:32,828 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:04:33,113 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:04:33,113 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112162.4089, 113272.9278, 114383.4467, 115493.96560000001, 116604.4845, 117715.0034, 118825.52230000001]}
+2025-05-23 14:04:33,114 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111051.89
+2025-05-23 14:04:33,114 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:04:33] "GET / HTTP/1.1" 200 -
+2025-05-23 14:04:33,151 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:04:33] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:04:33,561 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:04:33] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:04:33,564 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:04:33] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:04:33,603 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:04:33,603 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:04:33,903 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:04:33,904 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:04:33,905 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:04:33] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:05:34,338 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:05:34,795 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:05:34,795 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112139.3405, 113249.63100000001, 114359.92150000001, 115470.21200000001, 116580.5025, 117690.793, 118801.08350000001]}
+2025-05-23 14:05:34,796 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111029.05
+2025-05-23 14:05:34,796 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:05:34] "GET / HTTP/1.1" 200 -
+2025-05-23 14:05:34,828 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:05:34] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:05:35,278 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:05:35] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:05:35,280 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:05:35] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:05:35,283 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:05:35,284 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:05:35,574 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:05:35,574 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:05:35,575 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:05:35] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:06:09,672 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:06:09,949 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:06:09,949 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112130.2, 113240.40000000001, 114350.6, 115460.8, 116571.0, 117681.20000000001, 118791.40000000001]}
+2025-05-23 14:06:09,949 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 111020.0
+2025-05-23 14:06:09,950 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:09] "GET / HTTP/1.1" 200 -
+2025-05-23 14:06:09,990 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:09] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:06:10,099 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:10] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:06:10,101 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:10] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:06:10,106 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:06:10,107 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:06:10,391 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:06:10,391 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:06:10,394 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:10] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:06:50,855 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:06:51,288 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:06:51,289 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112081.0938, 113190.8076, 114300.52140000001, 115410.23520000001, 116519.94900000001, 117629.6628, 118739.37660000002]}
+2025-05-23 14:06:51,289 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110971.38
+2025-05-23 14:06:51,290 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:51] "GET / HTTP/1.1" 200 -
+2025-05-23 14:06:51,329 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:51] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:06:51,837 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:51] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:06:51,839 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:51] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:06:51,886 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:06:51,887 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:06:52,177 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:06:52,177 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:06:52,179 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:06:52] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:09:34,287 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:09:34,780 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:09:34,781 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112034.2601, 113143.51019999999, 114252.7603, 115362.0104, 116471.2605, 117580.5106, 118689.7607]}
+2025-05-23 14:09:34,781 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110925.01
+2025-05-23 14:09:34,838 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:09:34] "GET / HTTP/1.1" 200 -
+2025-05-23 14:09:34,874 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:09:34] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:09:35,314 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:09:35] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:09:35,316 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:09:35] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:09:35,376 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:09:35,377 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:09:35,658 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:09:35,659 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:09:35,661 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:09:35] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:11:06,037 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:11:06,658 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:11:06,658 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112022.1805, 113131.311, 114240.4415, 115349.572, 116458.70250000001, 117567.83300000001, 118676.96350000001]}
+2025-05-23 14:11:06,658 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110913.05
+2025-05-23 14:11:06,718 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:11:06] "GET / HTTP/1.1" 200 -
+2025-05-23 14:11:06,744 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:11:06] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:11:07,223 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:11:07] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:11:07,224 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:11:07] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:11:07,226 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:11:07,228 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:11:07,508 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:11:07,509 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:11:07,510 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:11:07] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
+2025-05-23 14:12:15,837 - __main__ - INFO - Uþkraunamas pagrindinis puslapis
+2025-05-23 14:12:16,290 - __main__ - INFO - Bandoma gauti prognozes ið modeliø
+2025-05-23 14:12:16,290 - __main__ - INFO - Predictions object structure: {'dates': ['2025-05-24', '2025-05-25', '2025-05-26', '2025-05-27', '2025-05-28', '2025-05-29', '2025-05-30'], 'values': [112022.1805, 113131.311, 114240.4415, 115349.572, 116458.70250000001, 117567.83300000001, 118676.96350000001]}
+2025-05-23 14:12:16,290 - __main__ - INFO - Pagrindinis puslapis uþkrautas. BTC kaina: 110913.05
+2025-05-23 14:12:16,334 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:12:16] "GET / HTTP/1.1" 200 -
+2025-05-23 14:12:16,360 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:12:16] "[36mGET /static/js/bitcoin-charts.js HTTP/1.1[0m" 304 -
+2025-05-23 14:12:16,803 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:12:16] "[33mGET /api/price_history?days=30 HTTP/1.1[0m" 404 -
+2025-05-23 14:12:16,806 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:12:16] "[33mGET /api/predictions HTTP/1.1[0m" 404 -
+2025-05-23 14:12:16,810 - __main__ - INFO - Requesting Bitcoin price history for 100 days
+2025-05-23 14:12:16,810 - __main__ - INFO - Fetching Bitcoin price history for 100 days from Binance
+2025-05-23 14:12:17,103 - __main__ - INFO - Successfully processed 100 price data points
+2025-05-23 14:12:17,104 - __main__ - INFO - Successfully retrieved 100 data points
+2025-05-23 14:12:17,105 - werkzeug - INFO - 192.168.1.228 - - [23/May/2025 14:12:17] "GET /api/btc_price/history?days=100 HTTP/1.1" 200 -
