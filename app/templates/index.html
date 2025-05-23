@@ -43,68 +43,300 @@
 </head>
 <body>
     <script>
-    // Set up global variables for charts - same as predict.html
-    (function() {
-        try {
-            {% if price_history is defined and price_history %}
-                console.log("Setting priceHistory from template");
-                var priceHistoryData = {{ price_history|tojson|safe }};
-                window.priceHistory = priceHistoryData;
-                console.log("priceHistory set successfully:", window.priceHistory);
-            {% else %}
-                console.log("No price_history from template, using empty object");
-                window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
-            {% endif %}
-        } catch(e) {
-            console.error("Error setting priceHistory:", e);
-            window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
-        }
+    // Initialize global variables safely
+    window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
+    window.predictions = {values: [], dates: []};
+    
+    // Load data via AJAX to avoid JSON serialization issues
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load live Bitcoin stats first
+        fetchLiveBitcoinStats();
+        // Also update the main price display
+        fetchLiveBitcoinPrice();
         
-        try {
-            {% if predictions is defined and predictions %}
-                console.log("Setting predictions from template");
-                // Jei predictions.values yra apibrėžtas
-                {% if predictions.values is defined %}
-                    // naujas formatas
-                    var predictionsData = {
-                        values: {{ predictions.values|tojson|safe }},
-                        dates: {% if predictions.dates is defined %}{{ predictions.dates|tojson|safe }}{% else %}[]{% endif %}
-                    };
-                {% else %}
-                    // senas formatas
-                    var predictionsData = {{ predictions|tojson|safe }};
-                {% endif %}
+        // Load price history data - use correct endpoint with current data
+        fetch('/api/price_history?days=30')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.status === 'success') {
+                    window.priceHistory = data.data;
+                    console.log("priceHistory loaded successfully:", window.priceHistory);
+                    
+                    // Trigger chart update if bitcoin-charts.js is loaded
+                    if (typeof updateCharts === 'function') {
+                        updateCharts();
+                    }
+                    
+                    // Update stats
+                    updateStats();
+                }
+            })
+            .catch(error => {
+                console.error("Error loading price history:", error);
+                // Fallback to calculating from historical data
+                updateStats();
+            });
+            
+        // Load predictions data - use correct endpoint
+        fetch('/api/predictions')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.status === 'success') {
+                    window.predictions = data.data;
+                    console.log("predictions loaded successfully:", window.predictions);
+                    
+                    // Trigger chart update if bitcoin-charts.js is loaded
+                    if (typeof updateCharts === 'function') {
+                        updateCharts();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error loading predictions:", error);
+            });
+    });
+    
+    // Fetch live Bitcoin statistics from Binance API
+    function fetchLiveBitcoinStats() {
+        // Fetch 24hr ticker statistics from Binance
+        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.symbol === 'BTCUSDT') {
+                    // Update DOM elements with live data
+                    const high24h = parseFloat(data.highPrice);
+                    const low24h = parseFloat(data.lowPrice);
+                    const volume24h = parseFloat(data.volume);
+                    const currentPrice = parseFloat(data.lastPrice);
+                    
+                    // Estimate market cap (Bitcoin circulating supply is approximately 19.7M)
+                    const btcSupply = 19700000;
+                    const marketCap = currentPrice * btcSupply;
+                    
+                    // Update DOM elements with proper formatting
+                    document.getElementById('high-24h').textContent = '$' + high24h.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    document.getElementById('low-24h').textContent = '$' + low24h.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    document.getElementById('volume-24h').textContent = volume24h.toLocaleString('en-US', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }) + ' BTC';
+                    document.getElementById('market-cap').textContent = '$' + (marketCap / 1000000000).toLocaleString('en-US', {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1
+                    }) + 'B';
+                    
+                    console.log('Live stats updated:', {
+                        high24h: high24h,
+                        low24h: low24h,
+                        volume24h: volume24h,
+                        currentPrice: currentPrice,
+                        marketCap: marketCap
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching live Bitcoin stats:", error);
+                // Fallback to historical data calculation
+                updateStats();
+            });
+    }
+    
+    // Fetch live Bitcoin price from Binance API (same as predict.html)
+    function fetchLiveBitcoinPrice() {
+        // Fetch 24hr ticker statistics from Binance
+        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.symbol === 'BTCUSDT') {
+                    const currentPrice = parseFloat(data.lastPrice);
+                    const priceChange = parseFloat(data.priceChange);
+                    const priceChangePercent = parseFloat(data.priceChangePercent);
+                    
+                    // Update the main price display in the hero card
+                    const mainPriceElements = document.querySelectorAll('.live-btc-price, #current-btc-price');
+                    mainPriceElements.forEach(element => {
+                        element.textContent = '$' + currentPrice.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    });
+                    
+                    // Update the main hero card price display
+                    const heroPrice = document.querySelector('.display-4');
+                    if (heroPrice) {
+                        heroPrice.textContent = '$' + currentPrice.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+                    
+                    // Update timestamp
+                    const timestampElement = document.getElementById('last-updated');
+                    if (timestampElement) {
+                        timestampElement.textContent = new Date().toLocaleTimeString('lt-LT');
+                    }
+                    
+                    // Update price change in hero card
+                    const heroCard = document.querySelector('.price-card .card-body');
+                    if (heroCard) {
+                        // Remove existing price change
+                        const existingChange = heroCard.querySelector('.live-price-change');
+                        if (existingChange) {
+                            existingChange.remove();
+                        }
+                        
+                        // Add new price change display
+                        const changeElement = document.createElement('h5');
+                        changeElement.className = 'live-price-change mt-2';
+                        
+                        if (priceChangePercent > 0) {
+                            changeElement.innerHTML = `<span class="text-success"><i class="fas fa-arrow-up"></i> +$${priceChange.toFixed(2)} (+${priceChangePercent.toFixed(2)}%)</span>`;
+                        } else if (priceChangePercent < 0) {
+                            changeElement.innerHTML = `<span class="text-danger"><i class="fas fa-arrow-down"></i> $${priceChange.toFixed(2)} (${priceChangePercent.toFixed(2)}%)</span>`;
+                        } else {
+                            changeElement.innerHTML = `<span class="text-light"><i class="fas fa-minus"></i> $0.00 (0.00%)</span>`;
+                        }
+                        
+                        // Insert after the main price
+                        const heroTitle = heroCard.querySelector('.display-4');
+                        if (heroTitle && heroTitle.parentNode) {
+                            heroTitle.parentNode.insertBefore(changeElement, heroTitle.nextSibling);
+                        }
+                    }
+                    
+                    console.log('Live Bitcoin price updated on index:', currentPrice);
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching live Bitcoin price:", error);
+                // Show error message in main price display
+                const heroPrice = document.querySelector('.display-4');
+                if (heroPrice) {
+                    heroPrice.textContent = 'Klaida kraunant kainą';
+                }
+            });
+    }
+    
+    // Auto-refresh price every 30 seconds (same as predict.html)
+    setInterval(fetchLiveBitcoinPrice, 30000);
+    
+    function updateStats() {
+        // Update stats from price history data
+        if (window.priceHistory && window.priceHistory.dates && window.priceHistory.dates.length > 0) {
+            const prices = window.priceHistory.prices || window.priceHistory.close || [];
+            const volumes = window.priceHistory.volumes || [];
+            const highs = window.priceHistory.high || [];
+            const lows = window.priceHistory.low || [];
+            
+            if (prices.length > 0) {
+                // Calculate 24h stats (using last 24 hours of data or available data)
+                const dataPoints = Math.min(24, prices.length); // Use last 24 hours or all available data
                 
-                window.predictions = predictionsData;
-                console.log("predictions set successfully:", window.predictions);
-            {% else %}
-                console.log("No predictions from template");
-                window.predictions = {values: [], dates: []};
-            {% endif %}
-        } catch(e) {
-            console.error("Error setting predictions:", e);
-            window.predictions = {values: [], dates: []};
+                // Get recent data for 24h calculations
+                const recentPrices = prices.slice(-dataPoints);
+                const recentVolumes = volumes.slice(-dataPoints);
+                const recentHighs = highs.slice(-dataPoints);
+                const recentLows = lows.slice(-dataPoints);
+                
+                // Calculate statistics
+                const high24h = recentHighs.length > 0 ? Math.max(...recentHighs) : Math.max(...recentPrices);
+                const low24h = recentLows.length > 0 ? Math.min(...recentLows) : Math.min(...recentPrices);
+                const volume24h = recentVolumes.length > 0 ? recentVolumes.reduce((sum, vol) => sum + vol, 0) : 0;
+                const currentPrice = prices[prices.length - 1];
+                
+                // Estimate market cap (Bitcoin circulating supply is approximately 19.7M)
+                const btcSupply = 19700000; // Approximate circulating supply
+                const marketCap = currentPrice * btcSupply;
+                
+                // Update DOM elements with proper formatting
+                document.getElementById('high-24h').textContent = '$' + high24h.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                document.getElementById('low-24h').textContent = '$' + low24h.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                document.getElementById('volume-24h').textContent = volume24h.toLocaleString('en-US', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
+                document.getElementById('market-cap').textContent = '$' + (marketCap / 1000000000).toLocaleString('en-US', {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1
+                }) + 'B';
+                
+                console.log('Stats updated:', {
+                    high24h: high24h,
+                    low24h: low24h,
+                    volume24h: volume24h,
+                    marketCap: marketCap
+                });
+            }
+        } else {
+            // Show loading or N/A
+            document.getElementById('high-24h').textContent = 'Kraunama...';
+            document.getElementById('low-24h').textContent = 'Kraunama...';
+            document.getElementById('volume-24h').textContent = 'Kraunama...';
+            document.getElementById('market-cap').textContent = 'Kraunama...';
         }
-    })();
+    }
     </script>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Bitcoin Predictor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Pradžia</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/models' %}active{% endif %}" href="/models">Modeliai</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/predict' %}active{% endif %}" href="/predict">Prognozės</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/training_status' %}active{% endif %}" href="/training_status">Apmokymo būsena</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
     <div class="container-fluid py-4">
         <h1 class="text-center mb-4">
             <i class="fab fa-bitcoin text-warning"></i>
             Bitcoin Kainų Analizė ir Prognozavimas
         </h1>
-        
-        <!-- Navigation -->
+          <!-- Navigation -->
         <div class="row mb-4">
             <div class="col-12 text-center">
+                <a href="/" class="btn btn-dark me-2">
+                    <i class="fas fa-home"></i> Pagrindinis
+                </a>
                 <a href="/predict" class="btn btn-primary me-2">
                     <i class="fas fa-chart-line"></i> Prognozės
                 </a>
                 <a href="/models" class="btn btn-info me-2">
                     <i class="fas fa-brain"></i> Modeliai
                 </a>
-                <a href="/history" class="btn btn-secondary">
+                <a href="/history" class="btn btn-secondary me-2">
                     <i class="fas fa-history"></i> Istorija
+                </a>
+                <a href="/training_status" class="btn btn-success">
+                    <i class="fas fa-tasks"></i> Apmokymas
                 </a>
             </div>
         </div>
@@ -118,62 +350,11 @@
                             <i class="fab fa-bitcoin"></i> Dabartinė Bitcoin Kaina
                         </h2>
                         <h1 class="display-4 fw-bold">
-                            {% if latest_price is defined %}
-                                ${{ "%.2f"|format(latest_price) }}
-                            {% else %}
-                                $-.--
-                            {% endif %}
+                            Kraunama...
                         </h1>
                         
-                        <!-- Price Change - Poprawione dla zgodności z typem liczbowym zamiast obiektu -->
-                        {% if price_change is defined %}
-                            {% if price_change is number %}
-                                {% if price_change > 0 %}
-                                    <h5 class="text-success">
-                                        <i class="fas fa-arrow-up"></i> 
-                                        +${{ "%.2f"|format(price_change) }} 
-                                        (+{{ "%.2f"|format((price_change/latest_price)*100) }}%)
-                                    </h5>
-                                {% elif price_change < 0 %}
-                                    <h5 class="text-danger">
-                                        <i class="fas fa-arrow-down"></i> 
-                                        ${{ "%.2f"|format(price_change) }} 
-                                        ({{ "%.2f"|format((price_change/latest_price)*100) }}%)
-                                    </h5>
-                                {% else %}
-                                    <h5 class="text-light">
-                                        <i class="fas fa-minus"></i> 
-                                        $0.00 (0.00%)
-                                    </h5>
-                                {% endif %}
-                            {% else %}
-                                <!-- Jeśli price_change ma stary format obiektu -->
-                                {% if price_change.direction is defined and price_change.value is defined %}
-                                    {% if price_change.direction == 'up' %}
-                                        <h5 class="text-success">
-                                            <i class="fas fa-arrow-up"></i> 
-                                            +${{ "%.2f"|format(price_change.value) }} 
-                                            (+{{ "%.2f"|format(price_change.percent) }}%)
-                                        </h5>
-                                    {% elif price_change.direction == 'down' %}
-                                        <h5 class="text-danger">
-                                            <i class="fas fa-arrow-down"></i> 
-                                            ${{ "%.2f"|format(price_change.value) }} 
-                                            ({{ "%.2f"|format(price_change.percent) }}%)
-                                        </h5>
-                                    {% else %}
-                                        <h5 class="text-light">
-                                            <i class="fas fa-minus"></i> 
-                                            ${{ "%.2f"|format(price_change.value) }} 
-                                            ({{ "%.2f"|format(price_change.percent) }}%)
-                                        </h5>
-                                    {% endif %}
-                                {% endif %}
-                            {% endif %}
-                        {% endif %}
-                        
                         <small class="text-light opacity-75">
-                            Atnaujinta: {{ now }}
+                            Atnaujinta: <span id="last-updated">Kraunama...</span>
                         </small>
                     </div>
                 </div>
@@ -248,7 +429,7 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                    24h Žemč.
+                                    24h Žem.
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-24h">
                                     Kraunama...
@@ -348,33 +529,9 @@
     <!-- Additional script for stats -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Update stats from price history data
-        if (window.priceHistory && window.priceHistory.dates && window.priceHistory.dates.length > 0) {
-            const prices = window.priceHistory.prices || window.priceHistory.close || [];
-            const volumes = window.priceHistory.volumes || [];
-            const highs = window.priceHistory.high || [];
-            const lows = window.priceHistory.low || [];
-            
-            if (prices.length > 0) {
-                // Calculate 24h stats (using last available data)
-                const latest = prices[prices.length - 1];
-                const high24h = highs.length > 0 ? Math.max(...highs.slice(-1)) : latest;
-                const low24h = lows.length > 0 ? Math.min(...lows.slice(-1)) : latest;
-                const volume24h = volumes.length > 0 ? volumes[volumes.length - 1] : 0;
-                
-                // Update DOM elements
-                document.getElementById('high-24h').textContent = '$' + high24h.toLocaleString();
-                document.getElementById('low-24h').textContent = '$' + low24h.toLocaleString();
-                document.getElementById('volume-24h').textContent = volume24h.toLocaleString();
-                document.getElementById('market-cap').textContent = 'N/A';
-            }
-        } else {
-            // Show loading or N/A
-            document.getElementById('high-24h').textContent = 'N/A';
-            document.getElementById('low-24h').textContent = 'N/A';
-            document.getElementById('volume-24h').textContent = 'N/A';
-            document.getElementById('market-cap').textContent = 'N/A';
-        }
+        // Stats will be updated by the main script above
+        // Initial display
+        updateStats();
     });
     </script>
 </body>

@@ -39,39 +39,140 @@
 </head>
 <body>
     <script>
-    // Fix the JavaScript syntax error by properly handling the data with safe JSON encoding
-    (function() {
-        try {
-            {% if price_history is defined and price_history %}
-                console.log("Setting priceHistory from template");
-                var priceHistoryData = {{ price_history|tojson|safe }};
-                window.priceHistory = priceHistoryData;
-                console.log("priceHistory set successfully:", window.priceHistory);
-            {% else %}
-                console.log("No price_history from template, using empty object");
-                window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
-            {% endif %}
-        } catch(e) {
-            console.error("Error setting priceHistory:", e);
-            window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
-        }
+    // Initialize global variables safely
+    window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
+    window.predictions = {values: [], dates: []};
+    
+    // Load data via AJAX to avoid JSON serialization issues
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load live Bitcoin price first
+        fetchLiveBitcoinPrice();
         
-        try {
-            {% if predictions is defined and predictions %}
-                console.log("Setting predictions from template: {{ predictions|length }} predictions");
-                var predictionsData = {{ predictions|tojson|safe }};
-                window.predictions = predictionsData;
-                console.log("predictions set successfully:", window.predictions);
-            {% else %}
-                console.log("No predictions from template");
-                window.predictions = [];
-            {% endif %}
-        } catch(e) {
-            console.error("Error setting predictions:", e);
-            window.predictions = [];
-        }
-    })();
+        // Load price history data - use correct endpoint
+        fetch('/api/price_history?days=30')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.status === 'success') {
+                    window.priceHistory = data.data;
+                    console.log("priceHistory loaded successfully:", window.priceHistory);
+                    
+                    // Trigger chart update if bitcoin-charts.js is loaded
+                    if (typeof updateCharts === 'function') {
+                        updateCharts();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error loading price history:", error);
+            });
+            
+        // Load predictions data - use correct endpoint
+        fetch('/api/predictions')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.status === 'success') {
+                    window.predictions = data.data;
+                    console.log("predictions loaded successfully:", window.predictions);
+                    
+                    // Trigger chart update if bitcoin-charts.js is loaded
+                    if (typeof updateCharts === 'function') {
+                        updateCharts();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error loading predictions:", error);
+            });
+    });
+    
+    // Fetch live Bitcoin price from Binance API
+    function fetchLiveBitcoinPrice() {
+        // Fetch 24hr ticker statistics from Binance
+        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.symbol === 'BTCUSDT') {
+                    const currentPrice = parseFloat(data.lastPrice);
+                    const priceChange = parseFloat(data.priceChange);
+                    const priceChangePercent = parseFloat(data.priceChangePercent);
+                    
+                    // Update the current price display
+                    const priceElement = document.getElementById('btc-price');
+                    if (priceElement) {
+                        priceElement.textContent = '$' + currentPrice.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+                    
+                    // Update price change display
+                    const changeContainer = priceElement ? priceElement.parentElement : null;
+                    if (changeContainer) {
+                        // Remove existing change display
+                        const existingChange = changeContainer.querySelector('.price-change');
+                        if (existingChange) {
+                            existingChange.remove();
+                        }
+                        
+                        // Add new price change display
+                        const changeElement = document.createElement('span');
+                        changeElement.className = 'price-change ms-3';
+                        
+                        if (priceChangePercent > 0) {
+                            changeElement.innerHTML = `<span class="text-success"><i class="fas fa-arrow-up"></i> +${priceChangePercent.toFixed(2)}%</span>`;
+                        } else if (priceChangePercent < 0) {
+                            changeElement.innerHTML = `<span class="text-danger"><i class="fas fa-arrow-down"></i> ${priceChangePercent.toFixed(2)}%</span>`;
+                        } else {
+                            changeElement.innerHTML = `<span class="text-muted"><i class="fas fa-minus"></i> 0.00%</span>`;
+                        }
+                        
+                        changeContainer.appendChild(changeElement);
+                    }
+                    
+                    console.log('Live Bitcoin price updated:', currentPrice);
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching live Bitcoin price:", error);
+                // Show error message or keep loading state
+                const priceElement = document.getElementById('btc-price');
+                if (priceElement) {
+                    priceElement.textContent = 'Klaida kraunant kainą';
+                }
+            });
+    }
+    
+    // Auto-refresh price every 30 seconds
+    setInterval(fetchLiveBitcoinPrice, 30000);
     </script>
+
+    <!-- Navigacija -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Bitcoin Predictor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Pradžia</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/models' %}active{% endif %}" href="/models">Modeliai</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/predict' %}active{% endif %}" href="/predict">Prognozės</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/training_status' %}active{% endif %}" href="/training_status">Apmokymo būsena</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
     <div class="container my-4">
         <h1 class="text-center mb-4">Bitcoin Kainų Prognozavimas su LSTM</h1>
         
@@ -100,31 +201,10 @@
         <!-- Dabartinė kaina -->
         <div class="alert alert-info">
             <h3>
-                Dabartinė kaina: <span id="btc-price">
-    {% if latest_price is defined %}
-        ${{ "%.2f"|format(latest_price) }}
-    {% else %}
-        $-.--
-    {% endif %}
-</span>
-                <!-- Kainos pokytis su ikona/rodykle -->
-                {% if price_change %}
-                    {% if price_change.direction == 'up' %}
-                        <span class="text-success">
-                            <i class="fas fa-arrow-up"></i> +{{ "%.2f"|format(price_change.percent) }}%
-                        </span>
-                    {% elif price_change.direction == 'down' %}
-                        <span class="text-danger">
-                            <i class="fas fa-arrow-down"></i> {{ "%.2f"|format(price_change.percent) }}%
-                        </span>
-                    {% else %}
-                        <span class="text-secondary">
-                            <i class="fas fa-minus"></i> {{ "%.2f"|format(price_change.percent) }}%
-                        </span>
-                    {% endif %}
-                {% endif %}
+                <i class="fab fa-bitcoin text-warning me-2"></i>
+                Dabartinė kaina: <span id="btc-price">Kraunama...</span>
+                <!-- Price change will be added dynamically -->
             </h3>
-            <small>Atnaujinta: <span id="price-update-time">Dabar</span></small>
         </div>
         
         <!-- Klaidos pranešimas - pridėkite į predict.html šabloną apie eilutę 65-70, prieš grafiką -->

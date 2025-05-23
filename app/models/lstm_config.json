@@ -1,6 +1,6 @@
 {
     "epochs": 50,
-    "batch_size": 32,
+    "batch_size": 16,
     "learning_rate": 0.001,
     "lookback": 30,
     "dropout": 0.2,
@@ -14,5 +14,5 @@
     "d_model": "64",
     "filters": "32,64,128",
     "kernel_size": "3,3,3",
-    "notes": null
+    "notes": "None"
 }

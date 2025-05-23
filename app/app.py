@@ -7,6 +7,7 @@ import datetime as dt
 from datetime import datetime, timedelta
 import random
 import time
+from app.utils.json_util import serialize_for_template
 
 # konfigūruojame logerį
 logging.basicConfig(
@@ -534,34 +535,79 @@ def index():
         # Get current Bitcoin price
         current_price = get_real_bitcoin_price()
         if current_price is None:
-            current_price = 45000.0
+            current_price = 45000.0 + random.uniform(-1000, 1000)
+            logger.warning(f"Using fallback Bitcoin price: {current_price}")
         
-        # Initialize variables
-        price_history = []
-        price_change = 0
+        # Get price history with proper fallback
+        price_history = get_bitcoin_price_history(days=7)
+        if not price_history or not isinstance(price_history, dict):
+            # Ensure we have a properly structured price_history
+            price_history = generate_mock_bitcoin_data(days=7)
         
-        logger.info("Bandoma gauti prognozes iš modelių")
-        # Sukuriame fiksuotas prognozes, kurias garantuotai galima naudoti
+        # Calculate price change
+        price_change = calculate_price_change(current_price, price_history['prices'][-2] if len(price_history.get('prices', [])) > 1 else current_price * 0.99)
+        
+        # Market statistics with fallbacks
+        circulating_supply = 19500000  
+        market_cap = current_price * circulating_supply
+        
+        high_24h = current_price * 1.03
+        low_24h = current_price * 0.97
+        volume_24h = 25000000000
+        
+        if price_history and len(price_history.get('prices', [])) > 0:
+            if 'high' in price_history and len(price_history['high']) > 0:
+                high_24h = max(price_history['high'][-1], current_price)
+            else:
+                high_24h = max(price_history['prices']) if price_history.get('prices') else high_24h
+            
+            if 'low' in price_history and len(price_history['low']) > 0:
+                low_24h = min(price_history['low'][-1], current_price)
+            else:
+                low_24h = min(price_history['prices']) if price_history.get('prices') else low_24h
+            
+            if 'volumes' in price_history and len(price_history['volumes']) > 0:
+                volume_24h = price_history['volumes'][-1]
+        
+        formatted_market_cap = f"${int(market_cap):,}"
+        formatted_volume = f"${int(volume_24h):,}"
+        formatted_high = f"${int(high_24h):,}"
+        formatted_low = f"${int(low_24h):,}"
+        
+        # Create fixed predictions
         fixed_predictions = {
             'dates': [(datetime.now() + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(1, 8)],
             'values': [current_price * (1 + 0.01 * i) for i in range(1, 8)]
         }
         
-        # Atsispausdiname predictions struktūrą derinimui
         logger.info(f"Predictions object structure: {fixed_predictions}")
-        
         logger.info(f"Pagrindinis puslapis užkrautas. BTC kaina: {current_price}")
         
-        # Perduodame fiksuotas prognozes
-        return render_template('index.html',
-                            latest_price=current_price,
-                            predictions=fixed_predictions,  # ← FIKSUOTOS PROGNOZĖS
-                            price_history=price_history,
-                            price_change=price_change,
-                            now=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        # Prepare all template data and serialize it
+        template_data = {
+            'latest_price': current_price,
+            'predictions': fixed_predictions,
+            'price_history': price_history,
+            'price_change': price_change,
+            'now': datetime.now(),
+            'market_cap': market_cap,
+            'formatted_market_cap': formatted_market_cap,
+            'volume_24h': volume_24h,
+            'formatted_volume': formatted_volume,
+            'high_24h': high_24h,
+            'formatted_high': formatted_high,
+            'low_24h': low_24h,
+            'formatted_low': formatted_low
+        }
+        
+        # Serialize all data for the template
+        serialized_template_data = json_util.serialize_for_template(template_data)
+        
+        # Pass serialized data to the template
+        return render_template('index.html', **serialized_template_data)
                             
     except Exception as e:
-        logger.error(f"Klaida index endpoint'e: {str(e)}")
+        logger.error(f"Klaida index endpoint'e: {str(e)}", exc_info=True)
         return render_template('error.html', error=str(e))
 
 @app.route('/models')
@@ -1064,38 +1110,99 @@ def candlestick_data_alt():
         logger.error(f"Error in alternative candlestick endpoint: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/price_history')
+def api_price_history():
+    """API endpoint for price history data"""
+    try:
+        days = request.args.get('days', 30, type=int)
+        if days > 365:
+            days = 365
+            
+        logger.info(f"API: Requesting Bitcoin price history for {days} days")
+        
+        # Get fresh price history data
+        history_data = get_bitcoin_price_history(days)
+        
+        if not history_data:
+            logger.error("Failed to get Bitcoin price history")
+            return jsonify({
+                'status': 'error',
+                'message': 'Nepavyko gauti Bitcoin kainos istorijos'
+            }), 500
+        
+        return jsonify({
+            'status': 'success',
+            'data': history_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in API price history: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/predictions')
+def api_predictions():
+    """API endpoint for predictions data"""
+    try:
+        # Get current price for baseline
+        current_price = get_real_bitcoin_price()
+        
+        # Generate sample predictions for the next 7 days
+        predictions = {
+            'dates': [(datetime.now() + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(1, 8)],
+            'values': [current_price * (1 + 0.005 * i) for i in range(1, 8)]  # Small upward trend
+        }
+        
+        return jsonify({
+            'status': 'success',
+            'data': predictions
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in API predictions: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+# Update the existing get_bitcoin_price_history function to include current data
 def get_bitcoin_price_history(days=30):
     """
-    Gauna tikslią Bitcoin kainos istoriją tiesiai iš Binance API
+    Get current Bitcoin price history including today's data from Binance API
     
     Args:
-        days (int): Dienų skaičius
+        days (int): Number of days
         
     Returns:
-        dict: Kainos istorija su formatuotais duomenimis
+        dict: Price history with formatted data
     """
     try:
         logger.info(f"Fetching Bitcoin price history for {days} days from Binance")
         
-        # Tiesiogiai gauname duomenis iš Binance API
+        # Get data from Binance API with proper time range
         end_time = int(datetime.now().timestamp() * 1000)
-        start_time = int((datetime.now() - timedelta(days=days)).timestamp() * 1000)
+        start_time = int((datetime.now() - timedelta(days=days + 1)).timestamp() * 1000)
         
-        url = f"https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&startTime={start_time}&endTime={end_time}"
+        # Use 1h interval for more recent data, 1d for longer periods
+        interval = '1h' if days <= 7 else '1d'
+        
+        url = f"https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval={interval}&startTime={start_time}&endTime={end_time}&limit=1000"
+        
         response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
         
         if response.status_code != 200:
-            logger.error(f"Klaida Binance API užklausoje: {response.status_code}")
-            # Return mock data instead of None
-            return generate_mock_bitcoin_data(days)
+            logger.error(f"Binance API error: {response.status_code}")
+            return generate_current_mock_bitcoin_data(days)
             
         klines = response.json()
         
         if not klines:
             logger.warning("Empty response from Binance API")
-            return generate_mock_bitcoin_data(days)
+            return generate_current_mock_bitcoin_data(days)
         
-        # Formuojame duomenis grafikui
+        # Process the data
         dates = []
         prices = []
         volumes = []
@@ -1103,29 +1210,82 @@ def get_bitcoin_price_history(days=30):
         high_prices = []
         low_prices = []
         
-        for kline in klines:
-            # Binance kline formatas: [Open time, Open, High, Low, Close, Volume, ...]
-            date = datetime.fromtimestamp(kline[0]/1000).strftime('%Y-%m-%d')
-            open_price = float(kline[1])
-            high_price = float(kline[2])
-            low_price = float(kline[3])
-            close_price = float(kline[4])
-            volume = float(kline[5])
+        # Group by day if we're using hourly data
+        if interval == '1h':
+            daily_data = {}
             
-            dates.append(date)
-            open_prices.append(open_price)
-            high_prices.append(high_price)
-            low_prices.append(low_price)
-            prices.append(close_price)
-            volumes.append(volume)
+            for kline in klines:
+                timestamp = kline[0] / 1000
+                date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+                
+                open_price = float(kline[1])
+                high_price = float(kline[2])
+                low_price = float(kline[3])
+                close_price = float(kline[4])
+                volume = float(kline[5])
+                
+                if date not in daily_data:
+                    daily_data[date] = {
+                        'open': open_price,
+                        'high': high_price,
+                        'low': low_price,
+                        'close': close_price,
+                        'volume': volume
+                    }
+                else:
+                    # Update high/low and close
+                    daily_data[date]['high'] = max(daily_data[date]['high'], high_price)
+                    daily_data[date]['low'] = min(daily_data[date]['low'], low_price)
+                    daily_data[date]['close'] = close_price  # Use latest close
+                    daily_data[date]['volume'] += volume
+            
+            # Convert to arrays
+            for date in sorted(daily_data.keys()):
+                data = daily_data[date]
+                dates.append(date)
+                open_prices.append(data['open'])
+                high_prices.append(data['high'])
+                low_prices.append(data['low'])
+                prices.append(data['close'])
+                volumes.append(data['volume'])
+                
+        else:
+            # Daily data processing
+            for kline in klines:
+                timestamp = kline[0] / 1000
+                date = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+                
+                open_price = float(kline[1])
+                high_price = float(kline[2])
+                low_price = float(kline[3])
+                close_price = float(kline[4])
+                volume = float(kline[5])
+                
+                dates.append(date)
+                open_prices.append(open_price)
+                high_prices.append(high_price)
+                low_prices.append(low_price)
+                prices.append(close_price)
+                volumes.append(volume)
+        
+        # Add current price if today's data is missing
+        today = datetime.now().strftime('%Y-%m-%d')
+        if not dates or dates[-1] != today:
+            current_price = get_real_bitcoin_price()
+            if current_price:
+                dates.append(today)
+                prices.append(current_price)
+                open_prices.append(current_price)
+                high_prices.append(current_price)
+                low_prices.append(current_price)
+                volumes.append(0)  # No volume data for current price
         
         logger.info(f"Successfully processed {len(dates)} price data points")
         
-        # Grąžiname formatuotus duomenis
         return {
             'dates': dates,
             'prices': prices,
-            'close': prices,  # Add close field for compatibility
+            'close': prices,
             'volumes': volumes,
             'open': open_prices,
             'high': high_prices,
@@ -1134,13 +1294,12 @@ def get_bitcoin_price_history(days=30):
         }
         
     except Exception as e:
-        logger.error(f"Klaida gaunant Bitcoin kainos istoriją: {str(e)}", exc_info=True)
-        # Return mock data instead of None
-        return generate_mock_bitcoin_data(days)
+        logger.error(f"Error getting Bitcoin price history: {str(e)}", exc_info=True)
+        return generate_current_mock_bitcoin_data(days)
 
-def generate_mock_bitcoin_data(days=30):
-    """Generate mock Bitcoin data when API fails"""
-    logger.info(f"Generating mock Bitcoin data for {days} days")
+def generate_current_mock_bitcoin_data(days=30):
+    """Generate mock Bitcoin data including today's price"""
+    logger.info(f"Generating current mock Bitcoin data for {days} days")
     
     dates = []
     prices = []
@@ -1149,26 +1308,33 @@ def generate_mock_bitcoin_data(days=30):
     high_prices = []
     low_prices = []
     
-    # Base price for simulation
-    base_price = 45000
+    # Get current real price as base
+    current_price = get_real_bitcoin_price()
+    if not current_price:
+        current_price = 45000
     
+    # Generate historical data working backwards from today
     for i in range(days, 0, -1):
-        date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
+        date = (datetime.now() - timedelta(days=i-1)).strftime('%Y-%m-%d')
         
-        # Add some random variation
-        current_price = base_price + random.uniform(-1000, 1000)
+        # Simulate price movement
+        if i == 1:  # Today - use current price
+            price = current_price
+        else:
+            # Generate price based on distance from today
+            variation = random.uniform(-0.05, 0.05)  # 5% max variation
+            price = current_price * (1 + variation * (i / days))
         
-        open_price = current_price * (1 + random.uniform(-0.02, 0.02))
-        high_price = current_price * (1 + random.uniform(0.02, 0.05))
-        low_price = current_price * (1 - random.uniform(0.02, 0.05))
-        close_price = current_price
+        open_price = price * (1 + random.uniform(-0.02, 0.02))
+        high_price = price * (1 + random.uniform(0.01, 0.03))
+        low_price = price * (1 - random.uniform(0.01, 0.03))
         volume = random.randint(1000, 10000)
         
         dates.append(date)
         open_prices.append(round(open_price, 2))
         high_prices.append(round(high_price, 2))
         low_prices.append(round(low_price, 2))
-        prices.append(round(close_price, 2))
+        prices.append(round(price, 2))
         volumes.append(volume)
     
     return {

@@ -12,7 +12,7 @@
         "active_model_id": "1"
     },
     "transformer": {
-        "status": "Aktyvus",
+        "status": "Apmokomas",
         "last_trained": "2025-05-22 18:49:33",
         "performance": "MAE: 510.0",
         "active_model_id": "2"

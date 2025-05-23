@@ -12,7 +12,14 @@ from flask_socketio import SocketIO
 import logging
 
 # Importuojame WebSocket managerį
-from app.services.websocket_service import websocket_manager
+try:
+    from app.services.websocket_service import websocket_manager
+except ImportError:
+    # Create a placeholder for the websocket_manager
+    class DummyWebSocketManager:
+        def setup_socketio(self, socketio): pass
+        def start(self): pass
+    websocket_manager = DummyWebSocketManager()
 
 # Importuojame modelio validavimo maršrutus
 try:
@@ -25,31 +32,75 @@ except ImportError:
 from app.api.validation_routes import api_validation
 
 # Importuojame užduočių maršrutus
-from app.routes.task_routes import task_routes
+try:
+    from app.routes.task_routes import task_routes
+except ImportError:
+    # Create a temporary placeholder if module is not found
+    from flask import Blueprint
+    task_routes = Blueprint('tasks', __name__, url_prefix='/tasks')
 
 # Užduočių vykdymo serviso įtraukimas į aplikaciją
-from app.services.task_executor import task_executor
+try:
+    from app.services.task_executor import task_executor
+except ImportError:
+    # Create a placeholder for task_executor
+    task_executor = None
 
 # Importuojame pranešimų maršrutus
-from app.routes.notification_routes import notification_routes
+try:
+    from app.routes.notification_routes import notification_routes
+except ImportError:
+    # Create a placeholder if module is not found
+    from flask import Blueprint
+    notification_routes = Blueprint('notifications', __name__, url_prefix='/notifications')
 
 # Importuojame dokumentacijos maršrutus
-from app.routes.documentation_routes import documentation_routes
+try:
+    from app.routes.documentation_routes import documentation_routes
+except ImportError:
+    # Create a placeholder if module is not found
+    from flask import Blueprint
+    documentation_routes = Blueprint('documentation', __name__, url_prefix='/docs')
 
 # Registruojame dashboard maršrutus
-from app.dashboard.dashboard_routes import dashboard
+try:
+    from app.dashboard.dashboard_routes import dashboard
+except ImportError:
+    # Create a placeholder if module is not found
+    from flask import Blueprint
+    dashboard = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
 # Importuojame prekybos maršrutus
-from app.trading.trading_routes import trading
+try:
+    from app.trading.trading_routes import trading
+except ImportError:
+    # Create a placeholder if module is not found
+    from flask import Blueprint
+    trading = Blueprint('trading', __name__, url_prefix='/trading')
 
 # Importuojame modelio treniravimo maršrutus
-from app.training.training_routes import model_training
+try:
+    from app.training.training_routes import model_training
+except ImportError:
+    # Create a placeholder if module is not found
+    from flask import Blueprint
+    model_training = Blueprint('training', __name__, url_prefix='/training')
 
 # Pridėkite šią importo eilutę
-from app.training.template_routes import template_management
+try:
+    from app.training.template_routes import template_management
+except ImportError:
+    # Create a placeholder if module is not found
+    from flask import Blueprint
+    template_management = Blueprint('templates', __name__, url_prefix='/templates')
 
 # Importuojame naują rezultatų modulį
-from app.results.results_routes import results
+try:
+    from app.results.results_routes import results
+except ImportError:
+    # Create a placeholder if module is not found
+    from flask import Blueprint
+    results = Blueprint('results', __name__, url_prefix='/results')
 
 # Sukuriame loggerį
 logging.basicConfig(
