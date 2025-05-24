@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}Hyperparameter Optimization - Bitcoin Prediction{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="text-gradient">
+                    <i class="fas fa-cogs"></i> Hyperparameter Optimization Dashboard
+                </h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('optimization.hyperparameter_optimization') }}" class="btn btn-primary">
+                        <i class="fas fa-sliders-h"></i> Start Optimization
+                    </a>
+                    <a href="{{ url_for('optimization.model_comparison') }}" class="btn btn-info">
+                        <i class="fas fa-chart-bar"></i> Compare Models
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card shadow border-left-primary">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Optimization Status
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold" id="optimization-status">
+                                {{ status.get('status', 'Idle') }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-cogs fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card shadow border-left-success">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Progress
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold" id="optimization-progress">
+                                {{ status.get('progress', 0) }}%
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card shadow border-left-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Current Trial
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold" id="current-trial">
+                                {{ status.get('current_trial', 0) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-flask fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card shadow border-left-danger">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Best Score
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold" id="best-score">
+                                {{ "%.4f"|format(status.get('best_score', 0)) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-trophy fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization Progress -->
+    {% if status.get('status') == 'Running' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="m-0">
+                        <i class="fas fa-spinner fa-spin"></i> Optimization in Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             style="width: {{ status.get('progress', 0) }}%">
+                            {{ status.get('progress', 0) }}%
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Current Model:</strong> <span id="current-model">{{ status.get('current_model', 'N/A') }}</span></p>
+                            <p><strong>Time Elapsed:</strong> <span id="time-elapsed">{{ status.get('time_elapsed', '0:00:00') }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estimated Remaining:</strong> <span id="time-remaining">{{ status.get('time_remaining', 'Unknown') }}</span></p>
+                            <p><strong>Current Parameters:</strong> <span id="current-params">{{ status.get('current_params', {}) | tojson }}</span></p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-danger" onclick="stopOptimization()">
+                        <i class="fas fa-stop"></i> Stop Optimization
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Results -->
+    {% if recent_results %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="m-0">
+                        <i class="fas fa-table"></i> Recent Optimization Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped" id="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Model</th>
+                                    <th>RMSE</th>
+                                    <th>MAE</th>
+                                    <th>R²</th>
+                                    <th>Trading Balance</th>
+                                    <th>Epochs</th>
+                                    <th>Batch Size</th>
+                                    <th>Learning Rate</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for result in recent_results[:10] %}
+                                <tr>
+                                    <td><span class="badge badge-primary">{{ result.get('model_type', 'Unknown') }}</span></td>
+                                    <td>{{ "%.2f"|format(result.get('rmse', 0)) }}</td>
+                                    <td>{{ "%.2f"|format(result.get('mae', 0)) }}</td>
+                                    <td>{{ "%.4f"|format(result.get('r2', 0)) }}</td>
+                                    <td class="{% if result.get('final_balance', 0) > 1000 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ "%.2f"|format(result.get('final_balance', 0)) }}
+                                    </td>
+                                    <td>{{ result.get('epochs', 0) }}</td>
+                                    <td>{{ result.get('batch_size', 0) }}</td>
+                                    <td>{{ "%.6f"|format(result.get('learning_rate', 0)) }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="viewDetails({{ loop.index0 }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-success" onclick="useParameters({{ loop.index0 }})">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Comprehensive Results Summary -->
+    {% if comprehensive_results %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="m-0">
+                        <i class="fas fa-chart-pie"></i> Optimization Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for method, data in comprehensive_results.get('optimization_summary', {}).items() %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="m-0">{{ method }}</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Method:</strong> {{ data.get('method', 'Unknown') }}</p>
+                                    {% if data.get('best_score') %}
+                                    <p><strong>Best Score:</strong> {{ "%.4f"|format(data.best_score) }}</p>
+                                    {% endif %}
+                                    {% if data.get('best_balance') %}
+                                    <p><strong>Best Balance:</strong> ${{ "%.2f"|format(data.best_balance) }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommendations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="m-0">
+                        <i class="fas fa-lightbulb"></i> Optimization Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Best Practices:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Bayesian Optimization:</strong> Use for efficient hyperparameter search with limited computational resources</li>
+                            <li><strong>Cross-Validation:</strong> Implement for robust model validation and performance estimation</li>
+                            <li><strong>Ensemble Methods:</strong> Combine multiple models for improved stability and performance</li>
+                            <li><strong>Regular Re-optimization:</strong> Re-run optimization as market conditions change</li>
+                            <li><strong>Multi-objective Optimization:</strong> Balance ML metrics with trading performance</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Optimization Result Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let recentResults = {{ recent_results_json | safe }};
+
+// Auto-refresh status if optimization is running
+{% if status.get('status') == 'Running' %}
+setInterval(updateOptimizationStatus, 5000);
+{% endif %}
+
+function updateOptimizationStatus() {
+    fetch('/optimization/api/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const status = data.status;
+                document.getElementById('optimization-status').textContent = status.status || 'Idle';
+                document.getElementById('optimization-progress').textContent = (status.progress || 0) + '%';
+                document.getElementById('current-trial').textContent = status.current_trial || 0;
+                document.getElementById('best-score').textContent = (status.best_score || 0).toFixed(4);
+                
+                // Update progress bar
+                const progressBar = document.querySelector('.progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = (status.progress || 0) + '%';
+                    progressBar.textContent = (status.progress || 0) + '%';
+                }
+                
+                // Update other status fields
+                if (document.getElementById('current-model')) {
+                    document.getElementById('current-model').textContent = status.current_model || 'N/A';
+                }
+                if (document.getElementById('time-elapsed')) {
+                    document.getElementById('time-elapsed').textContent = status.time_elapsed || '0:00:00';
+                }
+                if (document.getElementById('time-remaining')) {
+                    document.getElementById('time-remaining').textContent = status.time_remaining || 'Unknown';
+                }
+                
+                // Refresh page if optimization completed
+                if (status.status === 'Completed' || status.status === 'Failed') {
+                    setTimeout(() => location.reload(), 2000);
+                }
+            }
+        })
+        .catch(error => console.error('Error updating status:', error));
+}
+
+function stopOptimization() {
+    if (confirm('Are you sure you want to stop the optimization?')) {
+        fetch('/optimization/stop_optimization', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Optimization stopped successfully');
+                location.reload();
+            } else {
+                alert('Error stopping optimization: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error stopping optimization');
+        });
+    }
+}
+
+function viewDetails(index) {
+    const result = recentResults[index];
+    const modalBody = document.getElementById('modal-body');
+    
+    modalBody.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Model Configuration</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Model Type:</strong></td><td>${result.model_type || 'Unknown'}</td></tr>
+                    <tr><td><strong>Epochs:</strong></td><td>${result.epochs || 0}</td></tr>
+                    <tr><td><strong>Batch Size:</strong></td><td>${result.batch_size || 0}</td></tr>
+                    <tr><td><strong>Learning Rate:</strong></td><td>${(result.learning_rate || 0).toFixed(6)}</td></tr>
+                    <tr><td><strong>Dropout:</strong></td><td>${result.dropout || 0}</td></tr>
+                    <tr><td><strong>Units:</strong></td><td>${result.units || 0}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Performance Metrics</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>RMSE:</strong></td><td>${(result.rmse || 0).toFixed(2)}</td></tr>
+                    <tr><td><strong>MAE:</strong></td><td>${(result.mae || 0).toFixed(2)}</td></tr>
+                    <tr><td><strong>R²:</strong></td><td>${(result.r2 || 0).toFixed(4)}</td></tr>
+                    <tr><td><strong>MAPE:</strong></td><td>${(result.mape || 0).toFixed(2)}%</td></tr>
+                </table>
+                
+                <h6>Trading Performance</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Final Balance:</strong></td><td class="${(result.final_balance || 0) > 1000 ? 'text-success' : 'text-danger'}">$${(result.final_balance || 0).toFixed(2)}</td></tr>
+                    <tr><td><strong>Stop Loss:</strong></td><td>${(result.stop_loss || 0).toFixed(3)}</td></tr>
+                    <tr><td><strong>Take Profit:</strong></td><td>${(result.take_profit || 0).toFixed(3)}</td></tr>
+                    <tr><td><strong>Position Size:</strong></td><td>${result.position_size || 0}</td></tr>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('detailsModal')).show();
+}
+
+function useParameters(index) {
+    const result = recentResults[index];
+    if (confirm(`Apply these parameters to ${result.model_type} model?`)) {
+        // Redirect to model settings with parameters
+        const params = new URLSearchParams({
+            model_type: result.model_type,
+            epochs: result.epochs,
+            batch_size: result.batch_size,
+            learning_rate: result.learning_rate,
+            dropout: result.dropout,
+            units: result.units
+        });
+        
+        window.location.href = `/model_settings?${params.toString()}`;
+    }
+}
+</script>
+{% endblock %}

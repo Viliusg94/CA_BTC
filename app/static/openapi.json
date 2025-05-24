@@ -1,0 +1,475 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Bitcoin Price Prediction API",
+    "description": "API for training and managing Bitcoin price prediction models",
+    "version": "1.0.0",
+    "contact": {
+      "email": "support@example.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "core",
+      "description": "Core API endpoints"
+    },
+    {
+      "name": "models",
+      "description": "Model training and management"
+    },
+    {
+      "name": "predictions",
+      "description": "Price predictions and history"
+    },
+    {
+      "name": "history",
+      "description": "Model history records"
+    },
+    {
+      "name": "metrics",
+      "description": "Model performance metrics"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["core"],
+        "summary": "Health check endpoint for the API",
+        "description": "Returns the health status of the API and its components",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    },
+                    "database": {
+                      "type": "string",
+                      "example": "connected"
+                    },
+                    "services": {
+                      "type": "object",
+                      "properties": {
+                        "prediction": {
+                          "type": "string",
+                          "example": "running"
+                        },
+                        "training": {
+                          "type": "string",
+                          "example": "running"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "API is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Database connection failed"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/price_history": {
+      "get": {
+        "tags": ["core"],
+        "summary": "Get Bitcoin price history",
+        "description": "Retrieves historical Bitcoin price data",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "description": "Number of days of history to retrieve",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 1,
+              "maximum": 365
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historical price data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "dates": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "date"
+                          }
+                        },
+                        "prices": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "volumes": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error retrieving data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/model/train": {
+      "post": {
+        "tags": ["models"],
+        "summary": "Train a new model",
+        "description": "Start training a new machine learning model with specified parameters",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["model_type", "config"],
+                "properties": {
+                  "model_type": {
+                    "type": "string",
+                    "enum": ["LSTM", "GRU", "CNN", "TRANSFORMER"]
+                  },
+                  "config": {
+                    "type": "object",
+                    "properties": {
+                      "epochs": {
+                        "type": "integer",
+                        "example": 50
+                      },
+                      "batch_size": {
+                        "type": "integer",
+                        "example": 32
+                      },
+                      "learning_rate": {
+                        "type": "number",
+                        "example": 0.001
+                      },
+                      "lookback": {
+                        "type": "integer",
+                        "example": 30
+                      },
+                      "dropout": {
+                        "type": "number",
+                        "example": 0.2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Training started successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "task_id": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Model training started"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/predict": {
+      "get": {
+        "tags": ["predictions"],
+        "summary": "Generate price predictions",
+        "description": "Generate Bitcoin price predictions using a specified model",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "query",
+            "description": "ID of the model to use for prediction",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "description": "Number of days to predict",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 7,
+              "minimum": 1,
+              "maximum": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Predictions generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "model_info": {
+                      "type": "object"
+                    },
+                    "predictions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "x": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "y": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/compare": {
+      "get": {
+        "tags": ["metrics"],
+        "summary": "Compare model metrics",
+        "description": "Compare performance metrics between different models",
+        "parameters": [
+          {
+            "name": "model_types",
+            "in": "query",
+            "description": "Comma-separated list of model types to compare",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metrics comparison retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "metrics": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/model_history_db": {
+      "get": {
+        "tags": ["history"],
+        "summary": "Get all model history",
+        "description": "Retrieve history of all trained models",
+        "responses": {
+          "200": {
+            "description": "Model history retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "model_type": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "is_active": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ModelConfig": {
+        "type": "object",
+        "properties": {
+          "epochs": {
+            "type": "integer"
+          },
+          "batch_size": {
+            "type": "integer"
+          },
+          "learning_rate": {
+            "type": "number"
+          },
+          "lookback": {
+            "type": "integer"
+          },
+          "dropout": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}

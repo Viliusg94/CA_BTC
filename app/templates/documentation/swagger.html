@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation - Swagger UI{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.5.0/swagger-ui.css">
+<style>
+    .swagger-ui {
+        margin-top: 20px;
+    }
+    
+    /* Dark theme overrides for Swagger UI */
+    .swagger-ui .opblock-tag,
+    .swagger-ui .opblock .opblock-summary-path {
+        color: var(--text-primary) !important;
+    }
+    
+    .swagger-ui .opblock-description-wrapper p, 
+    .swagger-ui .opblock-external-docs-wrapper p, 
+    .swagger-ui .opblock-title_normal p {
+        color: var(--text-secondary) !important;
+    }
+    
+    .swagger-ui .info .title {
+        color: var(--accent-blue) !important;
+    }
+    
+    .swagger-ui .btn {
+        color: #333 !important;
+    }
+    
+    /* Add a banner to link back to main documentation */
+    .doc-banner {
+        background: var(--bg-tertiary);
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="text-center mb-4">
+        <i class="fas fa-code text-primary"></i>
+        API Documentation - Swagger UI
+    </h1>
+    
+    <div class="doc-banner">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">Interactive API Documentation</h5>
+                <p class="mb-0 text-muted">Explore and test the API endpoints directly from your browser</p>
+            </div>
+            <div>
+                <a href="/docs" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Documentation
+                </a>
+                <a href="/docs/api-reference" class="btn btn-outline-info ms-2">
+                    <i class="fas fa-book"></i> API Reference
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Swagger UI will be rendered here -->
+    <div id="swagger-ui"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.5.0/swagger-ui-bundle.js"></script>
+<script>
+window.onload = function() {
+    // Initialize Swagger UI
+    window.ui = SwaggerUIBundle({
+        url: "{{ url_for('static', filename='openapi.json') }}",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIBundle.SwaggerUIStandalonePreset
+        ],
+        layout: "BaseLayout",
+        supportedSubmitMethods: ['get', 'post', 'put', 'delete'],
+        onComplete: function() {
+            // Add dark mode styles after Swagger UI loads
+            document.querySelectorAll('.swagger-ui .info .main').forEach(el => {
+                el.style.backgroundColor = 'var(--bg-secondary)';
+            });
+            document.querySelectorAll('.swagger-ui .scheme-container').forEach(el => {
+                el.style.backgroundColor = 'var(--bg-secondary)';
+            });
+        }
+    });
+};
+</script>
+{% endblock %}

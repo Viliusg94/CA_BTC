@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Status - {{ model_type.upper() }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .training-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+        }
+        
+        .logs-container {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .metric-card {
+            transition: transform 0.3s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .status-badge {
+            font-size: 1.1rem;
+            padding: 8px 16px;
+        }
+        
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        
+        .control-buttons {
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0">
+                        <i class="fas fa-brain text-primary"></i>
+                        {{ model_type.upper() }} Model Training
+                    </h1>
+                    <div class="control-buttons">
+                        <a href="/real_training" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Training
+                        </a>
+                        <button id="refreshBtn" class="btn btn-outline-info me-2">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button id="stopBtn" class="btn btn-outline-danger" 
+                                {% if session.status in ['completed', 'failed', 'stopped'] %}disabled{% endif %}>
+                            <i class="fas fa-stop"></i> Stop Training
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card training-card h-100">
+                    <div class="card-body text-center">
+                        <div class="progress-ring mx-auto mb-3" id="progressRing">
+                            <svg width="120" height="120">
+                                <circle cx="60" cy="60" r="50" stroke="#e9ecef" stroke-width="8" fill="none"/>
+                                <circle cx="60" cy="60" r="50" stroke="#007bff" stroke-width="8" fill="none"
+                                        stroke-dasharray="314" stroke-dashoffset="314" id="progressCircle"
+                                        style="transition: stroke-dashoffset 0.5s ease;"/>
+                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" id="progressText">0%</text>
+                            </svg>
+                        </div>
+                        <h5 class="card-title">Training Progress</h5>
+                        <span class="badge status-badge" id="statusBadge">{{ session.status }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-9">
+                <div class="card training-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Training Configuration</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>Model Type:</strong><br>
+                                <span class="text-primary">{{ model_type.upper() }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Epochs:</strong><br>
+                                <span id="currentEpoch">{{ session.current_epoch }}</span> / {{ config.epochs }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Batch Size:</strong><br>
+                                {{ config.batch_size }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Learning Rate:</strong><br>
+                                {{ config.learning_rate }}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Training ID:</strong><br>
+                                <code>{{ training_id }}</code>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Started:</strong><br>
+                                <span id="startTime">{{ session.start_time }}</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Duration:</strong><br>
+                                <span id="duration">Calculating...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                        <h6>Training Loss</h6>
+                        <h4 id="trainingLoss">-</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-area fa-2x text-warning mb-2"></i>
+                        <h6>Validation Loss</h6>
+                        <h4 id="validationLoss">-</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bullseye fa-2x text-success mb-2"></i>
+                        <h6>MAE</h6>
+                        <h4 id="mae">-</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-percentage fa-2x text-danger mb-2"></i>
+                        <h6>R² Score</h6>
+                        <h4 id="r2Score">-</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card training-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Loss Progression</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="lossChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card training-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Metrics Progression</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="metricsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Logs -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card training-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Training Logs</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearLogs()">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="logs-container" id="logsContainer">
+                            <div class="text-muted">Waiting for training logs...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const trainingId = '{{ training_id }}';
+        let lossChart, metricsChart;
+        let refreshInterval;
+        
+        // Initialize charts
+        function initCharts() {
+            const lossCtx = document.getElementById('lossChart').getContext('2d');
+            lossChart = new Chart(lossCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Training Loss',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Validation Loss',
+                        data: [],
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            const metricsCtx = document.getElementById('metricsChart').getContext('2d');
+            metricsChart = new Chart(metricsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'MAE',
+                        data: [],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'R² Score',
+                        data: [],
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update progress ring
+        function updateProgressRing(progress) {
+            const circle = document.getElementById('progressCircle');
+            const text = document.getElementById('progressText');
+            const circumference = 314; // 2 * π * 50
+            const offset = circumference - (progress / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+            text.textContent = Math.round(progress) + '%';
+        }
+        
+        // Update status badge
+        function updateStatusBadge(status) {
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = status;
+            badge.className = 'badge status-badge';
+            
+            switch(status) {
+                case 'training':
+                    badge.classList.add('bg-primary');
+                    break;
+                case 'completed':
+                    badge.classList.add('bg-success');
+                    break;
+                case 'failed':
+                case 'error':
+                    badge.classList.add('bg-danger');
+                    break;
+                case 'stopped':
+                    badge.classList.add('bg-warning');
+                    break;
+                default:
+                    badge.classList.add('bg-secondary');
+            }
+        }
+        
+        // Update training data
+        function updateTrainingData(data) {
+            // Update progress
+            updateProgressRing(data.progress);
+            updateStatusBadge(data.status);
+            
+            // Update current epoch
+            document.getElementById('currentEpoch').textContent = data.current_epoch;
+            
+            // Update metrics
+            const metrics = data.metrics || {};
+            document.getElementById('trainingLoss').textContent = 
+                metrics.loss ? metrics.loss.toFixed(4) : '-';
+            document.getElementById('validationLoss').textContent = 
+                metrics.val_loss ? metrics.val_loss.toFixed(4) : '-';
+            document.getElementById('mae').textContent = 
+                metrics.mae ? metrics.mae.toFixed(2) : '-';
+            document.getElementById('r2Score').textContent = 
+                metrics.r2 ? metrics.r2.toFixed(4) : '-';
+            
+            // Update duration
+            if (data.start_time) {
+                const startTime = new Date(data.start_time);
+                const now = new Date();
+                const duration = Math.floor((now - startTime) / 1000);
+                const hours = Math.floor(duration / 3600);
+                const minutes = Math.floor((duration % 3600) / 60);
+                const seconds = duration % 60;
+                document.getElementById('duration').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Update logs
+            if (data.logs && data.logs.length > 0) {
+                const logsContainer = document.getElementById('logsContainer');
+                const latestLogs = data.logs.slice(-50); // Show last 50 logs
+                logsContainer.innerHTML = latestLogs.map(log => 
+                    `<div class="mb-1"><span class="text-muted">${log.timestamp}</span> ${log.message}</div>`
+                ).join('');
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            }
+            
+            // Update charts with epoch history
+            if (data.epoch_history && data.epoch_history.length > 0) {
+                const epochs = data.epoch_history.map((_, i) => i + 1);
+                
+                lossChart.data.labels = epochs;
+                lossChart.data.datasets[0].data = data.epoch_history.map(h => h.loss);
+                lossChart.data.datasets[1].data = data.epoch_history.map(h => h.val_loss);
+                lossChart.update('none');
+                
+                metricsChart.data.labels = epochs;
+                metricsChart.data.datasets[0].data = data.epoch_history.map(h => h.mae);
+                metricsChart.data.datasets[1].data = data.epoch_history.map(h => h.r2 || 0);
+                metricsChart.update('none');
+            }
+            
+            // Disable stop button if training is finished
+            const stopBtn = document.getElementById('stopBtn');
+            if (['completed', 'failed', 'stopped'].includes(data.status)) {
+                stopBtn.disabled = true;
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
+                }
+            }
+        }
+        
+        // Fetch training status
+        function fetchTrainingStatus() {
+            fetch(`/api/real_training/status/${trainingId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateTrainingData(data.session);
+                    } else {
+                        console.error('Error fetching training status:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching training status:', error);
+                });
+        }
+        
+        // Stop training
+        function stopTraining() {
+            if (confirm('Are you sure you want to stop the training?')) {
+                fetch(`/api/real_training/stop/${trainingId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Training stop requested');
+                        fetchTrainingStatus();
+                    } else {
+                        alert('Error stopping training: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error stopping training:', error);
+                    alert('Error stopping training');
+                });
+            }
+        }
+        
+        // Clear logs
+        function clearLogs() {
+            document.getElementById('logsContainer').innerHTML = 
+                '<div class="text-muted">Logs cleared</div>';
+        }
+        
+        // Event listeners
+        document.getElementById('stopBtn').addEventListener('click', stopTraining);
+        document.getElementById('refreshBtn').addEventListener('click', fetchTrainingStatus);
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            fetchTrainingStatus();
+            
+            // Start auto-refresh
+            refreshInterval = setInterval(fetchTrainingStatus, 2000);
+        });
+    </script>
+</body>
+</html>

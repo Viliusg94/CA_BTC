@@ -65,7 +65,7 @@ function initializeFallbackCandlestickChart(ctx) {
                     const element = elements[0];
                     const dataIndex = element.index;
                     
-                    createEnhancedCrosshair(canvas, event);
+                    createEnhancedCrosshair(chart.canvas, event);
                     updateChartInfoPanel(dataIndex);
                 } else {
                     removeCrosshair();
@@ -187,24 +187,40 @@ function drawCandlesticks(chart) {
 function createEnhancedCrosshair(canvas, event) {
     removeCrosshair();
     
+    // Get mouse position relative to the canvas
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
+    // Create crosshair container element
     const crosshair = document.createElement('div');
     crosshair.id = 'chart-crosshair';
     crosshair.className = 'chart-crosshair';
     crosshair.style.position = 'absolute';
     crosshair.style.pointerEvents = 'none';
     crosshair.style.zIndex = '999';
+    crosshair.style.top = '0';
+    crosshair.style.left = '0';
+    crosshair.style.width = canvas.width + 'px';
+    crosshair.style.height = canvas.height + 'px';
+    
+    // Add horizontal and vertical lines
     crosshair.innerHTML = `
-        <div class="crosshair-line" style="position: absolute; left: ${x}px; top: 0; width: 2px; height: ${canvas.height}px;"></div>
-        <div class="crosshair-line" style="position: absolute; left: 0; top: ${y}px; width: ${canvas.width}px; height: 2px;"></div>
+        <div class="crosshair-line" style="position: absolute; left: ${x}px; top: 0; width: 2px; height: ${canvas.height}px; background: rgba(96, 165, 250, 0.7); box-shadow: 0 0 4px rgba(96, 165, 250, 0.8);"></div>
+        <div class="crosshair-line" style="position: absolute; left: 0; top: ${y}px; width: ${canvas.width}px; height: 2px; background: rgba(96, 165, 250, 0.7); box-shadow: 0 0 4px rgba(96, 165, 250, 0.8);"></div>
         <div style="position: absolute; left: ${x - 4}px; top: ${y - 4}px; width: 8px; height: 8px; background: #60a5fa; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(96, 165, 250, 0.8);"></div>
     `;
     
-    canvas.parentElement.style.position = 'relative';
-    canvas.parentElement.appendChild(crosshair);
+    // Ensure container is positioned relative for absolute positioning of crosshair
+    const chartContainer = canvas.closest('.chart-container');
+    if (chartContainer) {
+        chartContainer.style.position = 'relative';
+        chartContainer.appendChild(crosshair);
+    } else {
+        // Fallback to canvas parent
+        canvas.parentElement.style.position = 'relative';
+        canvas.parentElement.appendChild(crosshair);
+    }
 }
 
 // Update the chart information panel with candlestick data

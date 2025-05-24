@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Model Training</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <h1 class="mb-4">
+            <i class="fas fa-brain text-primary"></i>
+            Real Model Training
+        </h1>
+        
+        <!-- Navigation -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <a href="/" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="/models" class="btn btn-outline-info me-2">
+                    <i class="fas fa-chart-line"></i> Models
+                </a>
+                <a href="/training_status" class="btn btn-outline-success">
+                    <i class="fas fa-tasks"></i> Training Status
+                </a>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs"></i>
+                            Training Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="trainingForm" action="/api/real_training/start" method="POST">
+                            <div class="mb-3">
+                                <label for="model_type" class="form-label">Model Type</label>
+                                <select class="form-select" id="model_type" name="model_type" required>
+                                    <option value="">Select model type</option>
+                                    <option value="lstm">LSTM</option>
+                                    <option value="gru">GRU</option>
+                                    <option value="cnn">CNN</option>
+                                    <option value="transformer">Transformer</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="epochs" class="form-label">Epochs</label>
+                                <input type="number" class="form-control" id="epochs" name="epochs" 
+                                       value="50" min="1" max="200" required>
+                                <div class="form-text">Recommended: 50-100</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="batch_size" class="form-label">Batch Size</label>
+                                <input type="number" class="form-control" id="batch_size" name="batch_size" 
+                                       value="32" min="8" max="256" required>
+                                <div class="form-text">Recommended: 32 or 64</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="learning_rate" class="form-label">Learning Rate</label>
+                                <input type="number" class="form-control" id="learning_rate" name="learning_rate" 
+                                       value="0.001" min="0.0001" max="0.1" step="0.0001" required>
+                                <div class="form-text">Recommended: 0.001-0.01</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="lookback" class="form-label">Lookback Window</label>
+                                <input type="number" class="form-control" id="lookback" name="lookback" 
+                                       value="24" min="1" max="96" required>
+                                <div class="form-text">Number of time steps to look back</div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="startBtn">
+                                    <i class="fas fa-play"></i>
+                                    Start Training
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            Training Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Important Notes:</h6>
+                            <ul class="mb-0">
+                                <li>Training can take from minutes to hours</li>
+                                <li>You'll be redirected to a live status page</li>
+                                <li>You can stop training at any time</li>
+                                <li>All progress is saved automatically</li>
+                            </ul>
+                        </div>
+                        
+                        <h6>Model Types:</h6>
+                        <ul>
+                            <li><strong>LSTM:</strong> Best for long sequences</li>
+                            <li><strong>GRU:</strong> Faster than LSTM</li>
+                            <li><strong>CNN:</strong> Good for pattern recognition</li>
+                            <li><strong>Transformer:</strong> State-of-the-art for sequences</li>
+                        </ul>
+                        
+                        <h6>Tips:</h6>
+                        <ul>
+                            <li>Start with fewer epochs for testing</li>
+                            <li>Increase batch size if you have GPU memory</li>
+                            <li>Lower learning rate for more stable training</li>
+                            <li>Monitor the live status page during training</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Active Training Sessions -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks"></i>
+                            Active Training Sessions
+                        </h5>
+                    </div>
+                    <div class="card-body" id="activeSessionsContainer">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Handle form submission
+        document.getElementById('trainingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting Training...';
+            
+            // Submit form normally (will redirect to status page)
+            this.submit();
+        });
+        
+        // Load active training sessions
+        function loadActiveSessions() {
+            fetch('/api/real_training/active')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('activeSessionsContainer');
+                    
+                    if (data.success && data.sessions.length > 0) {
+                        let html = '<div class="list-group list-group-flush">';
+                        
+                        data.sessions.forEach(session => {
+                            const statusClass = getStatusClass(session.status);
+                            html += `
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${session.model_type.toUpperCase()}</h6>
+                                        <small class="text-muted">Started: ${formatTime(session.start_time)}</small>
+                                        <div class="progress mt-2" style="height: 6px; width: 200px;">
+                                            <div class="progress-bar ${statusClass}" 
+                                                 style="width: ${session.progress}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge ${statusClass}">${session.status}</span><br>
+                                        <small class="text-muted">${session.progress}%</small><br>
+                                        <a href="/api/real_training/status/${session.training_id}" 
+                                           class="btn btn-sm btn-outline-primary mt-1">View</a>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += '</div>';
+                        container.innerHTML = html;
+                    } else {
+                        container.innerHTML = '<div class="text-center text-muted">No active training sessions</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading active sessions:', error);
+                    document.getElementById('activeSessionsContainer').innerHTML = 
+                        '<div class="text-center text-danger">Error loading sessions</div>';
+                });
+        }
+        
+        function getStatusClass(status) {
+            switch(status) {
+                case 'training': return 'bg-primary';
+                case 'completed': return 'bg-success';
+                case 'failed': return 'bg-danger';
+                case 'stopped': return 'bg-warning';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        function formatTime(timeString) {
+            return new Date(timeString).toLocaleString();
+        }
+        
+        // Load active sessions on page load and refresh every 5 seconds
+        document.addEventListener('DOMContentLoaded', loadActiveSessions);
+        setInterval(loadActiveSessions, 5000);
+    </script>
+</body>
+</html>

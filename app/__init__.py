@@ -78,6 +78,14 @@ except ImportError:
     from flask import Blueprint
     trading = Blueprint('trading', __name__, url_prefix='/trading')
 
+# Import trading dashboard blueprint
+try:
+    from app.trading.trading_dashboard import trading_dashboard
+except ImportError:
+    # Create a placeholder if module is not found
+    from flask import Blueprint
+    trading_dashboard = Blueprint('trading_dashboard', __name__, url_prefix='/trading')
+    
 # Importuojame modelio treniravimo maršrutus
 try:
     from app.training.training_routes import model_training
@@ -117,6 +125,20 @@ from app.database import init_db
 # Papildykite failą d:\CA_BTC\app\__init__.py
 
 from app.db.init_results_db import init_results_tables
+
+# Initialize model training service
+from app.services.model_service import ModelTrainingService
+model_training_service = ModelTrainingService()
+
+# Initialize prediction service
+from app.services.prediction_service import prediction_service
+
+# Import new progress and error handling services
+from app.services.progress_tracker import progress_tracker
+from app.services.error_handler import error_handler
+from app.services.enhanced_model_service import enhanced_model_service
+from app.api.progress_api import progress_api
+from app.routes.progress_routes import progress_routes
 
 def create_app(config=None):
     """
@@ -169,6 +191,9 @@ def create_app(config=None):
     # Registruojame prekybos maršrutus
     app.register_blueprint(trading)
     
+    # Register trading dashboard blueprint
+    app.register_blueprint(trading_dashboard)
+    
     # Registruojame modelio treniravimo maršrutus
     app.register_blueprint(model_training)
     
@@ -178,8 +203,12 @@ def create_app(config=None):
     # Registruojame rezultatų maršrutus
     app.register_blueprint(results)
     
+    # Register progress tracking and error handling blueprints
+    app.register_blueprint(progress_api)
+    app.register_blueprint(progress_routes)
+    
     # Inicializuojame duomenų bazę
-    init_db()
+    init_db(app)
     
     # Inicializuojame rezultatų lenteles esamoje duomenų bazėje
     try:
@@ -215,6 +244,40 @@ def create_app(config=None):
     def index():
         # Pakeiskite šį nukreipimą, jei jis neteisinga
         return redirect(url_for('model_evaluation.index'))
+    
+    # Inicializuojame duomenų bazę
+    init_db(app)
+    
+    # Inicializuojame modelio treniravimo paslaugą
+    model_training_service.init_app(app, db)
+    app.model_training_service = model_training_service
+    
+    # Inicializuojame prognozavimo paslaugą
+    prediction_service.init_app(app, db)
+    prediction_service.start()
+    
+    # Inicializuojame pagerintas paslaugas
+    enhanced_model_service.init_app(app)
+    
+    # Registruojame modelio API Blueprint
+    from app.api.model_api import model_api
+    app.register_blueprint(model_api)
+    
+    # Registruojame modelio istorijos API Blueprint
+    from app.api.model_history_api import model_history_api
+    app.register_blueprint(model_history_api)
+    
+    # Registruojame modelio metrikos API Blueprint
+    from app.api.model_metrics_api import model_metrics_api
+    app.register_blueprint(model_metrics_api)
+    
+    # Registruojame istorijos blueprint'ą
+    from app.controllers.history_controller import history_bp
+    app.register_blueprint(history_bp)
+    
+    # Registruojame dokumentacijos blueprint'ą
+    from app.controllers.documentation_controller import documentation_bp
+    app.register_blueprint(documentation_bp)
     
     # Grąžiname sukonfigūruotą aplikaciją
     return app

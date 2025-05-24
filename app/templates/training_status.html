@@ -1,373 +1,590 @@
-<!DOCTYPE html>
-<html lang="lt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelių apmokymas - Bitcoin Prognozavimo Platforma</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% extends "base.html" %}
+
+{% block title %}Apmokymo Būsena{% endblock %}
+
+{% block content %}
+<style>
+    .progress {
+        height: 25px;
+        margin-bottom: 15px;
+    }
+    .metrics-table {
+        font-size: 0.9rem;
+    }
     
-    <style>
-        .progress {
-            height: 25px;
-            margin-bottom: 15px;
-        }
-        .metrics-table {
-            font-size: 0.9rem;
-        }
-        .refresh-banner {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 8px;
-            text-align: center;
-            z-index: 1000;
-        }
-        .error-details {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        .debug-info {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            border-radius: 4px;
-            padding: 10px;
-            margin-top: 10px;
-            font-family: monospace;
-            font-size: 0.8rem;
-        }
-    </style>
-</head>
-<body>
-    {% extends "base.html" %}
+    /* Enhanced card styles */
+    .training-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .training-card .card-header {
+        font-weight: bold;
+        border-bottom: 2px solid;
+    }
+    
+    /* Different color schemes for training status */
+    .training-card.active {
+        border: 2px solid #28a745;
+    }
+    
+    .training-card.active .card-header {
+        background-color: #28a745;
+        color: white;
+        border-color: #1e7e34;
+    }
+    
+    .training-card.idle {
+        border: 2px solid #6c757d;
+    }
+    
+    .training-card.idle .card-header {
+        background-color: #6c757d;
+        color: white;
+        border-color: #5a6268;
+    }
+    
+    .training-card.error {
+        border: 2px solid #dc3545;
+    }
+    
+    .training-card.error .card-header {
+        background-color: #dc3545;
+        color: white;
+        border-color: #bd2130;
+    }
+    
+    .training-card.completed {
+        border: 2px solid #17a2b8;
+    }
+    
+    .training-card.completed .card-header {
+        background-color: #17a2b8;
+        color: white;
+        border-color: #138496;
+    }
+    
+    /* Debug panel */
+    #debug-panel {
+        background-color: #343a40;
+        color: #f8f9fa;
+        border-radius: 5px;
+        padding: 10px;
+        font-family: monospace;
+        margin-bottom: 20px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+</style>
 
-    {% block title %}Apmokymo Būsena{% endblock %}
+<h1 class="text-center mb-4">
+    <i class="fas fa-tasks text-success"></i>
+    Modelių Treniravimo Eiga
+</h1>
 
-    {% block content %}
-    <h1 class="text-center mb-4">
-        <i class="fas fa-tasks text-success"></i>
-        Modelių Apmokymo Būsena
-    </h1>
+<!-- Navigation -->
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">
+            <i class="fas fa-home"></i> Pagrindinis
+        </a>
+        <a href="/predict" class="btn btn-secondary me-2">
+            <i class="fas fa-chart-line"></i> Prognozės
+        </a>
+        <a href="/models" class="btn btn-secondary me-2">
+            <i class="fas fa-brain"></i> Modeliai
+        </a>
+        <a href="/training_status" class="btn btn-success">
+            <i class="fas fa-tasks"></i> Apmokymas
+        </a>
+    </div>
+</div>
 
-    <!-- Navigation -->
-    <div class="row mb-4">
-        <div class="col-12 text-center">
-            <a href="/" class="btn btn-secondary me-2">
-                <i class="fas fa-home"></i> Pagrindinis
-            </a>
-            <a href="/predict" class="btn btn-primary me-2">
-                <i class="fas fa-chart-line"></i> Prognozės
-            </a>
-            <a href="/models" class="btn btn-info me-2">
-                <i class="fas fa-brain"></i> Modeliai
-            </a>
-            <a href="/history" class="btn btn-secondary me-2">
-                <i class="fas fa-history"></i> Istorija
-            </a>
-            <a href="/training_status" class="btn btn-success">
-                <i class="fas fa-tasks"></i> Apmokymas
-            </a>
+<!-- Debug panel - will show errors if any -->
+<div class="row mb-4" id="debug-container" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Debugging Information</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleDebugPanel()">Toggle</button>
+            </div>
+            <div class="card-body">
+                <div id="debug-panel"></div>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Current Training Status -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header">
-                    <h5 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-clock"></i> Dabartinis Treniravimas
-                    </h5>
+<!-- Training Status Cards -->
+<div class="row mb-5" id="training-cards-container">
+    <div class="col-12 text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading training status...</p>
+    </div>
+</div>
+
+<!-- Global Stop All Button -->
+<div class="row mb-4" id="stop-all-container" style="display: none;">
+    <div class="col-12 text-center">
+        <button class="btn btn-danger" onclick="stopAllTraining()">
+            <i class="fas fa-stop-circle"></i> Sustabdyti Visus Apmokymus (<span id="training-count">0</span>)
+        </button>
+    </div>
+</div>
+
+<!-- No models message -->
+<div id="no-models-message" class="text-center py-5" style="display: none;">
+    <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">Nėra prieinamų modelių</h4>
+    <p class="text-muted">Sukurkite modelius Modelių puslapyje</p>
+    <a href="/models" class="btn btn-primary mt-3">
+        <i class="fas fa-brain"></i> Modelių Valdymas
+    </a>
+</div>
+
+<!-- Modal for details -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalTitle">Modelio Detalės</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailsModalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Kraunama...</span>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="font-weight-bold text-success">GRU Neural Network</h6>
-                            <div class="progress mb-2">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: 65%" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100">
-                                    Epoch 65/100
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variables
+let refreshInterval;
+let trainingData = {};
+let debugMessages = [];
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    refreshTrainingStatus();
+    startAutoRefresh();
+});
+
+// Function to refresh training status
+function refreshTrainingStatus() {
+    console.log('Refreshing training status...');
+    
+    // Show loading indicator
+    document.getElementById('training-cards-container').innerHTML = `
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading training status...</p>
+        </div>
+    `;
+    
+    fetch('/api/training_status')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Training status data:', data);
+            addDebugMessage('Received training status: ' + JSON.stringify(data));
+            
+            if (data.success) {
+                trainingData = data.all_status;
+                updateTrainingCards(data.all_status, data.training_summary);
+            } else {
+                console.error('Failed to fetch training status:', data.error);
+                showError('Nepavyko gauti treniravimo duomenų: ' + data.error);
+                addDebugMessage('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching training status:', error);
+            showError('Klaida gaunant treniravimo duomenis: ' + error.message);
+            addDebugMessage('Fetch error: ' + error.message);
+        });
+}
+
+// Function to update training cards
+function updateTrainingCards(allStatus, trainingSummary) {
+    const container = document.getElementById('training-cards-container');
+    const stopAllContainer = document.getElementById('stop-all-container');
+    const noModelsMessage = document.getElementById('no-models-message');
+    const trainingCount = document.getElementById('training-count');
+    
+    if (!allStatus || Object.keys(allStatus).length === 0) {
+        container.innerHTML = '';
+        stopAllContainer.style.display = 'none';
+        noModelsMessage.style.display = 'block';
+        addDebugMessage('No status data available');
+        return;
+    }
+    
+    let hasActiveTraining = false;
+    let cardsHtml = '';
+    
+    Object.keys(allStatus).forEach(modelType => {
+        const status = allStatus[modelType];
+        const progress = status.progress || {};
+        const modelStatus = status.status || {};
+        
+        addDebugMessage(`Model ${modelType}: ${JSON.stringify(status)}`);
+        
+        // Determine card status
+        let cardClass = 'idle';
+        let statusText = 'Neaktyvus';
+        let statusIcon = 'fas fa-pause';
+        let progressValue = progress.progress || 0;
+        let statusIndicator = 'status-idle';
+        
+        if (status.is_training) {
+            cardClass = 'active';
+            statusText = 'Treniruojama';
+            statusIcon = 'fas fa-cog fa-spin';
+            statusIndicator = 'status-active';
+            hasActiveTraining = true;
+        } else if (progress.status === 'completed' || progress.status === 'Completed') {
+            cardClass = 'completed';
+            statusText = 'Užbaigtas';
+            statusIcon = 'fas fa-check';
+            progressValue = 100;
+            statusIndicator = 'status-completed';
+        } else if (progress.status === 'error' || progress.status === 'Error' || progress.status === 'Klaida') {
+            cardClass = 'error';
+            statusText = 'Klaida';
+            statusIcon = 'fas fa-exclamation-triangle';
+            statusIndicator = 'status-error';
+        }
+        
+        cardsHtml += `
+            <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="card training-card ${cardClass}" id="card-${modelType}">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="${statusIcon}"></i> ${modelType.toUpperCase()} Modelis
+                            </h5>
+                            <span class="status-indicator ${statusIndicator}"></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col">
+                                <strong>Būsena:</strong> ${statusText}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col">
+                                <strong>Progresas:</strong>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar ${status.is_training ? 'progress-bar-striped progress-bar-animated' : ''}" 
+                                         role="progressbar" 
+                                         style="width: ${progressValue}%" 
+                                         aria-valuenow="${progressValue}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        ${progressValue}%
+                                    </div>
                                 </div>
                             </div>
-                            <p class="mb-1"><strong>Dabartinis Nuostolis:</strong> 0.0234</p>
-                            <p class="mb-1"><strong>Tikslumas:</strong> 78.3%</p>
-                            <p class="mb-1"><strong>Trukmė:</strong> 1h 23m</p>
-                            <p class="mb-0"><strong>Likęs Laikas:</strong> ~45min</p>
-                        </div>
-                        <div class="col-md-6">
-                            <canvas id="training-progress-chart" height="200"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-3">
-                        <button class="btn btn-warning me-2">
-                            <i class="fas fa-pause"></i> Pristabdyti
-                        </button>
-                        <button class="btn btn-danger me-2">
-                            <i class="fas fa-stop"></i> Sustabdyti
-                        </button>
-                        <button class="btn btn-info">
-                            <i class="fas fa-download"></i> Išsaugoti Pažangą
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Training Queue -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header">
-                    <h5 class="m-0 font-weight-bold text-warning">
-                        <i class="fas fa-list"></i> Treniravimo Eilė
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">LSTM v2.0 - Optimizuotas</h6>
-                                <p class="mb-1">100 epochų, learning rate: 0.001</p>
-                                <small>Pridėta: 2024-01-16 14:30</small>
-                            </div>
-                            <span class="badge bg-primary rounded-pill">1</span>
                         </div>
                         
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">Transformer Model</h6>
-                                <p class="mb-1">50 epochų, attention heads: 8</p>
-                                <small>Pridėta: 2024-01-16 15:45</small>
+                        ${progress.current_epoch ? `
+                        <div class="row mb-3">
+                            <div class="col">
+                                <strong>Epocha:</strong> ${progress.current_epoch}/${progress.total_epochs || 'N/A'}
                             </div>
-                            <span class="badge bg-secondary rounded-pill">2</span>
                         </div>
+                        ` : ''}
                         
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">Ensemble Model</h6>
-                                <p class="mb-1">Kombinuotas LSTM + GRU</p>
-                                <small>Pridėta: 2024-01-16 16:20</small>
+                        ${progress.loss ? `
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Loss:</strong> ${parseFloat(progress.loss).toFixed(4)}
                             </div>
-                            <span class="badge bg-info rounded-pill">3</span>
+                            <div class="col-6">
+                                <strong>Val Loss:</strong> ${progress.val_loss ? parseFloat(progress.val_loss).toFixed(4) : 'N/A'}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="row">
+                            <div class="col">
+                                <button class="btn btn-outline-info btn-sm me-2" 
+                                        onclick="showTrainingDetails('${modelType}')">
+                                    <i class="fas fa-info-circle"></i> Detalės
+                                </button>
+                                
+                                ${status.is_training ? `
+                                <button class="btn btn-outline-danger btn-sm stop-training-btn" 
+                                        onclick="stopTraining('${modelType}')">
+                                    <i class="fas fa-stop"></i> Sustabdyti
+                                </button>
+                                ` : ''}
+                                
+                                ${progress.status === 'error' || progress.status === 'Error' || progress.status === 'Klaida' ? `
+                                <button class="btn btn-outline-warning btn-sm" 
+                                        onclick="resetTrainingStatus('${modelType}')">
+                                    <i class="fas fa-redo"></i> Atstatyti
+                                </button>
+                                ` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- System Resources -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card stats-card shadow border-left-primary">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                CPU Naudojimas
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                67%
-                            </div>
-                            <div class="progress mt-2">
-                                <div class="progress-bar bg-primary" style="width: 67%"></div>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-microchip fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card stats-card shadow border-left-success">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                GPU Naudojimas
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                84%
-                            </div>
-                            <div class="progress mt-2">
-                                <div class="progress-bar bg-success" style="width: 84%"></div>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-memory fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card stats-card shadow border-left-warning">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                RAM Naudojimas
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                12.4GB / 16GB
-                            </div>
-                            <div class="progress mt-2">
-                                <div class="progress-bar bg-warning" style="width: 77%"></div>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-hdd fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Training Logs -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header">
-                    <h5 class="m-0 font-weight-bold text-info">
-                        <i class="fas fa-terminal"></i> Treniravimo Žurnalai
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div style="background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; height: 300px; overflow-y: scroll;">
-                        <div>2024-01-16 16:45:23 - [INFO] Starting GRU model training...</div>
-                        <div>2024-01-16 16:45:24 - [INFO] Loading training data: 2000 samples</div>
-                        <div>2024-01-16 16:45:25 - [INFO] Data preprocessing completed</div>
-                        <div>2024-01-16 16:45:26 - [INFO] Model architecture: GRU(128) -> Dense(1)</div>
-                        <div>2024-01-16 16:45:27 - [INFO] Optimizer: Adam(lr=0.001)</div>
-                        <div>2024-01-16 16:45:28 - [INFO] Epoch 1/100 - Loss: 0.1234 - Accuracy: 0.6543</div>
-                        <div>2024-01-16 16:46:15 - [INFO] Epoch 2/100 - Loss: 0.1156 - Accuracy: 0.6789</div>
-                        <div>2024-01-16 16:47:02 - [INFO] Epoch 3/100 - Loss: 0.1089 - Accuracy: 0.6954</div>
-                        <div>2024-01-16 16:47:49 - [INFO] Epoch 4/100 - Loss: 0.1023 - Accuracy: 0.7123</div>
-                        <div>2024-01-16 16:48:36 - [INFO] Epoch 5/100 - Loss: 0.0967 - Accuracy: 0.7289</div>
-                        <div>2024-01-16 16:49:23 - [WARNING] Learning rate reduced to 0.0005</div>
-                        <div>2024-01-16 16:50:10 - [INFO] Epoch 6/100 - Loss: 0.0912 - Accuracy: 0.7456</div>
-                        <div>2024-01-16 16:50:57 - [INFO] Epoch 7/100 - Loss: 0.0865 - Accuracy: 0.7612</div>
-                        <div style="color: #ffff00;">2024-01-16 16:51:44 - [INFO] Current epoch: 65/100 - Loss: 0.0234 - Accuracy: 0.7830</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endblock %}
-
-    {% block scripts %}
-    <script>
-    // Training progress chart
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('training-progress-chart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: Array.from({length: 65}, (_, i) => i + 1),
-                    datasets: [{
-                        label: 'Training Loss',
-                        data: Array.from({length: 65}, (_, i) => 0.15 * Math.exp(-i * 0.02) + 0.02),
-                        borderColor: 'rgb(96, 165, 250)',
-                        backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                        tension: 0.4
-                    }, {
-                        label: 'Validation Loss',
-                        data: Array.from({length: 65}, (_, i) => 0.16 * Math.exp(-i * 0.018) + 0.025),
-                        borderColor: 'rgb(52, 211, 153)',
-                        backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Training Progress',
-                            color: '#f3f4f6'
-                        },
-                        legend: {
-                            labels: {
-                                color: '#d1d5db'
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Epoch',
-                                color: '#d1d5db'
-                            },
-                            grid: {
-                                color: 'rgba(156, 163, 175, 0.2)'
-                            },
-                            ticks: {
-                                color: '#9ca3af'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Loss',
-                                color: '#d1d5db'
-                            },
-                            grid: {
-                                color: 'rgba(156, 163, 175, 0.2)'
-                            },
-                            ticks: {
-                                color: '#9ca3af'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Auto-refresh training status every 30 seconds
-        setInterval(function() {
-            // Update progress bar
-            const progressBar = document.querySelector('.progress-bar');
-            if (progressBar) {
-                let currentValue = parseInt(progressBar.style.width);
-                if (currentValue < 100) {
-                    currentValue += 1;
-                    progressBar.style.width = currentValue + '%';
-                    progressBar.textContent = `Epoch ${currentValue}/100`;
-                }
-            }
-            
-            // Add new log entry
-            const logContainer = document.querySelector('[style*="background: #1a1a1a"]');
-            if (logContainer && Math.random() > 0.7) {
-                const now = new Date();
-                const timeString = now.toLocaleString('lt-LT');
-                const newLog = document.createElement('div');
-                newLog.textContent = `${timeString} - [INFO] Training in progress... Loss decreasing`;
-                logContainer.appendChild(newLog);
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
-        }, 30000);
+        `;
     });
-    </script>
-    {% endblock %}
-</body>
-</html>
+    
+    container.innerHTML = cardsHtml;
+    
+    if (trainingSummary && trainingSummary.training_models) {
+        stopAllContainer.style.display = hasActiveTraining ? 'block' : 'none';
+        if (trainingCount) trainingCount.textContent = trainingSummary.training_models;
+    } else {
+        stopAllContainer.style.display = 'none';
+    }
+    
+    noModelsMessage.style.display = 'none';
+}
+
+// Function to stop training for a specific model
+function stopTraining(modelType) {
+    if (!confirm(`Ar tikrai norite sustabdyti ${modelType.toUpperCase()} modelio mokymą?`)) {
+        return;
+    }
+    
+    addDebugMessage(`Stopping training for ${modelType}`);
+    
+    fetch(`/stop_training/${modelType}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`${modelType.toUpperCase()} modelio mokymas sustabdytas`);
+            refreshTrainingStatus();
+        } else {
+            alert('Klaida sustabdant mokymą: ' + data.error);
+            addDebugMessage(`Error stopping training: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error stopping training:', error);
+        alert('Klaida sustabdant mokymą: ' + error.message);
+        addDebugMessage(`Fetch error stopping training: ${error.message}`);
+    });
+}
+
+// Function to reset training status
+function resetTrainingStatus(modelType) {
+    if (!confirm(`Ar tikrai norite atstatyti ${modelType.toUpperCase()} modelio būseną?`)) {
+        return;
+    }
+    
+    addDebugMessage(`Resetting training status for ${modelType}`);
+    
+    fetch(`/api/reset_training_status/${modelType}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`${modelType.toUpperCase()} modelio būsena atstatyta`);
+            refreshTrainingStatus();
+        } else {
+            alert('Klaida atstatant būseną: ' + data.error);
+            addDebugMessage(`Error resetting training status: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error resetting training status:', error);
+        alert('Klaida atstatant būseną: ' + error.message);
+        addDebugMessage(`Fetch error resetting status: ${error.message}`);
+    });
+}
+
+// Function to stop all training
+function stopAllTraining() {
+    if (!confirm('Ar tikrai norite sustabdyti visus aktyvius apmokymus?')) {
+        return;
+    }
+    
+    addDebugMessage('Stopping all training');
+    
+    fetch('/stop_all_training', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Visi apmokymai sustabdyti (${data.stopped_count})`);
+            refreshTrainingStatus();
+        } else {
+            alert('Klaida sustabdant apmokymus: ' + data.error);
+            addDebugMessage(`Error stopping all training: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error stopping all training:', error);
+        alert('Klaida sustabdant apmokymus: ' + error.message);
+        addDebugMessage(`Fetch error stopping all training: ${error.message}`);
+    });
+}
+
+// Function to show training details
+function showTrainingDetails(modelType) {
+    const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+    document.getElementById('detailsModalTitle').textContent = `${modelType.toUpperCase()} Modelio Treniravimo Detalės`;
+    document.getElementById('detailsModalBody').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Kraunama...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch model details
+    fetch(`/api/model_details/${modelType}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('detailsModalBody').innerHTML = renderModelDetails(data.details);
+            } else {
+                document.getElementById('detailsModalBody').innerHTML = `
+                    <div class="alert alert-danger">
+                        Klaida gaunant modelio detales: ${data.error || 'Nežinoma klaida'}
+                    </div>
+                `;
+                addDebugMessage(`Error getting model details: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching model details:', error);
+            document.getElementById('detailsModalBody').innerHTML = `
+                <div class="alert alert-danger">
+                    Klaida gaunant modelio detales: ${error.message || 'Nežinoma klaida'}
+                </div>
+            `;
+            addDebugMessage(`Fetch error getting model details: ${error.message}`);
+        });
+}
+
+// Function to render model details
+function renderModelDetails(details) {
+    if (!details) return '<div class="alert alert-warning">Nėra detalių</div>';
+    
+    return `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Pagrindinė informacija</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Modelio tipas:</strong></td><td>${details.model_type}</td></tr>
+                    <tr><td><strong>Būsena:</strong></td><td>${details.status}</td></tr>
+                    <tr><td><strong>Paskutinis mokymas:</strong></td><td>${details.last_trained}</td></tr>
+                    <tr><td><strong>Efektyvumas:</strong></td><td>${details.performance}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Konfigūracija</h6>
+                <pre class="bg-light p-2 rounded">${JSON.stringify(details.config || {}, null, 2)}</pre>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <h6>Dabartinis apmokymas</h6>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p><strong>Būsena:</strong> ${details.current_training?.status || 'Nevykdomas'}</p>
+                                <p><strong>Epocha:</strong> ${details.current_training?.current_epoch || 0}/${details.current_training?.total_epochs || 0}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p><strong>Progresas:</strong> ${details.current_training?.progress || 0}%</p>
+                                <p><strong>Likęs laikas:</strong> ${details.current_training?.time_remaining || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p><strong>Loss:</strong> ${details.current_training?.metrics?.loss || 'N/A'}</p>
+                                <p><strong>Val Loss:</strong> ${details.current_training?.metrics?.val_loss || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Function to start auto-refresh
+function startAutoRefresh() {
+    refreshInterval = setInterval(refreshTrainingStatus, 10000); // Refresh every 10 seconds
+}
+
+// Function to stop auto-refresh
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+}
+
+// Function to show error message
+function showError(message) {
+    const container = document.getElementById('training-cards-container');
+    container.innerHTML = `
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> ${message}
+            </div>
+        </div>
+    `;
+}
+
+// Debug functions
+function addDebugMessage(message) {
+    const timestamp = new Date().toLocaleTimeString();
+    debugMessages.push(`[${timestamp}] ${message}`);
+    
+    // Keep only last 50 messages
+    if (debugMessages.length > 50) {
+        debugMessages.shift();
+    }
+    
+    // Update debug panel if visible
+    const debugPanel = document.getElementById('debug-panel');
+    if (debugPanel) {
+        debugPanel.innerHTML = debugMessages.join('<br>');
+        debugPanel.scrollTop = debugPanel.scrollHeight;
+    }
+    
+    // Show debug container if there are messages
+    if (debugMessages.length > 0) {
+        document.getElementById('debug-container').style.display = 'block';
+    }
+}
+
+function toggleDebugPanel() {
+    const debugPanel = document.getElementById('debug-panel');
+    debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+}
+
+// Stop auto-refresh when user leaves the page
+window.addEventListener('beforeunload', function() {
+    stopAutoRefresh();
+});
+</script>
+{% endblock %}

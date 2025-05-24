@@ -1,21 +1,24 @@
 import logging
 import json
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit, disconnect
+from flask import request
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 class WebSocketManager:
     """
     Klasė, skirta valdyti WebSocket komunikaciją tarp serverio ir kliento
     """
     
-    def __init__(self, socketio=None):
+    def __init__(self):
         """
         Inicializuoja WebSocket managerį
-        
-        Args:
-            socketio (SocketIO, optional): Flask-SocketIO objektas
         """
-        self.socketio = socketio
-    
+        self.socketio = None
+        self.connected_clients = set()
+        self.error_handlers = {}
+        
     def setup_socketio(self, socketio):
         """
         Nustato SocketIO objektą
@@ -24,104 +27,140 @@ class WebSocketManager:
             socketio (SocketIO): Flask-SocketIO objektas
         """
         self.socketio = socketio
-    
-    def broadcast_message(self, data, event='message', namespace='/training'):
-        """
-        Siunčia pranešimą visiems prisijungusiems klientams
+        self._register_error_handlers()
+        self._register_event_handlers()
         
-        Args:
-            data (dict): Duomenų žodynas
-            event (str, optional): Įvykio pavadinimas. Numatytoji reikšmė: 'message'
-            namespace (str, optional): Vardų erdvė. Numatytoji reikšmė: '/training'
+    def _register_error_handlers(self):
+        """Register comprehensive error handlers"""
+        
+        @self.socketio.on_error_default
+        def default_error_handler(e):
+            logger.error(f"WebSocket error: {str(e)}", exc_info=True)
+            emit('error', {
+                'message': 'An unexpected error occurred',
+                'timestamp': datetime.now().isoformat(),
+                'error_type': 'websocket_error'
+            })
             
-        Returns:
-            bool: True, jei pranešimas išsiųstas sėkmingai, False kitu atveju
-        """
+        @self.socketio.on_error('/training')
+        def training_error_handler(e):
+            logger.error(f"Training WebSocket error: {str(e)}", exc_info=True)
+            emit('training_error', {
+                'message': 'Training communication error',
+                'timestamp': datetime.now().isoformat(),
+                'suggested_action': 'Please refresh the page and try again'
+            })
+            
+    def _register_event_handlers(self):
+        """Register event handlers with error handling"""
+        
+        @self.socketio.on('connect')
+        def handle_connect():
+            try:
+                client_id = request.sid
+                self.connected_clients.add(client_id)
+                logger.info(f"Client {client_id} connected")
+                
+                emit('connection_confirmed', {
+                    'status': 'connected',
+                    'client_id': client_id,
+                    'timestamp': datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error handling connection: {e}")
+                emit('error', {'message': 'Connection failed'})
+                
+        @self.socketio.on('disconnect')
+        def handle_disconnect():
+            try:
+                client_id = request.sid
+                self.connected_clients.discard(client_id)
+                logger.info(f"Client {client_id} disconnected")
+                
+            except Exception as e:
+                logger.error(f"Error handling disconnection: {e}")
+                
+        @self.socketio.on('request_training_status')
+        def handle_training_status_request(data):
+            try:
+                model_type = data.get('model_type')
+                if not model_type:
+                    emit('error', {'message': 'Model type required'})
+                    return
+                    
+                # Get training status from model service
+                from app.services.model_service import ModelTrainingService
+                service = ModelTrainingService()
+                status = service.get_training_progress(model_type)
+                
+                emit('training_status', {
+                    'model_type': model_type,
+                    'status': status,
+                    'timestamp': datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error getting training status: {e}")
+                emit('training_error', {
+                    'message': 'Failed to get training status',
+                    'model_type': data.get('model_type', 'unknown')
+                })
+    
+    def broadcast_training_progress(self, model_type, progress_data):
+        """Broadcast training progress with error handling"""
         try:
-            if self.socketio:
-                self.socketio.emit(event, data, namespace=namespace)
-                return True
-            else:
-                logging.warning("SocketIO objektas nenustatytas")
+            if not self.socketio:
+                logger.warning("SocketIO not initialized")
                 return False
+                
+            self.socketio.emit('training_progress', {
+                'model_type': model_type,
+                'progress': progress_data,
+                'timestamp': datetime.now().isoformat()
+            }, namespace='/training')
+            
+            return True
+            
         except Exception as e:
-            logging.error(f"Klaida siunčiant pranešimą per WebSocket: {str(e)}")
+            logger.error(f"Error broadcasting training progress: {e}")
             return False
     
-    def broadcast_training_update(self, training_id, epoch, metrics, progress, status='training', namespace='/training'):
-        """
-        Siunčia treniravimo atnaujinimą visiems prisijungusiems klientams
-        
-        Args:
-            training_id (str): Treniravimo sesijos ID
-            epoch (int): Dabartinė epocha
-            metrics (dict): Metrikos (loss, accuracy, val_loss, val_accuracy)
-            progress (float): Progreso procentas (0-100)
-            status (str, optional): Treniravimo būsena. Numatytoji reikšmė: 'training'
-            namespace (str, optional): Vardų erdvė. Numatytoji reikšmė: '/training'
+    def broadcast_error(self, error_type, message, details=None):
+        """Broadcast error to all connected clients"""
+        try:
+            if not self.socketio:
+                return False
+                
+            error_data = {
+                'error_type': error_type,
+                'message': message,
+                'timestamp': datetime.now().isoformat()
+            }
             
-        Returns:
-            bool: True, jei pranešimas išsiųstas sėkmingai, False kitu atveju
-        """
-        data = {
-            'training_id': training_id,
-            'epoch': epoch,
-            'metrics': metrics,
-            'progress': progress,
-            'status': status
-        }
-        
-        return self.broadcast_message(data, event='training_update', namespace=namespace)
-    
-    def broadcast_training_complete(self, training_id, final_metrics, namespace='/training'):
-        """
-        Siunčia pranešimą apie baigtą treniravimą visiems prisijungusiems klientams
-        
-        Args:
-            training_id (str): Treniravimo sesijos ID
-            final_metrics (dict): Galutinės metrikos
-            namespace (str, optional): Vardų erdvė. Numatytoji reikšmė: '/training'
+            if details:
+                error_data['details'] = details
+                
+            self.socketio.emit('system_error', error_data)
+            return True
             
-        Returns:
-            bool: True, jei pranešimas išsiųstas sėkmingai, False kitu atveju
-        """
-        data = {
-            'training_id': training_id,
-            'metrics': final_metrics,
-            'progress': 100,
-            'status': 'complete'
-        }
-        
-        return self.broadcast_message(data, event='training_complete', namespace=namespace)
-    
-    def broadcast_training_error(self, training_id, error_message, namespace='/training'):
-        """
-        Siunčia pranešimą apie treniravimo klaidą visiems prisijungusiems klientams
-        
-        Args:
-            training_id (str): Treniravimo sesijos ID
-            error_message (str): Klaidos pranešimas
-            namespace (str, optional): Vardų erdvė. Numatytoji reikšmė: '/training'
-            
-        Returns:
-            bool: True, jei pranešimas išsiųstas sėkmingai, False kitu atveju
-        """
-        data = {
-            'training_id': training_id,
-            'error': error_message,
-            'status': 'error'
-        }
-        
-        return self.broadcast_message(data, event='training_error', namespace=namespace)
+        except Exception as e:
+            logger.error(f"Error broadcasting error: {e}")
+            return False
     
     def start(self):
-        """
-        Paleidžia WebSocket servisą (jei reikia)
-        """
-        logging.info("WebSocket servisas paleistas")
-        # Šiame metode papildomos logikos nereikia, nes
-        # SocketIO bus inicializuojamas ir paleidžiamas su Flask aplikacija
-        pass
+        """Start WebSocket service with error handling"""
+        try:
+            if self.socketio:
+                logger.info("WebSocket service started successfully")
+                return True
+            else:
+                logger.error("SocketIO not initialized")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to start WebSocket service: {e}")
+            return False
 
 # Sukuriame globalų WebSocketManager objektą
 websocket_manager = WebSocketManager()

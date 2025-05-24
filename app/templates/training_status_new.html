@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+
+{% block title %}Apmokymo Būsena{% endblock %}
+
+{% block content %}
+<style>
+    .progress {
+        height: 25px;
+        margin-bottom: 15px;
+    }
+    .metrics-table {
+        font-size: 0.9rem;
+    }
+    .refresh-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    /* Enhanced card styles */
+    .training-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .training-card .card-header {
+        font-weight: bold;
+        border-bottom: 2px solid;
+    }
+    
+    /* Different color schemes for training status */
+    .training-card.active {
+        border: 2px solid #28a745;
+    }
+    
+    .training-card.active .card-header {
+        background-color: #28a745;
+        color: white;
+        border-color: #1e7e34;
+    }
+    
+    .training-card.idle {
+        border: 2px solid #6c757d;
+    }
+    
+    .training-card.idle .card-header {
+        background-color: #6c757d;
+        color: white;
+        border-color: #5a6268;
+    }
+    
+    .training-card.error {
+        border: 2px solid #dc3545;
+    }
+    
+    .training-card.error .card-header {
+        background-color: #dc3545;
+        color: white;
+        border-color: #bd2130;
+    }
+    
+    .training-card.completed {
+        border: 2px solid #17a2b8;
+    }
+    
+    .training-card.completed .card-header {
+        background-color: #17a2b8;
+        color: white;
+        border-color: #138496;
+    }
+    
+    /* Progress bar enhancements */
+    .training-card .progress {
+        height: 20px;
+        border-radius: 5px;
+        background-color: #e9ecef;
+    }
+    
+    .training-card .progress-bar {
+        transition: width 0.6s ease;
+        font-weight: bold;
+        color: white;
+        text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Metrics display enhancements */
+    .metrics-value {
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .loss-value {
+        color: #dc3545;
+    }
+    
+    .val-loss-value {
+        color: #fd7e14;
+    }
+    
+    .accuracy-value {
+        color: #28a745;
+    }
+    
+    /* Animated elements for active training */
+    .pulse-icon {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>
+
+<h1 class="text-center mb-4">
+    <i class="fas fa-tasks text-success"></i>
+    Modelių Treniravimo Eiga
+</h1>
+
+<!-- Navigation -->
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">
+            <i class="fas fa-home"></i> Pagrindinis
+        </a>
+        <a href="{{ url_for('predict') if url_for('predict') else '/' }}" class="btn btn-secondary me-2">
+            <i class="fas fa-chart-line"></i> Prognozės
+        </a>
+        <a href="{{ url_for('models') if url_for('models') else '/' }}" class="btn btn-secondary me-2">
+            <i class="fas fa-brain"></i> Modeliai
+        </a>
+        <a href="{{ url_for('training_status') }}" class="btn btn-success">
+            <i class="fas fa-tasks"></i> Apmokymas
+        </a>
+    </div>
+</div>
+
+<!-- Training Status Cards -->
+<div class="row mb-5">
+    {% if all_status %}
+        {% for model_type, status in all_status.items() %}
+        <div class="col-lg-6 mb-4">
+            <div id="card-{{ model_type }}" 
+                 class="card training-card {{ 'active' if status.is_training else 'idle' if status.status.status == 'Neapmokytas' else 'completed' if status.status.status == 'Aktyvus' else 'error' if status.progress.status == 'Klaida' else 'idle' }}"
+                 data-model-type="{{ model_type }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas {{ 'fa-brain' if 'lstm' in model_type.lower() or 'gru' in model_type.lower() else 'fa-network-wired' if 'transformer' in model_type.lower() else 'fa-microchip' }}"></i>
+                        {{ model_type.upper() }} Modelis
+                    </h5>
+                    <div class="status-indicator">
+                        {% if status.is_training %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-spinner fa-spin me-1"></i> 
+                            Apmokomas
+                        </span>
+                        <i class="fas fa-circle text-success pulse-icon ms-2"></i>
+                        {% elif status.progress.status == 'Klaida' %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-exclamation-circle me-1"></i> 
+                            Klaida
+                        </span>
+                        {% elif status.status.status == 'Aktyvus' %}
+                        <span class="badge bg-info">
+                            <i class="fas fa-check-circle me-1"></i> 
+                            Aktyvus
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-pause-circle me-1"></i> 
+                            Neaktyvus
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Training progress -->
+                    <div class="progress mb-3">
+                        <div class="progress-bar {{ 'bg-success' if status.is_training else 'bg-danger' if status.progress.status == 'Klaida' else 'bg-info' if status.status.status == 'Aktyvus' else 'bg-secondary' }}" 
+                             role="progressbar" 
+                             style="width: {{ status.progress.progress or 0 }}%;" 
+                             aria-valuenow="{{ status.progress.progress or 0 }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ (status.progress.progress or 0)|round|int }}%
+                        </div>
+                    </div>
+                    
+                    <!-- Status and metrics -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1 epoch-status">
+                                Epocha {{ status.progress.current_epoch or 0 }}/{{ status.progress.total_epochs or 0 }}
+                            </p>
+                            <p class="mb-1">
+                                <strong>Laikas iki pabaigos:</strong> {{ status.progress.time_remaining or 'N/A' }}
+                            </p>
+                            <p class="mb-1">
+                                <strong>Dabartinis žingsnis:</strong> {{ status.progress.current_step or 'N/A' }}
+                            </p>
+                        </div>
+                        <div class="col-md-6 metrics-container">
+                            <div class="metrics-table">
+                                {% if status.progress.metrics %}
+                                <p class="mb-1">
+                                    <strong>Loss:</strong> <span class="loss-value">{{ status.progress.metrics.loss|default('N/A', true) if status.progress.metrics.loss != None else 'N/A' }}</span>
+                                </p>
+                                <p class="mb-1">
+                                    <strong>Val Loss:</strong> <span class="val-loss-value">{{ status.progress.metrics.val_loss|default('N/A', true) if status.progress.metrics.val_loss != None else 'N/A' }}</span>
+                                </p>
+                                <p class="mb-1">
+                                    <strong>MAE:</strong> <span class="accuracy-value">{{ status.progress.metrics.mae|default('N/A', true) if status.progress.metrics.mae != None else 'N/A' }}</span>
+                                </p>
+                                {% else %}
+                                <p class="mb-1">
+                                    <strong>Loss:</strong> <span class="loss-value">N/A</span>
+                                </p>
+                                <p class="mb-1">
+                                    <strong>Val Loss:</strong> <span class="val-loss-value">N/A</span>
+                                </p>
+                                <p class="mb-1">
+                                    <strong>MAE:</strong> <span class="accuracy-value">N/A</span>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action buttons -->
+                    <div class="d-flex justify-content-between mt-3">
+                        {% if not status.is_training %}
+                        <form action="{{ url_for('train_model') }}" method="post" style="display: inline;">
+                            <input type="hidden" name="model_type" value="{{ model_type }}">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-play"></i> Pradėti Treniravimą
+                            </button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('stop_training', model_type=model_type) }}" method="post" style="display: inline;">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Ar tikrai norite nutraukti {{ model_type }} modelio apmokymą?')">
+                                <i class="fas fa-stop"></i> Sustabdyti
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        <button class="btn btn-secondary" onclick="showTrainingDetails('{{ model_type }}')">
+                            <i class="fas fa-info-circle"></i> Detalės
+                        </button>
+                    </div>
+                    
+                    <!-- Training control buttons -->
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <button class="btn btn-warning btn-sm" onclick="stopTraining('{{ model_type }}')" 
+                                    style="display: {{ 'block' if status.is_training else 'none' }}">
+                                <i class="fas fa-stop"></i> Sustabdyti
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="resetTrainingStatus('{{ model_type }}')">
+                                <i class="fas fa-redo"></i> Atstatyti Būseną
+                            </button>
+                            <button class="btn btn-info btn-sm" onclick="checkTrainingStatus('{{ model_type }}')">
+                                <i class="fas fa-info"></i> Patikrinti Būseną
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if status.progress.error %}
+                    <div class="alert alert-danger mt-3">
+                        <i class="fas fa-exclamation-circle"></i>
+                        {{ status.progress.error }}
+                        {% if status.progress.last_error_time %}
+                        <br><small class="text-muted">{{ status.progress.last_error_time }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<!-- Global Stop All Button -->
+{% if training_summary and training_summary.training_models > 0 %}
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <form action="{{ url_for('stop_all_training') }}" method="post" style="display: inline;">
+            <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Ar tikrai norite nutraukti visų modelių apmokymą?')">
+                <i class="fas fa-stop-circle"></i> Nutraukti Visą Apmokymą
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- No models message -->
+{% if not all_status %}
+<div class="text-center py-5">
+    <i class="fas fa-exclamation-circle fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">Nėra prieinamų modelių</h4>
+    <p class="text-muted">Sukurkite modelius Modelių puslapyje</p>
+    <a href="{{ url_for('models') if url_for('models') else '/' }}" class="btn btn-primary mt-3">
+        <i class="fas fa-brain"></i> Eiti į Modelių puslapį
+    </a>
+</div>
+{% endif %}
+
+<!-- Modal for details -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalTitle">Modelio Treniravimo Detalės</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="detailsModalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Kraunama...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Uždaryti</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Function to show training details
+function showTrainingDetails(modelType) {
+    const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+    document.getElementById('detailsModalTitle').textContent = `${modelType.toUpperCase()} Modelio Treniravimo Detalės`;
+    document.getElementById('detailsModalBody').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Kraunama...</span>
+            </div>
+            <p class="mt-3">Kraunamos modelio detalės...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch model details
+    fetch(`/api/model_details/${modelType}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('detailsModalBody').innerHTML = renderModelDetails(data.details);
+            } else {
+                document.getElementById('detailsModalBody').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        ${data.error || 'Nepavyko gauti modelio detalių'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById('detailsModalBody').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Klaida: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function renderModelDetails(details) {
+    // Build detailed HTML from the model details
+    return `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="fw-bold">Modelio parametrai</h6>
+                <table class="table table-sm">
+                    <tbody>
+                        <tr><td>Sluoksniai</td><td>${details.layers || 'N/A'}</td></tr>
+                        <tr><td>Batch Size</td><td>${details.batch_size || 'N/A'}</td></tr>
+                        <tr><td>Learning Rate</td><td>${details.learning_rate || 'N/A'}</td></tr>
+                        <tr><td>Epochs</td><td>${details.epochs || 'N/A'}</td></tr>
+                        <tr><td>Dropout</td><td>${details.dropout || 'N/A'}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold">Apmokymo metrikos</h6>
+                <div id="metricsChart" style="height: 200px;">Čia bus metrikos grafikai</div>
+            </div>
+        </div>
+    `;
+}
+
+// Removed the automatic page reload that was causing the redirect
+// Only refresh if user is actively viewing the page and there are training models
+{% if training_summary and training_summary.training_models > 0 %}
+// Set up auto-refresh for training status using AJAX instead of page reload
+let refreshCount = 0;
+const refreshInterval = 30 * 1000; // 30 seconds instead of 10
+
+function refreshTrainingStatus() {
+    refreshCount++;
+    console.log(`Refreshing training status (${refreshCount})`);
+    
+    // Use AJAX to fetch updated status instead of reloading the page
+    fetch('/api/training_status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateTrainingCards(data.all_status);
+            }
+        })
+        .catch(error => {
+            console.log('Error refreshing training status:', error);
+        });
+}
+
+// Start auto-refresh only if there are training models
+const statusRefreshInterval = setInterval(refreshTrainingStatus, refreshInterval);
+
+// Stop auto-refresh when user leaves the page
+window.addEventListener('beforeunload', function() {
+    clearInterval(statusRefreshInterval);
+});
+
+// Function to update UI with training status
+function updateTrainingCards(allStatus) {
+    if (!allStatus) return;
+    
+    Object.keys(allStatus).forEach(modelType => {
+        const status = allStatus[modelType];
+        const cardElement = document.getElementById(`card-${modelType}`);
+        
+        if (!cardElement) return;
+        
+        // Update progress bar
+        const progressBar = cardElement.querySelector('.progress-bar');
+        if (progressBar) {
+            const progress = status.progress.progress || 0;
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${Math.round(progress)}%`;
+        }
+        
+        // Update epoch status
+        const epochElement = cardElement.querySelector('.epoch-status');
+        if (epochElement) {
+            const current = status.progress.current_epoch || 0;
+            const total = status.progress.total_epochs || 0;
+            epochElement.textContent = `Epocha ${current}/${total}`;
+        }
+    });
+}
+{% endif %}
+
+// Training control functions
+function stopTraining(modelType) {
+    if (confirm(`Sustabdyti apmokymą modelio ${modelType}?`)) {
+        fetch(`/api/stop_training/${modelType}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Apmokymas sustabdytas modelio ${modelType}`);
+                    location.reload();
+                } else {
+                    alert(`Nepavyko sustabdyti: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                alert(`Klaida: ${error.message}`);
+            });
+    }
+}
+
+function resetTrainingStatus(modelType) {
+    if (confirm(`Atstatyti apmokymo būseną modelio ${modelType}? Tai išvalys užstrigusį apmokymo būseną.`)) {
+        fetch(`/api/reset_training_status/${modelType}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Būsena atstatyta modelio ${modelType}`);
+                    location.reload();
+                } else {
+                    alert(`Nepavyko atstatyti: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                alert(`Klaida: ${error.message}`);
+            });
+    }
+}
+
+function stopAllTraining() {
+    if (confirm('Sustabdyti VISUS apmokymo procesus?')) {
+        fetch('/api/stop_all_training', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(`Nepavyko: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                alert(`Klaida: ${error.message}`);
+            });
+    }
+}
+</script>
+{% endblock %}

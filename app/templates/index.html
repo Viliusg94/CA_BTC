@@ -187,8 +187,6 @@
             background: rgba(96, 165, 250, 0.7);
             box-shadow: 0 0 4px rgba(96, 165, 250, 0.8);
         }
-
-        /* ...existing code... */
     </style>
 </head>
 <body>
@@ -197,6 +195,228 @@
 {% block title %}Bitcoin Kainų Analizė - Pagrindinis{% endblock %}
 
 {% block content %}
+<h1 class="text-center mb-4">
+    <i class="fab fa-bitcoin text-warning"></i>
+    Bitcoin Kainų Analizė ir Prognozavimas
+</h1>
+
+<!-- Navigation -->
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <a href="/" class="btn btn-dark me-2">
+            <i class="fas fa-home"></i> Pagrindinis
+        </a>
+        <a href="/predict" class="btn btn-primary me-2">
+            <i class="fas fa-chart-line"></i> Prognozės
+        </a>
+        <a href="/models" class="btn btn-info me-2">
+            <i class="fas fa-brain"></i> Modeliai
+        </a>
+        <a href="/train_models" class="btn btn-warning me-2">
+            <i class="fas fa-cogs"></i> Treniruoti
+        </a>
+        <a href="/training_status" class="btn btn-success">
+            <i class="fas fa-tasks"></i> Apmokymas
+        </a>
+    </div>
+</div>
+
+<!-- Current Price Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card price-card shadow">
+            <div class="card-body text-center">
+                <h2 class="card-title">
+                    <i class="fab fa-bitcoin"></i> Dabartinė Bitcoin Kaina
+                </h2>
+                <h1 class="display-4 fw-bold">
+                    Kraunama...
+                </h1>
+                
+                <small class="text-light opacity-75">
+                    Atnaujinta: <span id="last-updated">Kraunama...</span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bitcoin Historical Price Chart (Main Chart) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-candlestick"></i> 
+                    Bitcoin Istorinės Kainos Grafikas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container position-relative">
+                    <canvas id="candlestick-chart"></canvas>
+                </div>
+                
+                <!-- Chart Info Panel (Centered) -->
+                <div class="row justify-content-center mt-3">
+                    <div class="col-md-8 col-lg-6">
+                        <div id="chart-info-panel" class="chart-info-panel">
+                            <div class="text-center">
+                                <i class="fas fa-mouse-pointer" style="font-size: 20px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                                <p style="margin: 0; color: var(--text-muted); font-size: 13px;">Užveskite pelės žymeklį ant grafiko, kad pamatytumėte detalią informaciją</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="candlestickError" class="alert alert-warning mt-3" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card shadow border-left-primary">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            24h Apimtis
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="volume-24h">
+                            Kraunama...
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card shadow border-left-success">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            24h Aukšč.
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="high-24h">
+                            Kraunama...
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card shadow border-left-danger">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            24h Žem.
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-24h">
+                            Kraunama...
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card shadow border-left-warning">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Rinkos kap.
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="market-cap">
+                            Kraunama...
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-coins fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-rocket"></i> Greiti Veiksmai
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3">
+                        <a href="/predict" class="btn btn-outline-primary btn-lg w-100">
+                            <i class="fas fa-crystal-ball d-block mb-2"></i>
+                            Generuoti Prognozes
+                        </a>
+                        <small class="text-muted d-block mt-2">
+                            Naudokite LSTM modelius Bitcoin kainų prognozavimui
+                        </small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="/models" class="btn btn-outline-info btn-lg w-100">
+                            <i class="fas fa-cogs d-block mb-2"></i>
+                            Valdyti Modelius
+                        </a>
+                        <small class="text-muted d-block mt-2">
+                            Treniruokite ir konfigūruokite AI modelius
+                        </small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="/training_status" class="btn btn-outline-secondary btn-lg w-100">
+                            <i class="fas fa-tasks d-block mb-2"></i>
+                            Apmokymo Būsena
+                        </a>
+                        <small class="text-muted d-block mt-2">
+                            Stebėkite modelių apmokymo procesą
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<div class="row">
+    <div class="col-12 text-center">
+        <p class="text-muted">
+            <i class="fas fa-chart-line"></i> 
+            Bitcoin Kainų Analizės Sistema | 
+            Realaus laiko duomenys iš Binance API
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Include the bitcoin-charts.js file -->
+<script src="{{ url_for('static', filename='js/bitcoin-charts.js') }}"></script>
+
 <script>
 // Initialize global variables safely
 window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
@@ -421,7 +641,7 @@ function updateStats() {
             document.getElementById('volume-24h').textContent = volume24h.toLocaleString('en-US', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
-            });
+            }) + ' BTC';
             document.getElementById('market-cap').textContent = '$' + (marketCap / 1000000000).toLocaleString('en-US', {
                 minimumFractionDigits: 1,
                 maximumFractionDigits: 1
@@ -442,278 +662,6 @@ function updateStats() {
         document.getElementById('market-cap').textContent = 'Kraunama...';
     }
 }
-    </script>
-
-    <h1 class="text-center mb-4">
-        <i class="fab fa-bitcoin text-warning"></i>
-        Bitcoin Kainų Analizė ir Prognozavimas
-    </h1>
-
-    <!-- Navigation -->
-    <div class="row mb-4">
-        <div class="col-12 text-center">
-            <a href="/" class="btn btn-dark me-2">
-                <i class="fas fa-home"></i> Pagrindinis
-            </a>
-            <a href="/predict" class="btn btn-primary me-2">
-                <i class="fas fa-chart-line"></i> Prognozės
-            </a>
-            <a href="/models" class="btn btn-info me-2">
-                <i class="fas fa-brain"></i> Modeliai
-            </a>
-            <a href="/history" class="btn btn-secondary me-2">
-                <i class="fas fa-history"></i> Istorija
-            </a>
-            <a href="/training_status" class="btn btn-success">
-                <i class="fas fa-tasks"></i> Apmokymas
-            </a>
-        </div>
-    </div>
-
-    <!-- Current Price Card -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card price-card shadow">
-                <div class="card-body text-center">
-                    <h2 class="card-title">
-                        <i class="fab fa-bitcoin"></i> Dabartinė Bitcoin Kaina
-                    </h2>
-                    <h1 class="display-4 fw-bold">
-                        Kraunama...
-                    </h1>
-                    
-                    <small class="text-light opacity-75">
-                        Atnaujinta: <span id="last-updated">Kraunama...</span>
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bitcoin Historical Price Chart (Main Chart) -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h5 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-chart-candlestick"></i> 
-                        Bitcoin Istorinės Kainos Grafikas
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="candlestick-chart"></canvas>
-                    </div>
-                    
-                    <!-- Chart Legend Panel -->
-                    <div id="chart-legend-panel" class="chart-legend-panel">
-                        <div class="legend-content">
-                            <div class="legend-item">
-                                <div class="candlestick-symbol bullish-candle"></div>
-                                <span class="legend-label">Bullish Candle (Kaina kilo)</span>
-                            </div>
-                            
-                            <div class="legend-item">
-                                <div class="candlestick-symbol bearish-candle"></div>
-                                <span class="legend-label">Bearish Candle (Kaina krito)</span>
-                            </div>
-                            
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #60a5fa;"></div>
-                                <span class="legend-label">Atidarymo kaina</span>
-                            </div>
-                            
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #fbbf24;"></div>
-                                <span class="legend-label">Uždarymo kaina</span>
-                            </div>
-                            
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #34d399;"></div>
-                                <span class="legend-label">Aukščiausia kaina</span>
-                            </div>
-                            
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #f87171;"></div>
-                                <span class="legend-label">Žemiausia kaina</span>
-                            </div>
-                            
-                            <div class="legend-item">
-                                <i class="fas fa-mouse-pointer" style="color: #60a5fa; font-size: 12px;"></i>
-                                <span class="legend-label">Užveskite ant svečių detalių informacijai</span>
-                            </div>
-                            
-                            <div class="legend-item">
-                                <i class="fas fa-crosshairs" style="color: #60a5fa; font-size: 12px;"></i>
-                                <span class="legend-label">Kryžminis taikinys rodo poziciją</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Chart Information Panel -->
-                    <div id="chart-info-panel" class="chart-info-panel">
-                        <div class="text-center">
-                            <i class="fas fa-mouse-pointer" style="font-size: 20px; color: var(--text-muted); margin-bottom: 8px;"></i>
-                            <p style="margin: 0; color: var(--text-muted); font-size: 13px;">Užveskite pelės žymeklį ant grafiko, kad pamatytumėte detalią informaciją</p>
-                        </div>
-                    </div>
-                    
-                    <div id="candlestickError" class="alert alert-warning mt-3" style="display: none;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card stats-card shadow border-left-primary">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                24h Apimtis
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="volume-24h">
-                                Kraunama...
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card stats-card shadow border-left-success">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                24h Aukšč.
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="high-24h">
-                                Kraunama...
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card stats-card shadow border-left-danger">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                24h Žem.
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-24h">
-                                Kraunama...
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card stats-card shadow border-left-warning">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Rinkos kap.
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="market-cap">
-                                Kraunama...
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-coins fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h5 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-rocket"></i> Greiti Veiksmai
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-4 mb-3">
-                            <a href="/predict" class="btn btn-outline-primary btn-lg w-100">
-                                <i class="fas fa-crystal-ball d-block mb-2"></i>
-                                Generuoti Prognozes
-                            </a>
-                            <small class="text-muted d-block mt-2">
-                                Naudokite LSTM modelius Bitcoin kainų prognozavimui
-                            </small>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="/models" class="btn btn-outline-info btn-lg w-100">
-                                <i class="fas fa-cogs d-block mb-2"></i>
-                                Valdyti Modelius
-                            </a>
-                            <small class="text-muted d-block mt-2">
-                                Treniruokite ir konfigūruokite AI modelius
-                            </small>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="/history" class="btn btn-outline-secondary btn-lg w-100">
-                                <i class="fas fa-archive d-block mb-2"></i>
-                                Peržiūrėti Istoriją
-                            </a>
-                            <small class="text-muted d-block mt-2">
-                                Analizuokite modelių veikimo istoriją
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="row">
-        <div class="col-12 text-center">
-            <p class="text-muted">
-                <i class="fas fa-chart-line"></i> 
-                Bitcoin Kainų Analizės Sistema | 
-                Realaus laiko duomenys iš Binance API
-            </p>
-        </div>
-    </div>
-{% endblock %}
-
-{% block scripts %}
-<!-- Include the bitcoin-charts.js file -->
-<script src="{{ url_for('static', filename='js/bitcoin-charts.js') }}"></script>
-
-<!-- Additional script for stats -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Stats will be updated by the main script above
-    // Initial display
-    updateStats();
-});
 </script>
 {% endblock %}
     <!-- Bootstrap Bundle -->

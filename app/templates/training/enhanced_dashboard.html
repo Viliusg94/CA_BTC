@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Enhanced Model Training Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">
+        <i class="fas fa-brain text-primary"></i>
+        Enhanced Model Training Dashboard
+    </h1>
+    
+    <!-- Training Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-play-circle"></i>
+                        Start New Training
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="training-form">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Model Type</label>
+                                <select class="form-select" id="model-type" required>
+                                    <option value="">Select Model</option>
+                                    <option value="lstm">LSTM</option>
+                                    <option value="gru">GRU</option>
+                                    <option value="cnn">CNN</option>
+                                    <option value="transformer">Transformer</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Epochs</label>
+                                <input type="number" class="form-control" id="epochs" 
+                                       value="50" min="1" max="1000">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Batch Size</label>
+                                <input type="number" class="form-control" id="batch-size" 
+                                       value="32" min="1" max="256">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Learning Rate</label>
+                                <input type="number" class="form-control" id="learning-rate" 
+                                       value="0.001" step="0.0001" min="0.0001" max="1">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary" id="start-training-btn">
+                                        <i class="fas fa-play"></i> Start Training
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="validate-config-btn">
+                                        <i class="fas fa-check"></i> Validate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Training Tasks -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tasks"></i>
+                        Active Training Tasks
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="active-tasks">
+                        {% if training_tasks %}
+                            {% for task_id, progress in training_tasks.items() %}
+                            <div id="progress-{{ task_id }}" class="mb-3"></div>
+                            {% endfor %}
+                        {% else %}
+                        <p class="text-muted">No active training tasks</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Training History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history"></i>
+                        Training History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="training-history">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include progress tracker component -->
+{% include 'components/progress_tracker.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/progress-tracker.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize form handlers
+    initializeTrainingForm();
+    
+    // Start tracking existing tasks
+    {% if training_tasks %}
+    {% for task_id, progress in training_tasks.items() %}
+    startTaskTracking('{{ task_id }}');
+    {% endfor %}
+    {% endif %}
+    
+    // Auto-refresh training history
+    loadTrainingHistory();
+    setInterval(loadTrainingHistory, 30000); // Refresh every 30 seconds
+});
+
+function initializeTrainingForm() {
+    const form = document.getElementById('training-form');
+    const startBtn = document.getElementById('start-training-btn');
+    const validateBtn = document.getElementById('validate-config-btn');
+    
+    // Form submission handler
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = getFormData();
+        
+        // Validate first
+        const isValid = await validateConfiguration(formData);
+        if (!isValid) {
+            return;
+        }
+        
+        // Start training
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+        
+        try {
+            const response = await fetch('/training/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Create progress container
+                const taskContainer = document.createElement('div');
+                taskContainer.id = `progress-${result.task_id}`;
+                taskContainer.className = 'mb-3';
+                document.getElementById('active-tasks').appendChild(taskContainer);
+                
+                // Start tracking
+                startTaskTracking(result.task_id);
+                
+                // Show success message
+                showAlert('success', result.message);
+                
+                // Reset form
+                form.reset();
+            } else {
+                showAlert('danger', result.error || 'Failed to start training');
+            }
+        } catch (error) {
+            console.error('Training start error:', error);
+            showAlert('danger', 'Network error occurred while starting training');
+        } finally {
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Start Training';
+        }
+    });
+    
+    // Validation button handler
+    validateBtn.addEventListener('click', async function() {
+        const formData = getFormData();
+        await validateConfiguration(formData, true); // Show success message
+    });
+}
+
+function getFormData() {
+    return {
+        model_type: document.getElementById('model-type').value,
+        config: {
+            epochs: parseInt(document.getElementById('epochs').value),
+            batch_size: parseInt(document.getElementById('batch-size').value),
+            learning_rate: parseFloat(document.getElementById('learning-rate').value)
+        }
+    };
+}
+
+async function validateConfiguration(formData, showSuccess = false) {
+    try {
+        const response = await fetch('/training/validate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            if (showSuccess) {
+                showAlert('success', 'Configuration is valid');
+            }
+            return true;
+        } else {
+            const errors = result.errors || [result.error];
+            showAlert('danger', 'Validation errors:<br>' + errors.join('<br>'));
+            return false;
+        }
+    } catch (error) {
+        console.error('Validation error:', error);
+        showAlert('danger', 'Network error during validation');
+        return false;
+    }
+}
+
+function startTaskTracking(taskId) {
+    window.progressTracker.track(taskId, {
+        container: `#progress-${taskId}`,
+        template: 'default',
+        onComplete: function(progress) {
+            showAlert('success', `Training completed for ${progress.metadata?.model_type || 'model'}`);
+            setTimeout(() => {
+                loadTrainingHistory();
+            }, 2000);
+        },
+        onError: function(errorMessage) {
+            showAlert('danger', `Training failed: ${errorMessage}`);
+        }
+    });
+}
+
+async function loadTrainingHistory() {
+    try {
+        const response = await fetch('/api/progress/all');
+        const result = await response.json();
+        
+        if (result.success) {
+            const historyContainer = document.getElementById('training-history');
+            
+            // Filter completed training tasks
+            const completedTasks = Object.entries(result.tasks)
+                .filter(([taskId, progress]) => 
+                    progress.status === 'completed' && 
+                    progress.metadata?.model_type
+                )
+                .sort((a, b) => new Date(b[1].completion_time) - new Date(a[1].completion_time))
+                .slice(0, 10); // Show last 10 completed tasks
+            
+            if (completedTasks.length === 0) {
+                historyContainer.innerHTML = '<p class="text-muted">No completed training tasks</p>';
+                return;
+            }
+            
+            let historyHTML = '<div class="table-responsive"><table class="table table-sm">';
+            historyHTML += '<thead><tr>';
+            historyHTML += '<th>Model</th><th>Completed</th><th>Duration</th><th>Result</th>';
+            historyHTML += '</tr></thead><tbody>';
+            
+            completedTasks.forEach(([taskId, progress]) => {
+                const duration = progress.completion_time && progress.start_time ? 
+                    formatDuration(new Date(progress.completion_time) - new Date(progress.start_time)) : 'Unknown';
+                
+                const accuracy = progress.result?.accuracy ? 
+                    (progress.result.accuracy * 100).toFixed(1) + '%' : 'N/A';
+                
+                historyHTML += `<tr>
+                    <td><span class="badge bg-primary">${progress.metadata.model_type.toUpperCase()}</span></td>
+                    <td>${new Date(progress.completion_time).toLocaleString()}</td>
+                    <td>${duration}</td>
+                    <td>Accuracy: ${accuracy}</td>
+                </tr>`;
+            });
+            
+            historyHTML += '</tbody></table></div>';
+            historyContainer.innerHTML = historyHTML;
+        }
+    } catch (error) {
+        console.error('Error loading training history:', error);
+    }
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function formatDuration(milliseconds) {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+        return `${hours}h ${minutes % 60}m`;
+    } else if (minutes > 0) {
+        return `${minutes}m ${seconds % 60}s`;
+    } else {
+        return `${seconds}s`;
+    }
+}
+</script>
+{% endblock %}

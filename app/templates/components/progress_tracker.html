@@ -1,0 +1,212 @@
+<!-- Progress Tracker Component -->
+<div class="progress-tracker-component">
+    <style>
+        .progress-tracker {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            margin-bottom: 20px;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .progress-title {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+        
+        .progress-details {
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .progress-stage,
+        .progress-step {
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+        
+        .progress-timing {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .progress-timing span {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        
+        .progress-logs {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .logs-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .log-entry {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .log-entry:last-child {
+            margin-bottom: 0;
+        }
+        
+        .log-message {
+            color: var(--text-secondary);
+        }
+        
+        .progress-error {
+            background-color: rgba(248, 113, 113, 0.1);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+        
+        .progress-success {
+            background-color: rgba(52, 211, 153, 0.1);
+            border-color: var(--accent-green);
+        }
+        
+        .error-details {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(248, 113, 113, 0.1);
+            border-left: 4px solid var(--accent-red);
+            border-radius: 4px;
+        }
+        
+        .error-message {
+            color: var(--accent-red);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .error-technical {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+    
+    <!-- Default progress template (will be populated by JavaScript) -->
+    <div id="progress-default" class="progress-tracker" style="display: none;">
+        <div class="progress-header">
+            <h5 class="progress-title">Task Progress</h5>
+            <span class="progress-status badge bg-info">Starting</span>
+        </div>
+        
+        <div class="progress mb-2">
+            <div class="progress-bar" role="progressbar" style="width: 0%">0%</div>
+        </div>
+        
+        <div class="progress-details">
+            <div class="progress-stage">
+                <strong>Current Stage:</strong> <span class="stage-text">Initializing...</span>
+            </div>
+            <div class="progress-step">
+                <strong>Step:</strong> <span class="step-text">0 / 100</span>
+            </div>
+            <div class="progress-timing">
+                <span class="elapsed-time">
+                    <i class="fas fa-clock"></i> Elapsed: <span class="elapsed-text">0s</span>
+                </span>
+                <span class="estimated-time">
+                    <i class="fas fa-hourglass-half"></i> Remaining: <span class="remaining-text">Calculating...</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error display template -->
+<div id="error-template" style="display: none;">
+    <div class="alert alert-danger" role="alert">
+        <div class="error-header">
+            <h5 class="alert-heading">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="error-title">Error Occurred</span>
+            </h5>
+        </div>
+        <div class="error-content">
+            <div class="error-message"></div>
+            <div class="error-actions mt-3">
+                <button type="button" class="btn btn-outline-danger btn-sm retry-btn">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm details-btn" 
+                        onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    <i class="fas fa-info-circle"></i> Details
+                </button>
+                <div class="error-details mt-2" style="display: none;">
+                    <div class="error-technical"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Progress tracker utility functions
+function createProgressTracker(containerId, options = {}) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`Container ${containerId} not found`);
+        return null;
+    }
+    
+    // Initialize progress tracker for this container
+    return window.progressTracker.track(containerId, {
+        container: `#${containerId}`,
+        template: options.template || 'default',
+        onUpdate: options.onUpdate,
+        onComplete: options.onComplete,
+        onError: options.onError
+    });
+}
+
+function showError(containerId, errorMessage, technicalDetails = null) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const errorTemplate = document.getElementById('error-template').cloneNode(true);
+    errorTemplate.style.display = 'block';
+    errorTemplate.id = '';
+    
+    errorTemplate.querySelector('.error-message').textContent = errorMessage;
+    
+    if (technicalDetails) {
+        errorTemplate.querySelector('.error-technical').textContent = technicalDetails;
+    } else {
+        errorTemplate.querySelector('.details-btn').style.display = 'none';
+    }
+    
+    container.innerHTML = '';
+    container.appendChild(errorTemplate);
+}
+
+function clearProgress(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '';
+    }
+}
+</script>

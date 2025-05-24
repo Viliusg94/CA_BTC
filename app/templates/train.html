@@ -81,12 +81,18 @@
                                 <input type="number" class="form-control" id="batch_size" name="batch_size" value="32" min="8" max="256" required>
                                 <div class="form-text">Rekomenduojama reikšmė: 32 arba 64</div>
                             </div>
-                            
-                            <!-- Sekos ilgis -->
+                              <!-- Sekos ilgis -->
                             <div class="mb-3">
                                 <label for="sequence_length" class="form-label">Sekos ilgis</label>
                                 <input type="number" class="form-control" id="sequence_length" name="sequence_length" value="24" min="1" max="96" required>
                                 <div class="form-text">Laiko žingsnių skaičius prognozės sekoje (24 = 6 valandos)</div>
+                            </div>
+                            
+                            <!-- Mokymosi greitis -->
+                            <div class="mb-3">
+                                <label for="learning_rate" class="form-label">Mokymosi greitis</label>
+                                <input type="number" class="form-control" id="learning_rate" name="learning_rate" value="0.001" min="0.0001" max="0.1" step="0.0001" required>
+                                <div class="form-text">Rekomenduojama reikšmė: 0.001-0.01</div>
                             </div>
                             
                             <div class="d-grid">

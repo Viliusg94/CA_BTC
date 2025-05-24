@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Training Status Debug{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">
+    <i class="fas fa-bug text-warning"></i>
+    Training Status Debug
+</h1>
+
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="/models" class="btn btn-secondary me-2">
+            <i class="fas fa-brain"></i> Models
+        </a>
+        <a href="/training_status" class="btn btn-secondary">
+            <i class="fas fa-tasks"></i> Training Status
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cogs"></i> Debug Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <button id="reset-training-status-btn" class="btn btn-warning w-100">
+                            <i class="fas fa-sync-alt"></i> Reset Training Status
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <button id="test-train-model-btn" class="btn btn-info w-100">
+                            <i class="fas fa-vial"></i> Test Training API
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <button id="refresh-debug-btn" class="btn btn-primary w-100">
+                            <i class="fas fa-redo"></i> Refresh Debug Info
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bug"></i> Raw Training Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="debug-log" class="bg-light p-3 rounded mb-3" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                    Loading debug information...
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-secondary text-white">
+                                Training Status
+                            </div>
+                            <div class="card-body">
+                                <pre id="training-status-json" class="mb-0" style="max-height: 300px; overflow-y: auto;">Loading...</pre>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">
+                                Active Threads
+                            </div>
+                            <div class="card-body">
+                                <pre id="threads-json" class="mb-0" style="max-height: 300px; overflow-y: auto;">Loading...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    refreshDebugInfo();
+    
+    // Add event listeners
+    document.getElementById('refresh-debug-btn').addEventListener('click', refreshDebugInfo);
+    document.getElementById('reset-training-status-btn').addEventListener('click', resetTrainingStatus);
+    document.getElementById('test-train-model-btn').addEventListener('click', testTrainModel);
+});
+
+function refreshDebugInfo() {
+    fetch('/api/training_debug')
+        .then(response => response.json())
+        .then(data => {
+            // Update training status
+            const trainingStatusElem = document.getElementById('training-status-json');
+            if (trainingStatusElem) {
+                trainingStatusElem.textContent = JSON.stringify(data.training_status || {}, null, 2);
+            }
+            
+            // Update threads
+            const threadsElem = document.getElementById('threads-json');
+            if (threadsElem) {
+                threadsElem.textContent = JSON.stringify(data.training_threads || {}, null, 2);
+            }
+            
+            // Update debug log
+            const debugLogElem = document.getElementById('debug-log');
+            if (debugLogElem) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = `[${timestamp}] Fetched debug info\n`;
+                debugLogElem.textContent += logEntry;
+                
+                // Scroll to bottom
+                debugLogElem.scrollTop = debugLogElem.scrollHeight;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching debug info:', error);
+            const debugLogElem = document.getElementById('debug-log');
+            if (debugLogElem) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = `[${timestamp}] Error: ${error.message}\n`;
+                debugLogElem.textContent += logEntry;
+            }
+        });
+}
+
+function resetTrainingStatus() {
+    if (!confirm('Are you sure you want to reset all training status? This will stop any ongoing training.')) {
+        return;
+    }
+    
+    fetch('/api/reset_training_status', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const debugLogElem = document.getElementById('debug-log');
+        if (debugLogElem) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] Reset training status: ${data.success ? 'Success' : 'Failed'}\n`;
+            debugLogElem.textContent += logEntry;
+        }
+        
+        refreshDebugInfo();
+        
+        if (data.success) {
+            alert('Training status reset successfully');
+        } else {
+            alert('Failed to reset training status: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error resetting training status:', error);
+        const debugLogElem = document.getElementById('debug-log');
+        if (debugLogElem) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] Error resetting status: ${error.message}\n`;
+            debugLogElem.textContent += logEntry;
+        }
+    });
+}
+
+function testTrainModel() {
+    const debugLogElem = document.getElementById('debug-log');
+    if (debugLogElem) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = `[${timestamp}] Testing training API...\n`;
+        debugLogElem.textContent += logEntry;
+        debugLogElem.scrollTop = debugLogElem.scrollHeight;
+    }
+    
+    // Create minimal test model
+    const formData = new FormData();
+    formData.append('model_type', 'lstm');
+    formData.append('epochs', 5);
+    formData.append('batch_size', 32);
+    formData.append('learning_rate', 0.001);
+    formData.append('sequence_length', 10);
+    
+    fetch('/api/train_model', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (debugLogElem) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] Training API response: ${JSON.stringify(data)}\n`;
+            debugLogElem.textContent += logEntry;
+            debugLogElem.scrollTop = debugLogElem.scrollHeight;
+        }
+        
+        if (data.success) {
+            alert('Test training started successfully. Check training status page.');
+        } else {
+            alert('Failed to start test training: ' + (data.error || 'Unknown error'));
+        }
+        
+        // Refresh debug info after 2 seconds
+        setTimeout(refreshDebugInfo, 2000);
+    })
+    .catch(error => {
+        console.error('Error testing training API:', error);
+        if (debugLogElem) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] Error testing training API: ${error.message}\n`;
+            debugLogElem.textContent += logEntry;
+            debugLogElem.scrollTop = debugLogElem.scrollHeight;
+        }
+    });
+}
+</script>
+{% endblock %}

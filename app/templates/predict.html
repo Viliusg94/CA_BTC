@@ -35,291 +35,207 @@
             max-width: 100% !important;
             max-height: 400px !important;
         }
+        
+        /* Enhanced chart info panel styling */
+        .chart-info-panel {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(31, 41, 55, 0.8) 100%);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            max-width: 100%;
+            margin: 0 auto;
+            opacity: 0.85;
+        }
+        
+        .chart-info-panel.active {
+            border-color: var(--accent-blue);
+            opacity: 1;
+        }
+        
+        .chart-info-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .info-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+        
+        .info-change {
+            font-size: 13px;
+        }
+        
+        /* Prediction Controls */
+        .prediction-controls {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(31, 41, 55, 0.9) 100%);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Model selection enhanced styling */
+        .model-selection-container {
+            max-height: 380px;
+            overflow-y: auto;
+        }
+        
+        .model-card {
+            background: linear-gradient(135deg, rgba(55, 65, 81, 0.7) 0%, rgba(31, 41, 55, 0.7) 100%);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .model-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .model-card.selected {
+            border: 2px solid var(--accent-blue);
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+        }
+        
+        .model-card h5 {
+            margin-bottom: 8px;
+        }
+        
+        .model-metrics {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+        }
+        
+        .model-metric {
+            text-align: center;
+            padding: 4px 8px;
+            background: rgba(17, 24, 39, 0.4);
+            border-radius: 6px;
+        }
+        
+        .model-metric-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        
+        .model-metric-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+        
+        /* Enhanced slider styling */
+        .custom-range {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+            outline: none;
+        }
+        
+        .custom-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .custom-range::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Dropdown styling */
+        .form-select {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        .form-select:focus {
+            border-color: var(--accent-blue) !important;
+            box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25) !important;
+        }
+        
+        /* Enhanced button styling */
+        .btn-generate {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            padding: 12px 24px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+        }
+        
+        /* Prediction chart enhancements */
+        .prediction-chart-container {
+            position: relative;
+        }
+        
+        #prediction-error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(248, 113, 113, 0.2);
+            border: 1px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+            width: 80%;
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <script>
-    // Initialize global variables safely
-    window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
-    window.predictions = {values: [], dates: []};
-    
-    // Load data via AJAX to avoid JSON serialization issues
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Predict page loading...');
-        
-        // Load live Bitcoin price first
-        fetchLiveBitcoinPrice();
-        
-        // Auto-refresh price every 30 seconds
-        setInterval(fetchLiveBitcoinPrice, 30000);
-        
-        // Initialize prediction chart
-        setTimeout(() => {
-            initializePredictionChart();
-        }, 1000);
-    });
-    
-    // Fetch live Bitcoin price from Binance API
-    function fetchLiveBitcoinPrice() {
-        console.log('Fetching live Bitcoin price for predict page...');
-        
-        // Show loading state
-        const priceElement = document.getElementById('current-btc-price');
-        if (priceElement && priceElement.textContent.includes('Kraunama')) {
-            priceElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kraunama...';
-        }
-        
-        // Fetch current price from Binance
-        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Binance API response:', data);
-                
-                if (data && data.symbol === 'BTCUSDT') {
-                    const currentPrice = parseFloat(data.lastPrice);
-                    const priceChange = parseFloat(data.priceChange);
-                    const priceChangePercent = parseFloat(data.priceChangePercent);
-                    
-                    console.log(`Price: ${currentPrice}, Change: ${priceChange}, Change%: ${priceChangePercent}`);
-                    
-                    // Update the main price display
-                    const priceElement = document.getElementById('current-btc-price');
-                    if (priceElement) {
-                        priceElement.textContent = '$' + currentPrice.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
-                        console.log('Updated price element:', priceElement.textContent);
-                    }
-                    
-                    // Update timestamp
-                    const timestampElement = document.getElementById('last-updated');
-                    if (timestampElement) {
-                        timestampElement.textContent = new Date().toLocaleTimeString('lt-LT');
-                    }
-                    
-                    // Update price change in hero card
-                    const heroCard = document.querySelector('.price-card .card-body');
-                    if (heroCard) {
-                        // Remove existing price change
-                        const existingChange = heroCard.querySelector('.live-price-change');
-                        if (existingChange) {
-                            existingChange.remove();
-                        }
-                        
-                        // Add new price change display
-                        const changeElement = document.createElement('h5');
-                        changeElement.className = 'live-price-change mt-2';
-                        
-                        if (priceChangePercent > 0) {
-                            changeElement.innerHTML = `<span class="text-success"><i class="fas fa-arrow-up"></i> +$${priceChange.toFixed(2)} (+${priceChangePercent.toFixed(2)}%)</span>`;
-                        } else if (priceChangePercent < 0) {
-                            changeElement.innerHTML = `<span class="text-danger"><i class="fas fa-arrow-down"></i> $${priceChange.toFixed(2)} (${priceChangePercent.toFixed(2)}%)</span>`;
-                        } else {
-                            changeElement.innerHTML = `<span class="text-light"><i class="fas fa-minus"></i> $0.00 (0.00%)</span>`;
-                        }
-                        
-                        // Insert after the main price
-                        const heroPrice = heroCard.querySelector('#current-btc-price');
-                        if (heroPrice && heroPrice.parentNode) {
-                            heroPrice.parentNode.insertBefore(changeElement, heroPrice.nextSibling);
-                        }
-                    }
-                    
-                    console.log('Live Bitcoin price updated on predict page:', currentPrice);
-                } else {
-                    throw new Error('Invalid response format from Binance API');
-                }
-            })
-            .catch(error => {
-                console.error("Error fetching live Bitcoin price:", error);
-                
-                // Try fallback API
-                fetch('/api/btc_price/current')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const priceElement = document.getElementById('current-btc-price');
-                            if (priceElement) {
-                                priceElement.textContent = '$' + data.price.toLocaleString('en-US', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                });
-                            }
-                            
-                            const timestampElement = document.getElementById('last-updated');
-                            if (timestampElement) {
-                                timestampElement.textContent = new Date().toLocaleTimeString('lt-LT');
-                            }
-                            
-                            console.log('Used fallback API for Bitcoin price');
-                        } else {
-                            throw new Error('Fallback API also failed');
-                        }
-                    })
-                    .catch(fallbackError => {
-                        console.error("Fallback API also failed:", fallbackError);
-                        
-                        // Show error message in main price display
-                        const priceElement = document.getElementById('current-btc-price');
-                        if (priceElement) {
-                            priceElement.innerHTML = '<span class="text-warning">Klaida kraunant kainą</span>';
-                        }
-                    });
-            });
-    }
-    </script>
+{% extends "base.html" %}
 
-    {% extends "base.html" %}
-
-{% block title %}Bitcoin Prognozės{% endblock %}
+{% block title %}Bitcoin Kainų Prognozavimas{% endblock %}
 
 {% block content %}
-<script>
-// Initialize global variables
-window.priceHistory = {"dates":[], "prices":[], "close":[], "volumes":[]};
-window.predictions = {values: [], dates: []};
-
-// Load data via AJAX when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Predict page loading...');
-    
-    // Load live Bitcoin price first
-    fetchLiveBitcoinPrice();
-    
-    // Auto-refresh price every 30 seconds
-    setInterval(fetchLiveBitcoinPrice, 30000);
-    
-    // Initialize prediction chart
-    setTimeout(() => {
-        initializePredictionChart();
-    }, 1000);
-});
-
-// Fetch live Bitcoin price from Binance API
-function fetchLiveBitcoinPrice() {
-    console.log('Fetching live Bitcoin price for predict page...');
-    
-    // Show loading state
-    const priceElement = document.getElementById('current-btc-price');
-    if (priceElement && priceElement.textContent.includes('Kraunama')) {
-        priceElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kraunama...';
-    }
-    
-    // Fetch current price from Binance
-    fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Binance API response:', data);
-            
-            if (data && data.symbol === 'BTCUSDT') {
-                const currentPrice = parseFloat(data.lastPrice);
-                const priceChange = parseFloat(data.priceChange);
-                const priceChangePercent = parseFloat(data.priceChangePercent);
-                
-                console.log(`Price: ${currentPrice}, Change: ${priceChange}, Change%: ${priceChangePercent}`);
-                
-                // Update the main price display
-                const priceElement = document.getElementById('current-btc-price');
-                if (priceElement) {
-                    priceElement.textContent = '$' + currentPrice.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                    console.log('Updated price element:', priceElement.textContent);
-                }
-                
-                // Update timestamp
-                const timestampElement = document.getElementById('last-updated');
-                if (timestampElement) {
-                    timestampElement.textContent = new Date().toLocaleTimeString('lt-LT');
-                }
-                
-                // Update price change in hero card
-                const heroCard = document.querySelector('.price-card .card-body');
-                if (heroCard) {
-                    // Remove existing price change
-                    const existingChange = heroCard.querySelector('.live-price-change');
-                    if (existingChange) {
-                        existingChange.remove();
-                    }
-                    
-                    // Add new price change display
-                    const changeElement = document.createElement('h5');
-                    changeElement.className = 'live-price-change mt-2';
-                    
-                    if (priceChangePercent > 0) {
-                        changeElement.innerHTML = `<span class="text-success"><i class="fas fa-arrow-up"></i> +$${priceChange.toFixed(2)} (+${priceChangePercent.toFixed(2)}%)</span>`;
-                    } else if (priceChangePercent < 0) {
-                        changeElement.innerHTML = `<span class="text-danger"><i class="fas fa-arrow-down"></i> $${priceChange.toFixed(2)} (${priceChangePercent.toFixed(2)}%)</span>`;
-                    } else {
-                        changeElement.innerHTML = `<span class="text-light"><i class="fas fa-minus"></i> $0.00 (0.00%)</span>`;
-                    }
-                    
-                    // Insert after the main price
-                    const heroPrice = heroCard.querySelector('#current-btc-price');
-                    if (heroPrice && heroPrice.parentNode) {
-                        heroPrice.parentNode.insertBefore(changeElement, heroPrice.nextSibling);
-                    }
-                }
-                
-                console.log('Live Bitcoin price updated on predict page:', currentPrice);
-            } else {
-                throw new Error('Invalid response format from Binance API');
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching live Bitcoin price:", error);
-            
-            // Try fallback API
-            fetch('/api/btc_price/current')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const priceElement = document.getElementById('current-btc-price');
-                        if (priceElement) {
-                            priceElement.textContent = '$' + data.price.toLocaleString('en-US', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            });
-                        }
-                        
-                        const timestampElement = document.getElementById('last-updated');
-                        if (timestampElement) {
-                            timestampElement.textContent = new Date().toLocaleTimeString('lt-LT');
-                        }
-                        
-                        console.log('Used fallback API for Bitcoin price');
-                    } else {
-                        throw new Error('Fallback API also failed');
-                    }
-                })
-                .catch(fallbackError => {
-                    console.error("Fallback API also failed:", fallbackError);
-                    
-                    // Show error message in main price display
-                    const priceElement = document.getElementById('current-btc-price');
-                    if (priceElement) {
-                        priceElement.innerHTML = '<span class="text-warning">Klaida kraunant kainą</span>';
-                    }
-                });
-        });
-}
-</script>
-
 <h1 class="text-center mb-4">
-    <i class="fas fa-crystal-ball text-primary"></i>
-    Bitcoin Kainų Prognozės
+    <i class="fas fa-chart-line text-primary"></i>
+    Bitcoin Kainų Prognozavimas
 </h1>
 
 <!-- Navigation -->
@@ -331,19 +247,16 @@ function fetchLiveBitcoinPrice() {
         <a href="/predict" class="btn btn-primary me-2">
             <i class="fas fa-chart-line"></i> Prognozės
         </a>
-        <a href="/models" class="btn btn-info me-2">
+        <a href="/models" class="btn btn-secondary me-2">
             <i class="fas fa-brain"></i> Modeliai
         </a>
-        <a href="/history" class="btn btn-secondary me-2">
-            <i class="fas fa-history"></i> Istorija
-        </a>
-        <a href="/training_status" class="btn btn-success">
+        <a href="/training_status" class="btn btn-secondary">
             <i class="fas fa-tasks"></i> Apmokymas
         </a>
     </div>
 </div>
 
-<!-- Current Price Card -->
+<!-- Current Price Display -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card price-card shadow">
@@ -352,165 +265,144 @@ function fetchLiveBitcoinPrice() {
                     <i class="fab fa-bitcoin"></i> Dabartinė Bitcoin Kaina
                 </h2>
                 <h1 class="display-4 fw-bold" id="current-btc-price">
-                    Kraunama...
+                    ${{ "%.2f"|format(current_price) }}
                 </h1>
+                <div id="price-change-container">
+                    <!-- Price change will be inserted here by JavaScript -->
+                </div>
                 <small class="text-light opacity-75">
-                    Atnaujinta: <span id="last-updated">Kraunama...</span>
+                    Atnaujinta: <span id="last-updated">{{ last_updated }}</span>
+                </small>
+                <small class="d-block mt-2 text-light opacity-75">
+                    <i class="fas fa-info-circle"></i> Duomenys iš Binance API
                 </small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Prediction Configuration -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header">
-                <h5 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-sliders-h"></i> Prognozės Nustatymai
-                </h5>
-            </div>
-            <div class="card-body">
-                <form id="prediction-form">
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label for="prediction-days" class="form-label">Prognozės Laikotarpis</label>
-                            <select class="form-select" id="prediction-days">
-                                <option value="7">7 dienos</option>
-                                <option value="14">14 dienų</option>
-                                <option value="30" selected>30 dienų</option>
-                                <option value="60">60 dienų</option>
-                                <option value="90">90 dienų</option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <label for="model-selection" class="form-label">AI Modelis</label>
-                            <select class="form-select" id="model-selection">
-                                <option value="lstm" selected>LSTM Neural Network</option>
-                                <option value="gru">GRU Neural Network</option>
-                                <option value="ensemble">Ensemble Model</option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <label for="confidence-level" class="form-label">Patikimumo Lygis</label>
-                            <select class="form-select" id="confidence-level">
-                                <option value="0.8">80%</option>
-                                <option value="0.9" selected>90%</option>
-                                <option value="0.95">95%</option>
-                                <option value="0.99">99%</option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-magic"></i> Generuoti Prognozes
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Prediction Results Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header">
-                <h5 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-chart-line"></i> Bitcoin Kainų Prognozės
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="prediction-chart"></canvas>
-                </div>
-                <div id="predictionError" class="alert alert-warning mt-3" style="display: none;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Prediction Statistics -->
+<!-- Prediction Setup and Chart -->
 <div class="row">
-    <div class="col-md-3">
-        <div class="card stats-card shadow border-left-primary">
+    <!-- Left Column: Model Selection and Controls -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cogs"></i> Prognozavimo Nustatymai
+                </h5>
+            </div>
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Prognozuojama Kaina (7d)
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="prediction-7d">
-                            Generuokite prognozes
-                        </div>
+                <div id="model-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Kraunama...</span>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-calendar-week fa-2x text-gray-300"></i>
+                    <p class="mt-2 text-muted">Kraunami modeliai...</p>
+                </div>
+                
+                <div id="model-selector" style="display: none;">
+                    <h6 class="mb-3">Pasirinkite modelį:</h6>
+                    
+                    <div class="model-selection-container mb-4">
+                        <!-- Model cards will be added dynamically -->
                     </div>
+                    
+                    <div class="mb-3">
+                        <label for="days-range" class="form-label d-flex justify-content-between">
+                            <span>Prognozės periodas: <span id="days-value">7</span> dienų</span>
+                            <span class="text-muted">1-30 dienų</span>
+                        </label>
+                        <input type="range" class="form-range custom-range" id="days-range" min="1" max="30" step="1" value="7">
+                    </div>
+                    
+                    <div class="mb-4 form-check">
+                        <input class="form-check-input" type="checkbox" id="confidence-interval" checked>
+                        <label class="form-check-label" for="confidence-interval">
+                            Rodyti patikimumo intervalą
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button id="generate-btn" class="btn btn-primary btn-generate">
+                            <i class="fas fa-magic"></i> Generuoti Prognozę
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="no-models-message" style="display: none;">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Nerasta jokių modelių
+                        <p class="mb-0 mt-2">Apsilankykite Modelių puslapyje, kad apmokytumėte naują modelį.</p>
+                    </div>
+                    <a href="/models" class="btn btn-secondary w-100 mt-2">
+                        <i class="fas fa-brain"></i> Eiti į Modelių puslapį
+                    </a>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card stats-card shadow border-left-success">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Prognozuojama Kaina (30d)
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="prediction-30d">
-                            Generuokite prognozes
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
-                    </div>
-                </div>
+    <!-- Right Column: Chart and Insights -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h5 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line"></i> Bitcoin Kainų Prognozė
+                </h5>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card stats-card shadow border-left-warning">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            Modelio Tikslumas
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="model-accuracy">
-                            85.7%
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-bullseye fa-2x text-gray-300"></i>
-                    </div>
+                <div class="prediction-chart-container">
+                    <canvas id="prediction-chart"></canvas>
+                    <div id="prediction-error"></div>
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card stats-card shadow border-left-danger">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                            Prognozės Rizika
+                
+                <div id="prediction-loading" class="prediction-loading" style="display: none;">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Generuojama prognozė...</span>
+                    </div>
+                    <h5 class="text-muted">Generuojama prognozė...</h5>
+                </div>
+                
+                <div id="no-prediction-message" class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Pasirinkite modelį ir spauskite "Generuoti Prognozę"</h5>
+                </div>
+                
+                <div id="prediction-insights" class="mt-4" style="display: none;">
+                    <h6 class="mb-3"><i class="fas fa-lightbulb text-warning"></i> Prognozės įžvalgos</h6>
+                    
+                    <div class="alert alert-info prediction-alert">
+                        <h6 class="text-info"><i class="fas fa-info-circle"></i> Prognozės santrauka</h6>
+                        <p id="prediction-summary" class="mb-0">Pasirinkite modelį ir sugeneruokite prognozę.</p>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card bg-gradient-dark mb-3">
+                                <div class="card-body py-2">
+                                    <div class="small text-muted mb-1">Prognozuojama po 7 dienų:</div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0" id="prediction-7day">$0.00</h5>
+                                        <span id="prediction-7day-change" class="text-muted">0.00%</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="prediction-risk">
-                            Vidutinė
+                        <div class="col-md-6">
+                            <div class="card bg-gradient-dark mb-3">
+                                <div class="card-body py-2">
+                                    <div class="small text-muted mb-1">Prognozuojama po <span id="prediction-end-days">30</span> dienų:</div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0" id="prediction-end">$0.00</h5>
+                                        <span id="prediction-end-change" class="text-muted">0.00%</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    
+                    <div class="alert alert-warning prediction-alert mt-3">
+                        <h6 class="text-warning"><i class="fas fa-exclamation-triangle"></i> Atkreipkite dėmesį</h6>
+                        <p class="mb-0">Šios prognozės yra pagrįstos istoriniais duomenimis ir negali garantuoti ateities rezultatų. Kriptovaliutų rinka yra labai nepastovi ir gali stipriai svyruoti dėl įvairių veiksnių.</p>
                     </div>
                 </div>
             </div>
@@ -520,194 +412,347 @@ function fetchLiveBitcoinPrice() {
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/bitcoin-charts.js') }}"></script>
+<!-- Include the prediction-charts.js file -->
+<script src="{{ url_for('static', filename='js/prediction-charts.js') }}"></script>
+
 <script>
-    // JavaScript code for handling predictions and chart updates
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get references to UI elements
-        const modelSelect = document.getElementById('model-select');
-        const predictionDays = document.getElementById('prediction-days');
-        const predictButton = document.getElementById('predict-button');
-        const predictionResults = document.getElementById('prediction-results');
+// Global variables
+let selectedModel = null;
+let availableModels = [];
+let currentPrice = {{ current_price }};
+let lastPrediction = null;
+
+// Initialize page when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Prediction page initialized');
+    
+    // Load available models
+    loadAvailableModels();
+    
+    // Set up event listeners
+    document.getElementById('days-range').addEventListener('input', function() {
+        document.getElementById('days-value').textContent = this.value;
+    });
+    
+    document.getElementById('generate-btn').addEventListener('click', generatePrediction);
+    
+    // Update Bitcoin price every 30 seconds
+    fetchLiveBitcoinPrice();
+    setInterval(fetchLiveBitcoinPrice, 30000);
+});
+
+// Fetch live Bitcoin price
+async function fetchLiveBitcoinPrice() {
+    try {
+        const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+        const data = await response.json();
         
-        // Set up model selection change handler
-        modelSelect.addEventListener('change', function() {
-            updateModelDescription(this.value);
-        });
-        
-        // Initialize model description
-        if (modelSelect.value) {
-            updateModelDescription(modelSelect.value);
-        }
-        
-        // Set up predict button click handler
-        predictButton.addEventListener('click', function() {
-            // Show loading state
-            predictButton.disabled = true;
-            predictButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Generuojama prognozė...';
+        if (data && data.price) {
+            const newPrice = parseFloat(data.price);
+            const oldPrice = currentPrice;
+            currentPrice = newPrice;
             
-            // Get selected model and days
-            const modelId = modelSelect.value;
-            const days = predictionDays.value;
+            // Update price display
+            document.getElementById('current-btc-price').textContent = '$' + newPrice.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
             
-            if (!modelId) {
-                alert('Prašome pasirinkti modelį');
-                resetPredictButton();
-                return;
+            // Calculate and display price change
+            if (oldPrice > 0) {
+                const priceChange = newPrice - oldPrice;
+                const percentChange = (priceChange / oldPrice) * 100;
+                
+                const changeContainer = document.getElementById('price-change-container');
+                let changeClass = 'text-success';
+                let changeIcon = 'fa-arrow-up';
+                
+                if (priceChange < 0) {
+                    changeClass = 'text-danger';
+                    changeIcon = 'fa-arrow-down';
+                }
+                
+                changeContainer.innerHTML = `
+                    <h5 class="mt-2 ${changeClass}">
+                        <i class="fas ${changeIcon}"></i>
+                        ${priceChange >= 0 ? '+' : ''}$${Math.abs(priceChange).toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        })}
+                        (${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%)
+                    </h5>
+                `;
             }
             
-            // Make API request to get prediction
-            fetch(`/api/predict?model_id=${modelId}&days=${days}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Serverio klaida');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
-                    // Process prediction data
-                    processPrediction(data);
-                    
-                    // Show results
-                    predictionResults.style.display = 'block';
-                    
-                    // Scroll to results
-                    predictionResults.scrollIntoView({ behavior: 'smooth' });
-                })
-                .catch(error => {
-                    console.error('Prediction error:', error);
-                    alert(`Klaida generuojant prognozę: ${error.message}`);
-                })
-                .finally(() => {
-                    resetPredictButton();
+            // Update timestamp
+            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+            
+            console.log('Updated Bitcoin price:', newPrice);
+        }
+    } catch (error) {
+        console.error('Error fetching Bitcoin price:', error);
+    }
+}
+
+// Load available models
+async function loadAvailableModels() {
+    try {
+        console.log('Loading available models');
+        document.getElementById('model-loading').style.display = 'block';
+        document.getElementById('model-selector').style.display = 'none';
+        document.getElementById('no-models-message').style.display = 'none';
+        
+        const response = await fetch('/api/models/list');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Unknown error');
+        }
+        
+        availableModels = [];
+        
+        // Get models from files and database
+        if (data.model_files) {
+            Object.keys(data.model_files).forEach(modelType => {
+                availableModels.push({
+                    type: modelType,
+                    filename: data.model_files[modelType],
+                    r2: null,
+                    rmse: null,
+                    mae: null
                 });
-        });
-        
-        function resetPredictButton() {
-            predictButton.disabled = false;
-            predictButton.innerHTML = '<i class="fas fa-chart-line me-2"></i> Prognozuoti Bitcoin kainą';
+            });
         }
         
-        function updateModelDescription(modelId) {
-            // Update the model description based on selected model
-            // This would typically fetch model details from the server
-            // For now, just clear the description
-            document.getElementById('model-description').textContent = '';
-            
-            // Optionally fetch model details if needed
-            // fetch(`/api/models/${modelId}`)...
-        }
-        
-        function processPrediction(data) {
-            // Process and display prediction data
-            if (data.predictions && data.predictions.values) {
-                // Update prediction chart
-                updatePredictionChart(data.predictions);
+        // Add metrics from database models
+        if (data.db_models && data.db_models.length > 0) {
+            data.db_models.forEach(dbModel => {
+                const existingModelIndex = availableModels.findIndex(m => m.type === dbModel.model_type);
                 
-                // Update prediction table
-                updatePredictionTable(data.predictions);
-                
-                // Update summary statistics
-                updatePredictionSummary(data.predictions);
-            }
-        }
-        
-        function updatePredictionChart(predictions) {
-            // Get the chart canvas
-            const chartCanvas = document.getElementById('prediction-chart');
-            if (!chartCanvas) return;
-            
-            // If a chart already exists, destroy it
-            if (window.predictionChart) {
-                window.predictionChart.destroy();
-            }
-            
-            // Create the new chart
-            const ctx = chartCanvas.getContext('2d');
-            window.predictionChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: predictions.dates || [],
-                    datasets: [{
-                        label: 'Prognozuojama Bitcoin kaina (USD)',
-                        data: predictions.values || [],
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 2,
-                        tension: 0.1,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: false
-                        }
-                    }
+                if (existingModelIndex >= 0) {
+                    // Update existing model with database metrics
+                    availableModels[existingModelIndex].r2 = dbModel.r2;
+                    availableModels[existingModelIndex].rmse = dbModel.rmse;
+                    availableModels[existingModelIndex].mae = dbModel.mae;
+                    availableModels[existingModelIndex].id = dbModel.id;
+                    availableModels[existingModelIndex].is_active = dbModel.is_active;
+                } else {
+                    // Add new model from database
+                    availableModels.push({
+                        type: dbModel.model_type,
+                        id: dbModel.id,
+                        is_active: dbModel.is_active,
+                        r2: dbModel.r2,
+                        rmse: dbModel.rmse,
+                        mae: dbModel.mae
+                    });
                 }
             });
         }
         
-        function updatePredictionTable(predictions) {
-            // Update prediction table with values
-            const tableBody = document.getElementById('prediction-table-body');
-            if (!tableBody) return;
-            
-            tableBody.innerHTML = '';
-            
-            if (predictions.values && predictions.dates) {
-                for (let i = 0; i < predictions.values.length; i++) {
-                    const row = document.createElement('tr');
-                    
-                    const dateCell = document.createElement('td');
-                    dateCell.textContent = predictions.dates[i] || `Diena ${i+1}`;
-                    
-                    const valueCell = document.createElement('td');
-                    valueCell.textContent = `$${predictions.values[i].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                    
-                    row.appendChild(dateCell);
-                    row.appendChild(valueCell);
-                    tableBody.appendChild(row);
-                }
-            }
-        }
+        console.log('Available models:', availableModels);
         
-        function updatePredictionSummary(predictions) {
-            // Update prediction summary statistics
-            if (!predictions.values || predictions.values.length === 0) return;
-            
-            const currentPrice = window.currentPrice || predictions.values[0];
-            const latestPrediction = predictions.values[predictions.values.length - 1];
-            
-            // Calculate change and percentage
-            const change = latestPrediction - currentPrice;
-            const percentChange = (change / currentPrice) * 100;
-            
-            // Update summary elements if they exist
-            const predictionValue = document.getElementById('prediction-value');
-            if (predictionValue) {
-                predictionValue.textContent = `$${latestPrediction.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            }
-            
-            const predictionChange = document.getElementById('prediction-change');
-            if (predictionChange) {
-                predictionChange.textContent = `${change >= 0 ? '+' : ''}$${change.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                predictionChange.className = change >= 0 ? 'text-success' : 'text-danger';
-            }
-            
-            const predictionPercent = document.getElementById('prediction-percent');
-            if (predictionPercent) {
-                predictionPercent.textContent = `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%`;
-                predictionPercent.className = percentChange >= 0 ? 'text-success' : 'text-danger';
-            }
+        // Render models
+        renderModelSelector();
+        
+    } catch (error) {
+        console.error('Error loading models:', error);
+        document.getElementById('model-loading').style.display = 'none';
+        document.getElementById('no-models-message').style.display = 'block';
+    }
+}
+
+// Render model selector
+function renderModelSelector() {
+    const container = document.querySelector('.model-selection-container');
+    
+    if (availableModels.length === 0) {
+        document.getElementById('model-loading').style.display = 'none';
+        document.getElementById('no-models-message').style.display = 'block';
+        return;
+    }
+    
+    let html = '';
+    availableModels.forEach(model => {
+        html += `
+            <div class="model-card" data-model="${model.type.toLowerCase()}" onclick="selectModel('${model.type.toLowerCase()}')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">${model.type} Model</h5>
+                    ${model.is_active ? '<span class="badge bg-success">Active</span>' : ''}
+                </div>
+                <div class="model-metrics">
+                    <div class="model-metric">
+                        <div class="model-metric-label">R²</div>
+                        <div class="model-metric-value">${model.r2 ? model.r2.toFixed(3) : 'N/A'}</div>
+                    </div>
+                    <div class="model-metric">
+                        <div class="model-metric-label">RMSE</div>
+                        <div class="model-metric-value">${model.rmse ? model.rmse.toFixed(1) : 'N/A'}</div>
+                    </div>
+                    <div class="model-metric">
+                        <div class="model-metric-label">MAE</div>
+                        <div class="model-metric-value">${model.mae ? model.mae.toFixed(1) : 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    document.getElementById('model-loading').style.display = 'none';
+    document.getElementById('model-selector').style.display = 'block';
+    
+    // Select first model by default
+    if (availableModels.length > 0) {
+        selectModel(availableModels[0].type.toLowerCase());
+    }
+}
+
+// Select model
+function selectModel(modelType) {
+    selectedModel = modelType;
+    
+    // Update UI
+    document.querySelectorAll('.model-card').forEach(card => {
+        if (card.dataset.model === modelType) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
         }
     });
+    
+    console.log('Selected model:', selectedModel);
+}
+
+// Generate prediction
+async function generatePrediction() {
+    if (!selectedModel) {
+        alert('Please select a model first');
+        return;
+    }
+    
+    const days = parseInt(document.getElementById('days-range').value);
+    const confidenceInterval = document.getElementById('confidence-interval').checked;
+    
+    try {
+        // Show loading
+        document.getElementById('prediction-loading').style.display = 'flex';
+        document.getElementById('no-prediction-message').style.display = 'none';
+        document.getElementById('prediction-insights').style.display = 'none';
+        document.getElementById('prediction-error').style.display = 'none';
+        
+        // Disable generate button
+        const generateBtn = document.getElementById('generate-btn');
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+        
+        // Make API request
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model_type: selectedModel,
+                days: days,
+                confidence_interval: confidenceInterval
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Unknown error');
+        }
+        
+        // Store last prediction
+        lastPrediction = data.data;
+        
+        // Update prediction chart
+        if (window.updatePredictionChart) {
+            window.updatePredictionChart(data.data);
+        }
+        
+        // Update insights
+        updatePredictionInsights(data.data);
+        
+        // Hide loading, show insights
+        document.getElementById('prediction-loading').style.display = 'none';
+        document.getElementById('prediction-insights').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error generating prediction:', error);
+        
+        // Show error message
+        const errorEl = document.getElementById('prediction-error');
+        errorEl.textContent = `Error: ${error.message}`;
+        errorEl.style.display = 'block';
+        
+        document.getElementById('prediction-loading').style.display = 'none';
+    } finally {
+        // Re-enable generate button
+        const generateBtn = document.getElementById('generate-btn');
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generuoti Prognozę';
+    }
+}
+
+// Update prediction insights
+function updatePredictionInsights(prediction) {
+    if (!prediction) return;
+    
+    const days = prediction.days;
+    const values = prediction.values;
+    const current = prediction.current_price;
+    
+    // Update 7-day prediction or closest available
+    const day7Index = Math.min(6, values.length - 1);
+    const day7Value = values[day7Index];
+    const day7Change = ((day7Value - current) / current) * 100;
+    
+    document.getElementById('prediction-7day').textContent = '$' + day7Value.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    const day7ChangeEl = document.getElementById('prediction-7day-change');
+    day7ChangeEl.textContent = (day7Change >= 0 ? '+' : '') + day7Change.toFixed(2) + '%';
+    day7ChangeEl.className = day7Change >= 0 ? 'text-success' : 'text-danger';
+    
+    // Update end-day prediction
+    const endValue = values[values.length - 1];
+    const endChange = ((endValue - current) / current) * 100;
+    
+    document.getElementById('prediction-end-days').textContent = days;
+    document.getElementById('prediction-end').textContent = '$' + endValue.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    const endChangeEl = document.getElementById('prediction-end-change');
+    endChangeEl.textContent = (endChange >= 0 ? '+' : '') + endChange.toFixed(2) + '%';
+    endChangeEl.className = endChange >= 0 ? 'text-success' : 'text-danger';
+    
+    // Generate summary
+    let summary = '';
+    if (endChange > 5) {
+        summary = `Mūsų ${prediction.model_type} modelis prognozuoja stiprų Bitcoin kainos kilimą per ateinančias ${days} dienas. Prognozuojama, kad kaina pakils ${endChange.toFixed(1)}% nuo dabartinio lygio.`;
+    } else if (endChange > 0) {
+        summary = `Mūsų ${prediction.model_type} modelis prognozuoja nedidelį Bitcoin kainos kilimą per ateinančias ${days} dienas. Prognozuojama, kad kaina pakils ${endChange.toFixed(1)}% nuo dabartinio lygio.`;
+    } else if (endChange > -5) {
+        summary = `Mūsų ${prediction.model_type} modelis prognozuoja nedidelį Bitcoin kainos kritimą per ateinančias ${days} dienas. Prognozuojama, kad kaina sumažės ${Math.abs(endChange).toFixed(1)}% nuo dabartinio lygio.`;
+    } else {
+        summary = `Mūsų ${prediction.model_type} modelis prognozuoja reikšmingą Bitcoin kainos kritimą per ateinančias ${days} dienas. Prognozuojama, kad kaina sumažės ${Math.abs(endChange).toFixed(1)}% nuo dabartinio lygio.`;
+    }
+    
+    document.getElementById('prediction-summary').textContent = summary;
+}
 </script>
 {% endblock %}
 </body>

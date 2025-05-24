@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Hyperparameter Optimization{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="text-gradient">
+                    <i class="fas fa-sliders-h"></i> Hyperparameter Optimization
+                </h1>
+                <a href="{{ url_for('optimization.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization Configuration -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="m-0">
+                        <i class="fas fa-cog"></i> Optimization Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="optimization-form">
+                        <!-- Optimization Type -->
+                        <div class="mb-3">
+                            <label class="form-label">Optimization Method</label>
+                            <select class="form-select" id="optimization-type" required>
+                                <option value="bayesian">Bayesian Optimization (Recommended)</option>
+                                <option value="grid_search">Grid Search</option>
+                                <option value="random_search">Random Search</option>
+                            </select>
+                            <div class="form-text">Bayesian optimization is most efficient for complex parameter spaces</div>
+                        </div>
+
+                        <!-- Model Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Models to Optimize</label>
+                            <div class="row">
+                                {% for model in available_models %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="{{ model }}" 
+                                               id="model-{{ model.lower() }}" name="model_types"
+                                               {% if model == 'LSTM' %}checked{% endif %}>
+                                        <label class="form-check-label" for="model-{{ model.lower() }}">
+                                            {{ model }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Optimization Parameters -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="n-trials" class="form-label">Number of Trials</label>
+                                    <input type="number" class="form-control" id="n-trials" value="50" min="10" max="500">
+                                    <div class="form-text">More trials = better results but longer time</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="timeout" class="form-label">Timeout (seconds)</label>
+                                    <input type="number" class="form-control" id="timeout" value="3600" min="300" max="14400">
+                                    <div class="form-text">Maximum optimization time (1 hour default)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Options -->
+                        <div class="mb-3">
+                            <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#advanced-options">
+                                <i class="fas fa-cogs"></i> Advanced Options
+                            </button>
+                        </div>
+
+                        <div class="collapse" id="advanced-options">
+                            <div class="card card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="cross-validation" checked>
+                                            <label class="form-check-label" for="cross-validation">
+                                                Enable Cross-Validation
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="early-stopping" checked>
+                                            <label class="form-check-label" for="early-stopping">
+                                                Use Early Stopping
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <label for="objective-weights" class="form-label">Objective Weights</label>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <label class="form-label">ML Score</label>
+                                                <input type="range" class="form-range" id="ml-weight" min="0" max="100" value="60">
+                                                <span id="ml-weight-value">60%</span>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label">Trading Score</label>
+                                                <input type="range" class="form-range" id="trading-weight" min="0" max="100" value="40">
+                                                <span id="trading-weight-value">40%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="cv-folds" class="form-label">CV Folds</label>
+                                        <select class="form-select" id="cv-folds">
+                                            <option value="3" selected>3-Fold</option>
+                                            <option value="5">5-Fold</option>
+                                            <option value="10">10-Fold</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="button" class="btn btn-outline-secondary" onclick="loadPreset()">
+                                <i class="fas fa-download"></i> Load Preset
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="savePreset()">
+                                <i class="fas fa-save"></i> Save Preset
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="start-btn">
+                                <i class="fas fa-play"></i> Start Optimization
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="m-0">
+                        <i class="fas fa-info-circle"></i> Optimization Info
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Method Comparison</h6>
+                        <div class="comparison-item">
+                            <strong>Bayesian:</strong> Smart, efficient, good for complex spaces
+                        </div>
+                        <div class="comparison-item">
+                            <strong>Grid Search:</strong> Exhaustive, guaranteed to find best in grid
+                        </div>
+                        <div class="comparison-item">
+                            <strong>Random:</strong> Fast, good for high-dimensional spaces
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Estimated Time</h6>
+                        <p id="estimated-time" class="text-muted">Select options to see estimate</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Resource Usage</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-info" style="width: 75%">CPU</div>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-warning" style="width: 85%">Memory</div>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: 60%">Disk</div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <small>
+                            <i class="fas fa-lightbulb"></i>
+                            <strong>Tip:</strong> Start with Bayesian optimization and 50 trials for best results.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization History -->
+    {% if history %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="m-0">
+                        <i class="fas fa-history"></i> Optimization History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="optimization-history-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let historyData = {{ history_json | safe }};
+
+// Weight sliders synchronization
+document.getElementById('ml-weight').addEventListener('input', function() {
+    const mlWeight = parseInt(this.value);
+    const tradingWeight = 100 - mlWeight;
+    
+    document.getElementById('trading-weight').value = tradingWeight;
+    document.getElementById('ml-weight-value').textContent = mlWeight + '%';
+    document.getElementById('trading-weight-value').textContent = tradingWeight + '%';
+    
+    updateEstimatedTime();
+});
+
+document.getElementById('trading-weight').addEventListener('input', function() {
+    const tradingWeight = parseInt(this.value);
+    const mlWeight = 100 - tradingWeight;
+    
+    document.getElementById('ml-weight').value = mlWeight;
+    document.getElementById('ml-weight-value').textContent = mlWeight + '%';
+    document.getElementById('trading-weight-value').textContent = tradingWeight + '%';
+    
+    updateEstimatedTime();
+});
+
+// Form change handlers
+document.getElementById('optimization-type').addEventListener('change', updateEstimatedTime);
+document.getElementById('n-trials').addEventListener('input', updateEstimatedTime);
+document.querySelectorAll('input[name="model_types"]').forEach(cb => {
+    cb.addEventListener('change', updateEstimatedTime);
+});
+
+function updateEstimatedTime() {
+    const optimizationType = document.getElementById('optimization-type').value;
+    const nTrials = parseInt(document.getElementById('n-trials').value);
+    const selectedModels = document.querySelectorAll('input[name="model_types"]:checked').length;
+    
+    // Rough time estimates (in minutes)
+    const timePerTrial = {
+        'bayesian': 3,
+        'grid_search': 5,
+        'random_search': 2
+    };
+    
+    const estimatedMinutes = timePerTrial[optimizationType] * nTrials * selectedModels;
+    const hours = Math.floor(estimatedMinutes / 60);
+    const minutes = estimatedMinutes % 60;
+    
+    let timeString = '';
+    if (hours > 0) {
+        timeString = `${hours}h ${minutes}m`;
+    } else {
+        timeString = `${minutes}m`;
+    }
+    
+    document.getElementById('estimated-time').textContent = `~${timeString}`;
+}
+
+// Form submission
+document.getElementById('optimization-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        optimization_type: document.getElementById('optimization-type').value,
+        model_types: Array.from(document.querySelectorAll('input[name="model_types"]:checked')).map(cb => cb.value),
+        n_trials: parseInt(document.getElementById('n-trials').value),
+        timeout: parseInt(document.getElementById('timeout').value),
+        cross_validation: document.getElementById('cross-validation').checked,
+        early_stopping: document.getElementById('early-stopping').checked,
+        ml_weight: parseInt(document.getElementById('ml-weight').value) / 100,
+        trading_weight: parseInt(document.getElementById('trading-weight').value) / 100,
+        cv_folds: parseInt(document.getElementById('cv-folds').value)
+    };
+    
+    if (formData.model_types.length === 0) {
+        alert('Please select at least one model to optimize');
+        return;
+    }
+    
+    if (confirm('Start optimization? This may take a while.')) {
+        startOptimization(formData);
+    }
+});
+
+function startOptimization(formData) {
+    const startBtn = document.getElementById('start-btn');
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+    
+    fetch('/optimization/start_optimization', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Optimization started successfully!');
+            window.location.href = '/optimization/';
+        } else {
+            alert('Error starting optimization: ' + data.error);
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Start Optimization';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error starting optimization');
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="fas fa-play"></i> Start Optimization';
+    });
+}
+
+function loadPreset() {
+    // Implementation for loading saved presets
+    alert('Load preset functionality coming soon');
+}
+
+function savePreset() {
+    // Implementation for saving current configuration
+    alert('Save preset functionality coming soon');
+}
+
+// Initialize chart if history data exists
+if (historyData && historyData.length > 0) {
+    initializeHistoryChart();
+}
+
+function initializeHistoryChart() {
+    const ctx = document.getElementById('optimization-history-chart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: historyData.map((_, index) => `Trial ${index + 1}`),
+            datasets: [{
+                label: 'Best Score',
+                data: historyData.map(trial => trial.score),
+                borderColor: '#60a5fa',
+                backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Optimization Progress Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: 'Score'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Trial Number'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Initial time estimation
+updateEstimatedTime();
+</script>
+{% endblock %}

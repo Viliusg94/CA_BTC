@@ -1,0 +1,51 @@
+/* Training Status Page Styles */
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 10px;
+}
+
+.status-active {
+    background-color: #28a745;
+    box-shadow: 0 0 10px #28a745;
+    animation: pulse 1.5s infinite;
+}
+
+.status-idle {
+    background-color: #6c757d;
+}
+
+.status-error {
+    background-color: #dc3545;
+}
+
+.status-completed {
+    background-color: #17a2b8;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.training-card {
+    height: 100%;
+}
+
+/* Progress bar animation */
+.progress-bar {
+    transition: width 0.5s ease;
+}

@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+
+{% block title %}Model Training - Bitcoin LSTM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="text-center mb-4">
+        <i class="fas fa-brain text-primary"></i>
+        AI Model Training Center
+    </h1>
+
+    <!-- Navigation -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <a href="/" class="btn btn-dark me-2">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="/models" class="btn btn-info me-2">
+                <i class="fas fa-cogs"></i> Models
+            </a>
+            <a href="/training_status" class="btn btn-success me-2">
+                <i class="fas fa-tasks"></i> Training Status
+            </a>
+            <a href="/predict" class="btn btn-primary">
+                <i class="fas fa-chart-line"></i> Predictions
+            </a>
+        </div>
+    </div>
+
+    <!-- TensorFlow Status Check -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div id="tensorflow-status" class="alert" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Training Configuration -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sliders-h me-2"></i>
+                        Training Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="training-form">
+                        <!-- Model Type Selection -->
+                        <div class="mb-3">
+                            <label for="model_type" class="form-label">Model Type</label>
+                            <select class="form-select" id="model_type" name="model_type" required>
+                                <option value="">Select Model Type</option>
+                                <option value="lstm">LSTM (Long Short-Term Memory)</option>
+                                <option value="gru">GRU (Gated Recurrent Unit)</option>
+                                <option value="cnn">CNN (Convolutional Neural Network)</option>
+                                <option value="transformer">Transformer</option>
+                            </select>
+                            <div class="form-text">Choose the neural network architecture</div>
+                        </div>
+
+                        <!-- Basic Parameters -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="epochs" class="form-label">Epochs</label>
+                                <input type="number" class="form-control" id="epochs" name="epochs" 
+                                       value="50" min="5" max="200" required>
+                                <div class="form-text">Number of training iterations</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="batch_size" class="form-label">Batch Size</label>
+                                <input type="number" class="form-control" id="batch_size" name="batch_size" 
+                                       value="32" min="8" max="128" required>
+                                <div class="form-text">Training batch size</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="learning_rate" class="form-label">Learning Rate</label>
+                                <input type="number" class="form-control" id="learning_rate" name="learning_rate" 
+                                       value="0.001" min="0.0001" max="0.1" step="0.0001" required>
+                                <div class="form-text">Model learning rate</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sequence_length" class="form-label">Sequence Length</label>
+                                <input type="number" class="form-control" id="sequence_length" name="sequence_length" 
+                                       value="24" min="6" max="96" required>
+                                <div class="form-text">Time steps to look back</div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Parameters (shown based on model type) -->
+                        <div id="advanced-params">
+                            <!-- LSTM/GRU Parameters -->
+                            <div id="rnn-params" style="display: none;">
+                                <h6 class="text-primary">RNN Parameters</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="units" class="form-label">Units</label>
+                                        <input type="number" class="form-control" id="units" name="units" 
+                                               value="50" min="10" max="200">
+                                        <div class="form-text">Number of LSTM/GRU units</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="dropout" class="form-label">Dropout</label>
+                                        <input type="number" class="form-control" id="dropout" name="dropout" 
+                                               value="0.2" min="0" max="0.5" step="0.1">
+                                        <div class="form-text">Dropout rate for regularization</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CNN Parameters -->
+                            <div id="cnn-params" style="display: none;">
+                                <h6 class="text-primary">CNN Parameters</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="filters" class="form-label">Filters</label>
+                                        <input type="number" class="form-control" id="filters" name="filters" 
+                                               value="64" min="16" max="256">
+                                        <div class="form-text">Number of CNN filters</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="kernel_size" class="form-label">Kernel Size</label>
+                                        <input type="number" class="form-control" id="kernel_size" name="kernel_size" 
+                                               value="3" min="2" max="7">
+                                        <div class="form-text">CNN kernel size</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Transformer Parameters -->
+                            <div id="transformer-params" style="display: none;">
+                                <h6 class="text-primary">Transformer Parameters</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="num_heads" class="form-label">Attention Heads</label>
+                                        <input type="number" class="form-control" id="num_heads" name="num_heads" 
+                                               value="4" min="2" max="12">
+                                        <div class="form-text">Number of attention heads</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="d_model" class="form-label">Model Dimension</label>
+                                        <input type="number" class="form-control" id="d_model" name="d_model" 
+                                               value="64" min="32" max="256">
+                                        <div class="form-text">Transformer model dimension</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="start-training-btn">
+                                <i class="fas fa-play me-2"></i>
+                                Start Training
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Progress and Information -->
+        <div class="col-lg-6">
+            <!-- Model Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Model Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="model-info">
+                        <p class="text-muted">Select a model type to see information</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Training Progress -->
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Training Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="training-progress">
+                        <p class="text-muted">No training in progress</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Training Jobs -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Recent Training Jobs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recent-jobs">
+                        <p class="text-muted">Loading recent training jobs...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check TensorFlow status on page load
+    checkTensorFlowStatus();
+    
+    // Load recent training jobs
+    loadRecentJobs();
+    
+    // Update progress every 5 seconds
+    setInterval(loadRecentJobs, 5000);
+    
+    // Handle model type change
+    document.getElementById('model_type').addEventListener('change', function() {
+        showModelInfo(this.value);
+        showAdvancedParams(this.value);
+    });
+    
+    // Handle form submission
+    document.getElementById('training-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        startTraining();
+    });
+});
+
+function checkTensorFlowStatus() {
+    fetch('/api/training/tensorflow_status')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('tensorflow-status');
+            statusDiv.style.display = 'block';
+            
+            if (data.tensorflow_available) {
+                statusDiv.className = 'alert alert-success';
+                statusDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>TensorFlow is available - Ready for training!';
+            } else {
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>TensorFlow is not available. Please install TensorFlow to enable model training.';
+                document.getElementById('start-training-btn').disabled = true;
+            }
+        })
+        .catch(error => {
+            console.error('Error checking TensorFlow status:', error);
+        });
+}
+
+function showModelInfo(modelType) {
+    const infoDiv = document.getElementById('model-info');
+    
+    const modelInfo = {
+        'lstm': {
+            name: 'LSTM (Long Short-Term Memory)',
+            description: 'LSTM networks are well-suited for time series prediction. They can learn long-term dependencies and are effective for Bitcoin price forecasting.',
+            advantages: ['Good for long sequences', 'Handles vanishing gradients', 'Proven for time series'],
+            training_time: 'Medium (10-30 minutes)'
+        },
+        'gru': {
+            name: 'GRU (Gated Recurrent Unit)',
+            description: 'GRU is a simpler alternative to LSTM with fewer parameters. Often performs similarly to LSTM but trains faster.',
+            advantages: ['Faster training than LSTM', 'Fewer parameters', 'Good performance'],
+            training_time: 'Fast (5-20 minutes)'
+        },
+        'cnn': {
+            name: 'CNN (Convolutional Neural Network)',
+            description: 'CNNs can capture local patterns in time series data. Good for detecting short-term price patterns.',
+            advantages: ['Detects local patterns', 'Fast training', 'Good for short sequences'],
+            training_time: 'Fast (5-15 minutes)'
+        },
+        'transformer': {
+            name: 'Transformer',
+            description: 'Transformer models use attention mechanisms and can capture complex relationships in data.',
+            advantages: ['Self-attention mechanism', 'Parallel processing', 'State-of-the-art architecture'],
+            training_time: 'Slow (20-60 minutes)'
+        }
+    };
+    
+    if (modelType && modelInfo[modelType]) {
+        const info = modelInfo[modelType];
+        infoDiv.innerHTML = `
+            <h6 class="text-primary">${info.name}</h6>
+            <p>${info.description}</p>
+            <h6>Advantages:</h6>
+            <ul>
+                ${info.advantages.map(adv => `<li>${adv}</li>`).join('')}
+            </ul>
+            <p><strong>Expected Training Time:</strong> ${info.training_time}</p>
+        `;
+    } else {
+        infoDiv.innerHTML = '<p class="text-muted">Select a model type to see information</p>';
+    }
+}
+
+function showAdvancedParams(modelType) {
+    // Hide all parameter sections
+    document.getElementById('rnn-params').style.display = 'none';
+    document.getElementById('cnn-params').style.display = 'none';
+    document.getElementById('transformer-params').style.display = 'none';
+    
+    // Show relevant parameter section
+    if (modelType === 'lstm' || modelType === 'gru') {
+        document.getElementById('rnn-params').style.display = 'block';
+    } else if (modelType === 'cnn') {
+        document.getElementById('cnn-params').style.display = 'block';
+    } else if (modelType === 'transformer') {
+        document.getElementById('transformer-params').style.display = 'block';
+    }
+}
+
+function startTraining() {
+    const form = document.getElementById('training-form');
+    const formData = new FormData(form);
+    const button = document.getElementById('start-training-btn');
+    
+    // Disable button and show loading
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Starting Training...';
+    
+    // Prepare training data
+    const trainingData = {};
+    for (let [key, value] of formData.entries()) {
+        // Convert numeric fields
+        if (['epochs', 'batch_size', 'sequence_length', 'units', 'filters', 'kernel_size', 'num_heads', 'd_model'].includes(key)) {
+            trainingData[key] = parseInt(value);
+        } else if (['learning_rate', 'dropout'].includes(key)) {
+            trainingData[key] = parseFloat(value);
+        } else {
+            trainingData[key] = value;
+        }
+    }
+    
+    // Start training
+    fetch('/api/training/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(trainingData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Training started successfully! Job ID: ' + data.job_id);
+            // Start monitoring this job
+            monitorTrainingJob(data.job_id);
+        } else {
+            alert('Error starting training: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error starting training: ' + error);
+    })
+    .finally(() => {
+        // Re-enable button
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-play me-2"></i>Start Training';
+    });
+}
+
+function monitorTrainingJob(jobId) {
+    const progressDiv = document.getElementById('training-progress');
+    
+    function updateProgress() {
+        fetch(`/api/training/status/${jobId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    progressDiv.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+                    return;
+                }
+                
+                const progress = data.progress || 0;
+                const status = data.status || 'unknown';
+                
+                let progressHtml = `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Job: ${jobId}</span>
+                            <span>${progress}%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: ${progress}%" 
+                                 aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <p><strong>Status:</strong> ${status}</p>
+                `;
+                
+                if (data.current_epoch && data.total_epochs) {
+                    progressHtml += `<p><strong>Epoch:</strong> ${data.current_epoch}/${data.total_epochs}</p>`;
+                }
+                
+                if (data.training_loss) {
+                    progressHtml += `<p><strong>Training Loss:</strong> ${data.training_loss.toFixed(6)}</p>`;
+                }
+                
+                if (data.validation_loss) {
+                    progressHtml += `<p><strong>Validation Loss:</strong> ${data.validation_loss.toFixed(6)}</p>`;
+                }
+                
+                if (data.metrics && Object.keys(data.metrics).length > 0) {
+                    progressHtml += `
+                        <h6 class="text-success">Final Metrics:</h6>
+                        <ul>
+                            <li>R² Score: ${data.metrics.r2.toFixed(4)}</li>
+                            <li>RMSE: ${data.metrics.rmse.toFixed(2)}</li>
+                            <li>MAE: ${data.metrics.mae.toFixed(2)}</li>
+                            <li>MAPE: ${data.metrics.mape.toFixed(2)}%</li>
+                        </ul>
+                    `;
+                }
+                
+                progressDiv.innerHTML = progressHtml;
+                
+                // Continue monitoring if not completed or failed
+                if (status !== 'completed' && status !== 'failed' && status !== 'stopped') {
+                    setTimeout(updateProgress, 2000);
+                } else {
+                    // Refresh recent jobs when training completes
+                    loadRecentJobs();
+                }
+            })
+            .catch(error => {
+                console.error('Error monitoring training:', error);
+                progressDiv.innerHTML = `<p class="text-danger">Error monitoring training: ${error}</p>`;
+            });
+    }
+    
+    updateProgress();
+}
+
+function loadRecentJobs() {
+    fetch('/api/training/jobs')
+        .then(response => response.json())
+        .then(data => {
+            const jobsDiv = document.getElementById('recent-jobs');
+            
+            if (Object.keys(data).length === 0) {
+                jobsDiv.innerHTML = '<p class="text-muted">No training jobs found</p>';
+                return;
+            }
+            
+            let jobsHtml = '<div class="table-responsive"><table class="table table-dark table-striped">';
+            jobsHtml += '<thead><tr><th>Job ID</th><th>Model</th><th>Status</th><th>Progress</th><th>Started</th><th>Actions</th></tr></thead><tbody>';
+            
+            // Sort jobs by start time (newest first)
+            const sortedJobs = Object.entries(data).sort((a, b) => 
+                new Date(b[1].start_time) - new Date(a[1].start_time)
+            );
+            
+            sortedJobs.slice(0, 10).forEach(([jobId, job]) => {
+                const statusClass = {
+                    'completed': 'success',
+                    'failed': 'danger',
+                    'training': 'info',
+                    'stopped': 'warning'
+                }[job.status] || 'secondary';
+                
+                const startTime = new Date(job.start_time).toLocaleString();
+                
+                jobsHtml += `
+                    <tr>
+                        <td><code>${jobId}</code></td>
+                        <td>${job.model_type.toUpperCase()}</td>
+                        <td><span class="badge bg-${statusClass}">${job.status}</span></td>
+                        <td>${job.progress || 0}%</td>
+                        <td>${startTime}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info" onclick="monitorTrainingJob('${jobId}')">
+                                <i class="fas fa-eye"></i> Monitor
+                            </button>
+                            ${job.status === 'training' ? 
+                                `<button class="btn btn-sm btn-outline-danger ms-1" onclick="stopTraining('${jobId}')">
+                                    <i class="fas fa-stop"></i> Stop
+                                </button>` : ''
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            jobsHtml += '</tbody></table></div>';
+            jobsDiv.innerHTML = jobsHtml;
+        })
+        .catch(error => {
+            console.error('Error loading recent jobs:', error);
+            document.getElementById('recent-jobs').innerHTML = '<p class="text-danger">Error loading training jobs</p>';
+        });
+}
+
+function stopTraining(jobId) {
+    if (confirm('Are you sure you want to stop this training job?')) {
+        fetch(`/api/training/stop/${jobId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Training stopped successfully');
+                loadRecentJobs();
+            } else {
+                alert('Error stopping training: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error stopping training:', error);
+            alert('Error stopping training: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

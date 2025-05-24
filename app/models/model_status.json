@@ -12,13 +12,13 @@
         "active_model_id": "1"
     },
     "transformer": {
-        "status": "Apmokomas",
+        "status": "Neapmokytas",
         "last_trained": "2025-05-22 18:49:33",
         "performance": "MAE: 510.0",
         "active_model_id": "2"
     },
     "cnn": {
-        "status": "Apmokomas",
+        "status": "Neapmokytas",
         "last_trained": "Niekada",
         "performance": "Ne\u017einoma",
         "active_model_id": null

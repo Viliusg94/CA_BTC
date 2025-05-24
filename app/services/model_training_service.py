@@ -82,382 +82,527 @@ class TrainingProgressCallback(Callback):
 
 
 class ModelTrainingService:
-    """
-    Servisas skirtas modelio apmokymo procesui su automatiniu išsaugojimų valdymu.
-    """
+    """Complete model training service with real TensorFlow model implementation"""
     
-    def __init__(self, model_id, model=None):
-        """
-        Inicializuoja apmokymo servisą
+    def __init__(self):
+        self.training_jobs = {}
+        self.training_lock = threading.Lock()
+        self.tensorflow_available = False
+        self.models_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'models')
         
-        Args:
-            model_id (str): Modelio ID
-            model (object): Modelio objektas (pvz., Keras modelis)
-        """
-        self.model_id = model_id
-        self.model = model
+        # Ensure models directory exists
+        os.makedirs(self.models_dir, exist_ok=True)
         
-        # Apmokymo konfigūracija
-        self.epochs = 50
-        self.batch_size = 32
-        self.validation_split = 0.2
-        self.early_stopping = True
-        self.patience = 5
-        
-        # Išsaugojimų konfigūracija
-        self.checkpoint_service = CheckpointService(model_id)
-        self.save_checkpoints = True
-        self.checkpoint_interval = 5
-        self.max_checkpoints = 10
-        self.metric_to_monitor = 'val_loss'
-        self.monitor_mode = 'min'
-    
-    def configure_training(self, epochs=50, batch_size=32, validation_split=0.2, early_stopping=True, patience=5):
-        """
-        Konfigūruoja apmokymo parametrus
-        
-        Args:
-            epochs (int): Epochų skaičius
-            batch_size (int): Batch dydis
-            validation_split (float): Validavimo duomenų dalis
-            early_stopping (bool): Ar naudoti ankstyvą sustabdymą
-            patience (int): Kantrybės parametras ankstyvam sustabdymui
-        """
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.validation_split = validation_split
-        self.early_stopping = early_stopping
-        self.patience = patience
-    
-    def configure_checkpointing(self, save_checkpoints=True, checkpoint_interval=5, max_checkpoints=10, 
-                                metric_to_monitor='val_loss', monitor_mode='min'):
-        """
-        Konfigūruoja išsaugojimų parametrus
-        
-        Args:
-            save_checkpoints (bool): Ar išsaugoti tarpinius modelius
-            checkpoint_interval (int): Kas kiek epochų atlikti išsaugojimą
-            max_checkpoints (int): Maksimalus išsaugojimų skaičius
-            metric_to_monitor (str): Metrika, pagal kurią nustatomas geriausias modelis
-            monitor_mode (str): 'min' arba 'max' - ar mažesnė metrika geresnė, ar didesnė
-        """
-        self.save_checkpoints = save_checkpoints
-        self.checkpoint_interval = checkpoint_interval
-        self.max_checkpoints = max_checkpoints
-        self.metric_to_monitor = metric_to_monitor
-        self.monitor_mode = monitor_mode
-        
-        # Atnaujiname išsaugojimų servisą
-        self.checkpoint_service.configure(
-            save_interval=checkpoint_interval,
-            max_checkpoints=max_checkpoints,
-            metric_to_monitor=metric_to_monitor,
-            monitor_mode=monitor_mode
-        )
-    
-    def train(self, X_train, y_train, model_parameters=None):
-        """
-        Apmoko modelį su automatiniu išsaugojimų valdymu
-        
-        Args:
-            X_train: Apmokymo duomenys
-            y_train: Apmokymo etikečių duomenys
-            model_parameters (dict): Modelio parametrai
-            
-        Returns:
-            dict: Apmokymo rezultatai
-        """
+        # Try to import TensorFlow
         try:
-            # Tikriname, ar modelis yra inicializuotas
-            if self.model is None:
-                raise ValueError("Modelis nėra inicializuotas")
+            import tensorflow as tf
+            self.tf = tf
+            self.tensorflow_available = True
+            logger.info("TensorFlow successfully imported for model training")
+        except ImportError:
+            logger.error("TensorFlow not available - model training will not work")
+    
+    def fetch_bitcoin_data(self, days=365):
+        """Fetch Bitcoin data from Binance API for training"""
+        try:
+            import requests
             
-            # Nustatome pradines metrikas
-            history = {
-                'loss': [],
-                'val_loss': [],
-                'accuracy': [],
-                'val_accuracy': []
-            }
+            # Calculate time range
+            end_time = datetime.now()
+            start_time = end_time - timedelta(days=days)
             
-            # Skaidome duomenis į apmokymo ir validavimo
-            if self.validation_split > 0:
-                split_idx = int(len(X_train) * (1 - self.validation_split))
-                X_val = X_train[split_idx:]
-                y_val = y_train[split_idx:]
-                X_train = X_train[:split_idx]
-                y_train = y_train[:split_idx]
+            # Convert to milliseconds
+            start_ms = int(start_time.timestamp() * 1000)
+            end_ms = int(end_time.timestamp() * 1000)
             
-            # Inicializuojame ankstyvo sustabdymo parametrus
-            best_val_loss = float('inf')
-            patience_counter = 0
+            url = "https://api.binance.com/api/v3/klines"
+            all_klines = []
             
-            # Pradedame apmokymo ciklą
-            start_time = time.time()
-            
-            for epoch in range(self.epochs):
-                epoch_start_time = time.time()
+            current_start = start_ms
+            while current_start < end_ms:
+                params = {
+                    'symbol': 'BTCUSDT',
+                    'interval': '15m',  # 15-minute intervals
+                    'startTime': current_start,
+                    'endTime': end_ms,
+                    'limit': 1000
+                }
                 
-                # Apmokymo žingsnis
-                train_loss, train_acc = self._train_epoch(X_train, y_train)
-                
-                # Validavimo žingsnis
-                val_loss, val_acc = self._validate_epoch(X_val, y_val) if self.validation_split > 0 else (None, None)
-                
-                # Įrašome metrikas į istoriją
-                history['loss'].append(train_loss)
-                history['accuracy'].append(train_acc)
-                
-                if val_loss is not None:
-                    history['val_loss'].append(val_loss)
-                    history['val_accuracy'].append(val_acc)
-                
-                # Skaičiuojame epochos laiką
-                epoch_time = time.time() - epoch_start_time
-                
-                # Spausdiname progresą
-                self._print_progress(epoch, self.epochs, train_loss, train_acc, val_loss, val_acc, epoch_time)
-                
-                # Išsaugome tarpinį modelį, jei reikia
-                if self.save_checkpoints and self.checkpoint_service.should_save_checkpoint(epoch):
-                    # Sudarome metrikos žodyną
-                    metrics = {
-                        'loss': float(train_loss),
-                        'accuracy': float(train_acc)
-                    }
+                response = requests.get(url, params=params, timeout=10)
+                if response.status_code != 200:
+                    break
                     
-                    if val_loss is not None:
-                        metrics['val_loss'] = float(val_loss)
-                        metrics['val_accuracy'] = float(val_acc)
+                klines = response.json()
+                if not klines:
+                    break
                     
-                    # Išgauname modelio svorius
-                    weights_data = self._get_model_weights()
-                    
-                    # Išsaugome tarpinį modelį
-                    self.checkpoint_service.save_checkpoint(
-                        epoch=epoch,
-                        metrics=metrics,
-                        parameters=model_parameters or {},
-                        weights_data=weights_data
-                    )
+                all_klines.extend(klines)
+                current_start = int(klines[-1][0]) + 1
                 
-                # Tikriname ankstyvą sustabdymą
-                if self.early_stopping and val_loss is not None:
-                    if val_loss < best_val_loss:
-                        best_val_loss = val_loss
-                        patience_counter = 0
-                    else:
-                        patience_counter += 1
-                    
-                    if patience_counter >= self.patience:
-                        print(f"Ankstyvas sustabdymas po {epoch + 1} epochų")
-                        break
+                # Rate limiting
+                time.sleep(0.1)
             
-            # Apmokymo pabaiga
-            training_time = time.time() - start_time
-            print(f"Apmokymas baigtas per {training_time:.2f} sekundžių")
+            if not all_klines:
+                raise Exception("No data received from Binance API")
             
-            # Išsaugome galutinį modelį
-            final_metrics = {
-                'loss': float(history['loss'][-1]),
-                'accuracy': float(history['accuracy'][-1])
-            }
+            # Convert to DataFrame
+            columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume',
+                      'close_time', 'quote_asset_volume', 'number_of_trades',
+                      'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore']
             
-            if history.get('val_loss'):
-                final_metrics['val_loss'] = float(history['val_loss'][-1])
-                final_metrics['val_accuracy'] = float(history['val_accuracy'][-1])
+            df = pd.DataFrame(all_klines, columns=columns)
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             
-            # Išgauname modelio svorius
-            weights_data = self._get_model_weights()
+            # Convert numeric columns
+            numeric_columns = ['open', 'high', 'low', 'close', 'volume']
+            df[numeric_columns] = df[numeric_columns].astype(float)
             
-            # Išsaugome galutinį modelį
-            final_checkpoint = self.checkpoint_service.save_checkpoint(
-                epoch=len(history['loss']) - 1,
-                metrics=final_metrics,
-                parameters=model_parameters or {},
-                weights_data=weights_data
-            )
+            # Sort by timestamp
+            df = df.sort_values('timestamp').reset_index(drop=True)
             
-            # Grąžiname apmokymo rezultatus
-            return {
-                'history': history,
-                'training_time': training_time,
-                'final_checkpoint_id': final_checkpoint.checkpoint_id if final_checkpoint else None,
-                'best_checkpoint_id': self.checkpoint_service.best_checkpoint_id
-            }
-        
+            logger.info(f"Fetched {len(df)} data points from {df['timestamp'].min()} to {df['timestamp'].max()}")
+            return df
+            
         except Exception as e:
-            print(f"Klaida apmokant modelį: {str(e)}")
+            logger.error(f"Error fetching Bitcoin data: {str(e)}")
+            raise
+    
+    def prepare_data(self, df, sequence_length=24, target_column='close'):
+        """Prepare data for training"""
+        try:
+            # Select features
+            feature_columns = ['open', 'high', 'low', 'close', 'volume']
+            
+            # Normalize data
+            scaler = MinMaxScaler()
+            df_scaled = df.copy()
+            df_scaled[feature_columns] = scaler.fit_transform(df[feature_columns])
+            
+            # Create sequences
+            X, y = [], []
+            for i in range(sequence_length, len(df_scaled)):
+                X.append(df_scaled[feature_columns].iloc[i-sequence_length:i].values)
+                y.append(df_scaled[target_column].iloc[i])
+            
+            X = np.array(X)
+            y = np.array(y)
+            
+            # Split data
+            split_idx = int(len(X) * 0.8)
+            X_train, X_test = X[:split_idx], X[split_idx:]
+            y_train, y_test = y[:split_idx], y[split_idx:]
+            
             return {
-                'error': str(e),
-                'history': history if 'history' in locals() else None
+                'X_train': X_train,
+                'X_test': X_test,
+                'y_train': y_train,
+                'y_test': y_test,
+                'scaler': scaler,
+                'feature_columns': feature_columns
+            }
+            
+        except Exception as e:
+            logger.error(f"Error preparing data: {str(e)}")
+            raise
+    
+    def create_lstm_model(self, input_shape, config):
+        """Create LSTM model"""
+        if not self.tensorflow_available:
+            raise Exception("TensorFlow not available")
+        
+        model = self.tf.keras.Sequential([
+            self.tf.keras.layers.LSTM(config.get('units', 50), 
+                                     return_sequences=True, 
+                                     input_shape=input_shape,
+                                     dropout=config.get('dropout', 0.2)),
+            self.tf.keras.layers.LSTM(config.get('units', 50), 
+                                     return_sequences=True,
+                                     dropout=config.get('dropout', 0.2)),
+            self.tf.keras.layers.LSTM(config.get('units', 50),
+                                     dropout=config.get('dropout', 0.2)),
+            self.tf.keras.layers.Dense(25),
+            self.tf.keras.layers.Dense(1)
+        ])
+        
+        model.compile(
+            optimizer=self.tf.keras.optimizers.Adam(learning_rate=config.get('learning_rate', 0.001)),
+            loss='mean_squared_error',
+            metrics=['mae']
+        )
+        
+        return model
+    
+    def create_gru_model(self, input_shape, config):
+        """Create GRU model"""
+        if not self.tensorflow_available:
+            raise Exception("TensorFlow not available")
+        
+        model = self.tf.keras.Sequential([
+            self.tf.keras.layers.GRU(config.get('units', 50), 
+                                    return_sequences=True, 
+                                    input_shape=input_shape,
+                                    dropout=config.get('dropout', 0.2)),
+            self.tf.keras.layers.GRU(config.get('units', 50), 
+                                    return_sequences=True,
+                                    dropout=config.get('dropout', 0.2)),
+            self.tf.keras.layers.GRU(config.get('units', 50),
+                                    dropout=config.get('dropout', 0.2)),
+            self.tf.keras.layers.Dense(25),
+            self.tf.keras.layers.Dense(1)
+        ])
+        
+        model.compile(
+            optimizer=self.tf.keras.optimizers.Adam(learning_rate=config.get('learning_rate', 0.001)),
+            loss='mean_squared_error',
+            metrics=['mae']
+        )
+        
+        return model
+    
+    def create_cnn_model(self, input_shape, config):
+        """Create CNN model"""
+        if not self.tensorflow_available:
+            raise Exception("TensorFlow not available")
+        
+        model = self.tf.keras.Sequential([
+            self.tf.keras.layers.Conv1D(filters=config.get('filters', 64), 
+                                       kernel_size=config.get('kernel_size', 3),
+                                       activation='relu', 
+                                       input_shape=input_shape),
+            self.tf.keras.layers.Conv1D(filters=config.get('filters', 64), 
+                                       kernel_size=config.get('kernel_size', 3),
+                                       activation='relu'),
+            self.tf.keras.layers.Dropout(config.get('dropout', 0.2)),
+            self.tf.keras.layers.MaxPooling1D(pool_size=2),
+            self.tf.keras.layers.Flatten(),
+            self.tf.keras.layers.Dense(50, activation='relu'),
+            self.tf.keras.layers.Dense(1)
+        ])
+        
+        model.compile(
+            optimizer=self.tf.keras.optimizers.Adam(learning_rate=config.get('learning_rate', 0.001)),
+            loss='mean_squared_error',
+            metrics=['mae']
+        )
+        
+        return model
+    
+    def create_transformer_model(self, input_shape, config):
+        """Create simple Transformer model"""
+        if not self.tensorflow_available:
+            raise Exception("TensorFlow not available")
+        
+        sequence_length, num_features = input_shape
+        d_model = config.get('d_model', 64)
+        
+        inputs = self.tf.keras.layers.Input(shape=input_shape)
+        
+        # Simple multi-head attention
+        attention_output = self.tf.keras.layers.MultiHeadAttention(
+            num_heads=config.get('num_heads', 4),
+            key_dim=d_model // config.get('num_heads', 4)
+        )(inputs, inputs)
+        
+        # Add & Norm
+        attention_output = self.tf.keras.layers.LayerNormalization()(inputs + attention_output)
+        
+        # Feed forward
+        ffn_output = self.tf.keras.layers.Dense(d_model * 2, activation='relu')(attention_output)
+        ffn_output = self.tf.keras.layers.Dense(d_model)(ffn_output)
+        ffn_output = self.tf.keras.layers.Dropout(config.get('dropout', 0.1))(ffn_output)
+        
+        # Add & Norm
+        output = self.tf.keras.layers.LayerNormalization()(attention_output + ffn_output)
+        
+        # Global average pooling and final layers
+        output = self.tf.keras.layers.GlobalAveragePooling1D()(output)
+        output = self.tf.keras.layers.Dense(50, activation='relu')(output)
+        output = self.tf.keras.layers.Dense(1)(output)
+        
+        model = self.tf.keras.Model(inputs=inputs, outputs=output)
+        
+        model.compile(
+            optimizer=self.tf.keras.optimizers.Adam(learning_rate=config.get('learning_rate', 0.001)),
+            loss='mean_squared_error',
+            metrics=['mae']
+        )
+        
+        return model
+    
+    def calculate_metrics(self, y_true, y_pred, scaler, feature_columns):
+        """Calculate model performance metrics"""
+        try:
+            # Inverse transform predictions
+            dummy_true = np.zeros((len(y_true), len(feature_columns)))
+            dummy_pred = np.zeros((len(y_pred), len(feature_columns)))
+            
+            # Assuming 'close' is at index 3 (open, high, low, close, volume)
+            close_idx = 3
+            dummy_true[:, close_idx] = y_true.flatten()
+            dummy_pred[:, close_idx] = y_pred.flatten()
+            
+            y_true_original = scaler.inverse_transform(dummy_true)[:, close_idx]
+            y_pred_original = scaler.inverse_transform(dummy_pred)[:, close_idx]
+            
+            # Calculate metrics
+            mse = mean_squared_error(y_true_original, y_pred_original)
+            rmse = np.sqrt(mse)
+            mae = mean_absolute_error(y_true_original, y_pred_original)
+            r2 = r2_score(y_true_original, y_pred_original)
+            
+            # Calculate MAPE (Mean Absolute Percentage Error)
+            mape = np.mean(np.abs((y_true_original - y_pred_original) / y_true_original)) * 100
+            
+            return {
+                'mse': float(mse),
+                'rmse': float(rmse),
+                'mae': float(mae),
+                'r2': float(r2),
+                'mape': float(mape)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating metrics: {str(e)}")
+            return {
+                'mse': 0.0,
+                'rmse': 0.0,
+                'mae': 0.0,
+                'r2': 0.0,
+                'mape': 0.0
             }
     
-    def _train_epoch(self, X_train, y_train):
-        """
-        Apmoko modelį vieną epochą
+    def start_training(self, model_type, config):
+        """Start training a model"""
+        if not self.tensorflow_available:
+            return {
+                'success': False,
+                'error': 'TensorFlow not available. Please install TensorFlow to train models.'
+            }
         
-        Args:
-            X_train: Apmokymo duomenys
-            y_train: Apmokymo etikečių duomenys
-            
-        Returns:
-            tuple: (loss, accuracy) - apmokymo nuostoliai ir tikslumas
-        """
-        # Čia turėtų būti realus modelio apmokymo kodas
-        # Šis pavyzdys tik imituoja apmokymo procesą
+        job_id = f"{model_type}_{int(datetime.now().timestamp())}"
         
-        # Imituojame apmokymo žingsnį
-        time.sleep(0.1)  # Imituojame apmokymo laiką
+        # Default configuration
+        default_config = {
+            'epochs': 50,
+            'batch_size': 32,
+            'learning_rate': 0.001,
+            'sequence_length': 24,
+            'units': 50,
+            'dropout': 0.2,
+            'filters': 64,
+            'kernel_size': 3,
+            'num_heads': 4,
+            'd_model': 64
+        }
         
-        # Grąžiname apsimestines metrikos (mažėjančius nuostolius, didėjantį tikslumą)
-        epoch_idx = len(self._get_history_value('loss'))
-        base_loss = 1.0 - 0.8 * min(1.0, epoch_idx / 30)
-        loss = base_loss + np.random.normal(0, 0.05)
-        accuracy = 0.5 + 0.4 * min(1.0, epoch_idx / 30) + np.random.normal(0, 0.02)
+        # Merge with user config
+        training_config = {**default_config, **config}
         
-        return max(0.1, loss), min(0.99, max(0.5, accuracy))
-    
-    def _validate_epoch(self, X_val, y_val):
-        """
-        Validuoja modelį po epochos
+        # Initialize job
+        with self.training_lock:
+            self.training_jobs[job_id] = {
+                'model_type': model_type,
+                'status': 'starting',
+                'progress': 0,
+                'current_epoch': 0,
+                'total_epochs': training_config['epochs'],
+                'start_time': datetime.now(),
+                'config': training_config,
+                'error': None,
+                'metrics': {}
+            }
         
-        Args:
-            X_val: Validavimo duomenys
-            y_val: Validavimo etikečių duomenys
-            
-        Returns:
-            tuple: (val_loss, val_accuracy) - validavimo nuostoliai ir tikslumas
-        """
-        # Čia turėtų būti realus modelio validavimo kodas
-        # Šis pavyzdys tik imituoja validavimo procesą
+        # Start training in a separate thread
+        training_thread = threading.Thread(
+            target=self._train_model_thread,
+            args=(job_id, model_type, training_config)
+        )
+        training_thread.daemon = True
+        training_thread.start()
         
-        # Imituojame validavimo žingsnį
-        time.sleep(0.05)  # Imituojame validavimo laiką
-        
-        # Grąžiname apsimestines metrikos (šiek tiek didesnes nei apmokymo)
-        epoch_idx = len(self._get_history_value('loss'))
-        
-        # Apmokymo metrikos
-        train_loss = self._get_history_value('loss')[-1] if self._get_history_value('loss') else 1.0
-        train_acc = self._get_history_value('accuracy')[-1] if self._get_history_value('accuracy') else 0.5
-        
-        # Validavimo metrikos (šiek tiek blogesnės nei apmokymo)
-        val_loss = train_loss * (1.0 + 0.1 * np.random.random())
-        val_accuracy = train_acc * (1.0 - 0.05 * np.random.random())
-        
-        # Imituojame permokymą vėlesnėse epochose
-        if epoch_idx > 20:
-            overfitting_factor = min(1.0, (epoch_idx - 20) / 10) * 0.2
-            val_loss = train_loss * (1.0 + 0.1 * np.random.random() + overfitting_factor)
-            val_accuracy = train_acc * (1.0 - 0.05 * np.random.random() - overfitting_factor / 2)
-        
-        return max(0.1, val_loss), min(0.99, max(0.5, val_accuracy))
-    
-    def _get_history_value(self, key):
-        """
-        Grąžina metrikos istoriją pagal raktą
-        
-        Args:
-            key (str): Metrikos raktas
-            
-        Returns:
-            list: Metrikos istorija
-        """
-        # Ši funkcija yra pagalbinė apmokymo ir validavimo funkcijoms
-        # Realiame kode ši istorija būtų saugoma modelio objekte
-        
-        # Grąžiname tuščią sąrašą, jei istorija dar nesukurta
-        if not hasattr(self, '_history'):
-            self._history = {'loss': [], 'accuracy': [], 'val_loss': [], 'val_accuracy': []}
-        
-        return self._history.get(key, [])
-    
-    def _get_model_weights(self):
-        """
-        Išgauna modelio svorius
-        
-        Returns:
-            dict: Modelio svorių žodynas
-        """
-        # Čia turėtų būti realus svorių išgavimo kodas
-        # Šis pavyzdys tik grąžina apsimestinius svorius
-        
-        # Imituojame modelio svorių gavimą
-        # Realiame kode būtų naudojama model.get_weights() arba panašus metodas
-        
-        # Grąžiname apsimestinius svorius kaip numpy masyvus
         return {
-            'layer1': np.random.rand(10, 10),
-            'layer2': np.random.rand(10, 1)
+            'success': True,
+            'job_id': job_id,
+            'message': f'Training started for {model_type} model'
         }
     
-    def _print_progress(self, epoch, total_epochs, loss, accuracy, val_loss, val_acc, epoch_time):
-        """
-        Spausdina apmokymo progresą
-        
-        Args:
-            epoch (int): Dabartinė epocha
-            total_epochs (int): Bendras epochų skaičius
-            loss (float): Apmokymo nuostoliai
-            accuracy (float): Apmokymo tikslumas
-            val_loss (float): Validavimo nuostoliai
-            val_acc (float): Validavimo tikslumas
-            epoch_time (float): Epochos trukmė sekundėmis
-        """
-        # Formuojame progreso pranešimą
-        progress_str = f"Epocha {epoch + 1}/{total_epochs} - {epoch_time:.2f}s - loss: {loss:.4f} - accuracy: {accuracy:.4f}"
-        
-        if val_loss is not None:
-            progress_str += f" - val_loss: {val_loss:.4f} - val_accuracy: {val_acc:.4f}"
-        
-        print(progress_str)
-    
-    def load_best_model(self):
-        """
-        Užkrauna geriausią modelį iš išsaugojimų
-        
-        Returns:
-            tuple: (model, checkpoint) - modelio objektas ir išsaugojimo objektas
-        """
+    def _train_model_thread(self, job_id, model_type, config):
+        """Training thread function"""
         try:
-            # Užkrauname geriausią išsaugojimą
-            best_checkpoint = self.checkpoint_service.load_best_checkpoint()
+            logger.info(f"Starting training for {model_type} (job {job_id})")
             
-            if best_checkpoint is None:
-                print("Nerastas geriausias išsaugojimas")
-                return None, None
+            # Update status
+            with self.training_lock:
+                self.training_jobs[job_id]['status'] = 'fetching_data'
+                self.training_jobs[job_id]['progress'] = 5
             
-            # Užkrauname modelio svorius
-            weights_data = best_checkpoint.load_weights()
+            # Fetch data
+            df = self.fetch_bitcoin_data(days=365)
             
-            if weights_data is None:
-                print(f"Nerasti modelio svoriai išsaugojimui {best_checkpoint.checkpoint_id}")
-                return None, best_checkpoint
+            # Update status
+            with self.training_lock:
+                self.training_jobs[job_id]['status'] = 'preparing_data'
+                self.training_jobs[job_id]['progress'] = 15
             
-            # Nustatome modelio svorius
-            self._set_model_weights(weights_data)
+            # Prepare data
+            data = self.prepare_data(df, sequence_length=config['sequence_length'])
             
-            return self.model, best_checkpoint
-        
+            # Update status
+            with self.training_lock:
+                self.training_jobs[job_id]['status'] = 'creating_model'
+                self.training_jobs[job_id]['progress'] = 25
+            
+            # Create model
+            input_shape = (config['sequence_length'], len(data['feature_columns']))
+            
+            if model_type.lower() == 'lstm':
+                model = self.create_lstm_model(input_shape, config)
+            elif model_type.lower() == 'gru':
+                model = self.create_gru_model(input_shape, config)
+            elif model_type.lower() == 'cnn':
+                model = self.create_cnn_model(input_shape, config)
+            elif model_type.lower() == 'transformer':
+                model = self.create_transformer_model(input_shape, config)
+            else:
+                raise Exception(f"Unknown model type: {model_type}")
+            
+            # Update status
+            with self.training_lock:
+                self.training_jobs[job_id]['status'] = 'training'
+                self.training_jobs[job_id]['progress'] = 30
+            
+            # Create custom callback to update progress
+            class ProgressCallback(self.tf.keras.callbacks.Callback):
+                def __init__(self, job_id, training_service, total_epochs):
+                    self.job_id = job_id
+                    self.training_service = training_service
+                    self.total_epochs = total_epochs
+                
+                def on_epoch_end(self, epoch, logs=None):
+                    progress = 30 + int((epoch + 1) / self.total_epochs * 60)  # 30-90%
+                    with self.training_service.training_lock:
+                        if self.job_id in self.training_service.training_jobs:
+                            self.training_service.training_jobs[self.job_id]['current_epoch'] = epoch + 1
+                            self.training_service.training_jobs[self.job_id]['progress'] = progress
+                            self.training_service.training_jobs[self.job_id]['training_loss'] = logs.get('loss', 0)
+                            self.training_service.training_jobs[self.job_id]['validation_loss'] = logs.get('val_loss', 0)
+            
+            progress_callback = ProgressCallback(job_id, self, config['epochs'])
+            
+            # Train model
+            history = model.fit(
+                data['X_train'], data['y_train'],
+                epochs=config['epochs'],
+                batch_size=config['batch_size'],
+                validation_data=(data['X_test'], data['y_test']),
+                callbacks=[progress_callback],
+                verbose=0
+            )
+            
+            # Update status
+            with self.training_lock:
+                self.training_jobs[job_id]['status'] = 'evaluating'
+                self.training_jobs[job_id]['progress'] = 90
+            
+            # Evaluate model
+            y_pred = model.predict(data['X_test'])
+            metrics = self.calculate_metrics(
+                data['y_test'], y_pred, 
+                data['scaler'], data['feature_columns']
+            )
+            
+            # Save model
+            model_path = os.path.join(self.models_dir, f'{model_type.lower()}_model.h5')
+            model.save(model_path)
+            
+            # Save scaler
+            scaler_path = os.path.join(self.models_dir, f'{model_type.lower()}_scaler.pkl')
+            with open(scaler_path, 'wb') as f:
+                pickle.dump(data['scaler'], f)
+            
+            # Save model info
+            model_info = {
+                'model_type': model_type,
+                'timestamp': datetime.now().isoformat(),
+                'config': config,
+                'metrics': metrics,
+                'training_history': {
+                    'loss': history.history['loss'][-10:],  # Last 10 epochs
+                    'val_loss': history.history['val_loss'][-10:] if 'val_loss' in history.history else []
+                }
+            }
+            
+            info_path = os.path.join(self.models_dir, f'{model_type.lower()}_model_info.json')
+            with open(info_path, 'w') as f:
+                json.dump(model_info, f, indent=2)
+            
+            # Save to database if available
+            try:
+                from app.app import db, ModelHistory
+                with db.session.begin():
+                    # Deactivate other models of same type
+                    ModelHistory.query.filter_by(model_type=model_type).update({'is_active': False})
+                    
+                    # Create new model record
+                    new_model = ModelHistory(
+                        model_type=model_type,
+                        r2=metrics['r2'],
+                        mae=metrics['mae'],
+                        rmse=metrics['rmse'],
+                        training_loss=history.history['loss'][-1],
+                        validation_loss=history.history['val_loss'][-1] if 'val_loss' in history.history else None,
+                        epochs=config['epochs'],
+                        is_active=True,
+                        model_params=json.dumps(config),
+                        timestamp=datetime.now()
+                    )
+                    
+                    db.session.add(new_model)
+                    db.session.commit()
+                    
+                logger.info(f"Saved {model_type} model to database")
+            except Exception as e:
+                logger.warning(f"Could not save to database: {str(e)}")
+            
+            # Update status - completed
+            with self.training_lock:
+                self.training_jobs[job_id]['status'] = 'completed'
+                self.training_jobs[job_id]['progress'] = 100
+                self.training_jobs[job_id]['metrics'] = metrics
+                self.training_jobs[job_id]['end_time'] = datetime.now()
+            
+            logger.info(f"Training completed for {model_type} (job {job_id})")
+            logger.info(f"Final metrics: R²={metrics['r2']:.4f}, RMSE={metrics['rmse']:.2f}, MAE={metrics['mae']:.2f}")
+            
         except Exception as e:
-            print(f"Klaida užkraunant geriausią modelį: {str(e)}")
-            return None, None
+            error_msg = str(e)
+            logger.error(f"Training failed for {model_type} (job {job_id}): {error_msg}")
+            logger.error(traceback.format_exc())
+            
+            # Update status - failed
+            with self.training_lock:
+                self.training_jobs[job_id]['status'] = 'failed'
+                self.training_jobs[job_id]['error'] = error_msg
+                self.training_jobs[job_id]['end_time'] = datetime.now()
     
-    def _set_model_weights(self, weights_data):
-        """
-        Nustato modelio svorius
-        
-        Args:
-            weights_data (dict): Modelio svorių žodynas
-        """
-        # Čia turėtų būti realus svorių nustatymo kodas
-        # Šis pavyzdys tik imituoja svorių nustatymą
-        
-        # Imituojame modelio svorių nustatymą
-        # Realiame kode būtų naudojama model.set_weights() arba panašus metodas
-        print(f"Nustatyti modelio svoriai su {len(weights_data)} sluoksniais")
-        
-        # Išspausdiname kiekvieno sluoksnio formą
-        for layer_name, weights in weights_data.items():
-            print(f"  {layer_name}: {weights.shape}")
+    def get_training_status(self, job_id):
+        """Get training status for a specific job"""
+        with self.training_lock:
+            return self.training_jobs.get(job_id, {})
+    
+    def get_all_training_jobs(self):
+        """Get all training jobs"""
+        with self.training_lock:
+            return dict(self.training_jobs)
+    
+    def stop_training(self, job_id):
+        """Stop a training job"""
+        with self.training_lock:
+            if job_id in self.training_jobs:
+                self.training_jobs[job_id]['status'] = 'stopped'
+                self.training_jobs[job_id]['end_time'] = datetime.now()
+                return True
+        return False
+
+# Global training service instance
+training_service = ModelTrainingService()

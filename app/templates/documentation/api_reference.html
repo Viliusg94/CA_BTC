@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}API Reference{% endblock %}
+
+{% block styles %}
+<style>
+    .endpoint-card {
+        margin-bottom: 2rem;
+        border-left: 4px solid var(--accent-blue);
+    }
+    
+    .endpoint-card .card-header {
+        background-color: var(--bg-secondary);
+    }
+    
+    .endpoint-url {
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .http-method {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-weight: bold;
+        margin-right: 0.5rem;
+        min-width: 60px;
+        text-align: center;
+    }
+    
+    .http-get {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .http-post {
+        background-color: #2ecc71;
+        color: white;
+    }
+    
+    .http-put {
+        background-color: #f39c12;
+        color: white;
+    }
+    
+    .http-delete {
+        background-color: #e74c3c;
+        color: white;
+    }
+    
+    .param-table {
+        font-size: 0.9rem;
+    }
+    
+    .param-required {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+    
+    .param-optional {
+        color: #95a5a6;
+        font-style: italic;
+    }
+    
+    .response-code {
+        display: inline-block;
+        padding: 0.15rem 0.4rem;
+        border-radius: 0.25rem;
+        font-weight: bold;
+        min-width: 40px;
+        text-align: center;
+        margin-right: 0.5rem;
+    }
+    
+    .code-200 {
+        background-color: #2ecc71;
+        color: white;
+    }
+    
+    .code-400 {
+        background-color: #f39c12;
+        color: white;
+    }
+    
+    .code-404 {
+        background-color: #95a5a6;
+        color: white;
+    }
+    
+    .code-500 {
+        background-color: #e74c3c;
+        color: white;
+    }
+    
+    .json-viewer {
+        background-color: #1a1a1a;
+        color: #f8f8f2;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .json-key {
+        color: #f92672;
+    }
+    
+    .json-string {
+        color: #a6e22e;
+    }
+    
+    .json-number {
+        color: #ae81ff;
+    }
+    
+    .json-boolean {
+        color: #66d9ef;
+    }
+    
+    .json-null {
+        color: #fd971f;
+    }
+    
+    #endpoint-search {
+        border-radius: 20px;
+        padding-left: 2.5rem;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 1.75rem;
+        top: 0.75rem;
+        color: #95a5a6;
+    }
+    
+    .category-header {
+        margin-top: 2rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .category-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-right: 0.5rem;
+        background-color: var(--bg-tertiary);
+        color: var(--text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="text-center my-4">
+        <i class="fas fa-book-open text-info"></i> API Reference
+    </h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="position-relative">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="endpoint-search" class="form-control" 
+                       placeholder="Search for endpoints (e.g. 'model', 'predict', 'GET')">
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-2">
+            <div class="sticky-top" style="top: 2rem;">
+                <div class="list-group mb-4">
+                    <a href="/docs" class="list-group-item list-group-item-action">
+                        <i class="fas fa-arrow-left"></i> Back to Documentation
+                    </a>
+                    <a href="#core" class="list-group-item list-group-item-action">Core API</a>
+                    <a href="#models" class="list-group-item list-group-item-action">Models API</a>
+                    <a href="#predictions" class="list-group-item list-group-item-action">Predictions API</a>
+                    <a href="#history" class="list-group-item list-group-item-action">History API</a>
+                    <a href="#metrics" class="list-group-item list-group-item-action">Metrics API</a>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">HTTP Methods</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><span class="http-method http-get">GET</span> Retrieve data</p>
+                        <p><span class="http-method http-post">POST</span> Create data</p>
+                        <p><span class="http-method http-put">PUT</span> Update data</p>
+                        <p><span class="http-method http-delete">DELETE</span> Delete data</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Response Codes</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><span class="response-code code-200">200</span> Success</p>
+                        <p><span class="response-code code-400">400</span> Bad request</p>
+                        <p><span class="response-code code-404">404</span> Not found</p>
+                        <p><span class="response-code code-500">500</span> Server error</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-10">
+            <div id="endpoints-container">
+                <!-- Endpoints will be loaded via JavaScript -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading API endpoints...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    fetchEndpoints();
+    
+    // Search functionality
+    document.getElementById('endpoint-search').addEventListener('input', filterEndpoints);
+});
+
+function fetchEndpoints() {
+    fetch('/docs/endpoints')
+        .then(response => response.json())
+        .then(endpoints => {
+            renderEndpoints(endpoints);
+        })
+        .catch(error => {
+            console.error('Error fetching endpoints:', error);
+            document.getElementById('endpoints-container').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Failed to load API endpoints: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function renderEndpoints(endpoints) {
+    // Group endpoints by category
+    const categories = {
+        'core': {
+            title: 'Core API',
+            endpoints: {}
+        },
+        'models': {
+            title: 'Models API',
+            endpoints: {}
+        },
+        'predictions': {
+            title: 'Predictions API',
+            endpoints: {}
+        },
+        'history': {
+            title: 'History API',
+            endpoints: {}
+        },
+        'metrics': {
+            title: 'Metrics API',
+            endpoints: {}
+        }
+    };
+    
+    // Categorize endpoints
+    for (const [path, data] of Object.entries(endpoints)) {
+        if (path.includes('/api/model/')) {
+            categories.models.endpoints[path] = data;
+        } else if (path.includes('/api/prediction') || path.includes('/api/predict')) {
+            categories.predictions.endpoints[path] = data;
+        } else if (path.includes('/api/model_history') || path.includes('/api/delete_model_history') || path.includes('/api/use_model')) {
+            categories.history.endpoints[path] = data;
+        } else if (path.includes('/api/metrics')) {
+            categories.metrics.endpoints[path] = data;
+        } else {
+            categories.core.endpoints[path] = data;
+        }
+    }
+    
+    // Generate HTML for endpoints
+    let html = '';
+    
+    for (const [categoryId, category] of Object.entries(categories)) {
+        const endpoints = category.endpoints;
+        if (Object.keys(endpoints).length === 0) continue;
+        
+        html += `<h2 id="${categoryId}" class="category-header">
+                    <span class="category-badge">${Object.keys(endpoints).length}</span>
+                    ${category.title}
+                </h2>`;
+                
+        for (const [path, data] of Object.entries(endpoints)) {
+            html += renderEndpoint(path, data);
+        }
+    }
+    
+    document.getElementById('endpoints-container').innerHTML = html;
+    
+    // Initialize collapsible sections
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const target = document.querySelector(this.getAttribute('data-bs-target'));
+            if (target) {
+                target.classList.toggle('show');
+            }
+        });
+    });
+}
+
+function renderEndpoint(path, data) {
+    // Generate HTTP method badges
+    const methodBadges = (data.methods || ['GET']).map(method => {
+        return `<span class="http-method http-${method.toLowerCase()}">${method}</span>`;
+    }).join('');
+    
+    // Generate parameters table
+    let paramsTable = '';
+    if (data.parameters && data.parameters.length > 0) {
+        paramsTable = `
+            <h5 class="mt-4">Parameters</h5>
+            <div class="table-responsive">
+                <table class="table table-sm param-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Required</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.parameters.map(param => `
+                            <tr>
+                                <td>${param.name}</td>
+                                <td><code>${param.type}</code></td>
+                                <td>${param.required ? 
+                                    '<span class="param-required">Yes</span>' : 
+                                    '<span class="param-optional">No</span>'}
+                                </td>
+                                <td>${param.description || ''}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+    
+    // Generate responses section
+    let responsesSection = '';
+    if (data.responses) {
+        responsesSection = `
+            <h5 class="mt-4">Responses</h5>
+            <div>
+                ${Object.entries(data.responses).map(([code, response]) => `
+                    <div class="mb-3">
+                        <div>
+                            <span class="response-code code-${code}">${code}</span>
+                            ${response.description || ''}
+                        </div>
+                        ${response.schema ? `
+                            <div class="mt-2">
+                                <small class="text-muted">Schema:</small>
+                                <div class="json-viewer mt-1">${formatJsonSchema(response.schema)}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    // Generate example section
+    let exampleSection = '';
+    if (data.example) {
+        exampleSection = `
+            <h5 class="mt-4">Example</h5>
+            <div>
+                ${data.example.request ? `
+                    <div class="mb-3">
+                        <small class="text-muted">Request:</small>
+                        <div class="json-viewer mt-1">${formatJsonSchema(data.example.request)}</div>
+                    </div>
+                ` : ''}
+                ${data.example.response ? `
+                    <div>
+                        <small class="text-muted">Response:</small>
+                        <div class="json-viewer mt-1">${formatJsonSchema(data.example.response)}</div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+    
+    // Create the endpoint card
+    return `
+        <div class="card endpoint-card mb-4" data-endpoint="${path}">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div>
+                    ${methodBadges}
+                    <span class="endpoint-url">${path}</span>
+                </div>
+                <button class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#details-${path.replace(/\//g, '-').slice(1)}">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <p>${data.description || 'No description available.'}</p>
+                
+                <div class="collapse" id="details-${path.replace(/\//g, '-').slice(1)}">
+                    ${paramsTable}
+                    ${responsesSection}
+                    ${exampleSection}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function formatJsonSchema(obj) {
+    if (typeof obj === 'string') {
+        return `<span class="json-string">"${obj}"</span>`;
+    } else if (typeof obj === 'number') {
+        return `<span class="json-number">${obj}</span>`;
+    } else if (typeof obj === 'boolean') {
+        return `<span class="json-boolean">${obj}</span>`;
+    } else if (obj === null) {
+        return `<span class="json-null">null</span>`;
+    } else if (Array.isArray(obj)) {
+        if (obj.length === 0) return '[]';
+        return `[
+            ${obj.map(item => formatJsonSchema(item)).join(',<br>')}
+        ]`;
+    } else if (typeof obj === 'object') {
+        const entries = Object.entries(obj);
+        if (entries.length === 0) return '{}';
+        return `{
+            ${entries.map(([key, value]) => `
+                <span class="json-key">"${key}"</span>: ${formatJsonSchema(value)}
+            `).join(',<br>')}
+        }`;
+    }
+    return String(obj);
+}
+
+function filterEndpoints() {
+    const searchTerm = document.getElementById('endpoint-search').value.toLowerCase();
+    const endpointCards = document.querySelectorAll('.endpoint-card');
+    
+    let visibleCount = 0;
+    
+    endpointCards.forEach(card => {
+        const endpoint = card.dataset.endpoint.toLowerCase();
+        const methods = Array.from(card.querySelectorAll('.http-method')).map(el => el.textContent.toLowerCase());
+        const description = card.querySelector('.card-body p').textContent.toLowerCase();
+        
+        if (endpoint.includes(searchTerm) || 
+            methods.some(method => method.includes(searchTerm)) ||
+            description.includes(searchTerm)) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Update category visibility and counts
+    document.querySelectorAll('.category-header').forEach(header => {
+        const categoryId = header.id;
+        const categorySection = Array.from(document.querySelectorAll(`.endpoint-card[data-endpoint*="/${categoryId}"]`));
+        const visibleInCategory = categorySection.filter(card => card.style.display !== 'none').length;
+        
+        if (visibleInCategory === 0) {
+            header.style.display = 'none';
+        } else {
+            header.style.display = '';
+            const badge = header.querySelector('.category-badge');
+            if (badge) {
+                badge.textContent = visibleInCategory;
+            }
+        }
+    });
+    
+    if (visibleCount === 0) {
+        document.getElementById('endpoints-container').innerHTML += `
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle me-2"></i>
+                No endpoints match your search criteria.
+            </div>
+        `;
+    }
+}
+</script>
+{% endblock %}

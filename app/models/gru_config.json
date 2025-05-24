@@ -1,8 +1,8 @@
 {
-    "epochs": 10,
+    "epochs": 50,
     "batch_size": 32,
-    "learning_rate": 0.001,
-    "lookback": 30,
+    "learning_rate": 0.00101,
+    "lookback": 24,
     "dropout": 0.2,
     "validation_split": 0.2,
     "recurrent_dropout": 0.2,

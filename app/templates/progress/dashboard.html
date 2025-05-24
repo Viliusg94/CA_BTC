@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracking Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block title %}Progress Dashboard{% endblock %}
+
+    {% block content %}
+    <div class="container-fluid mt-4">
+        <h1 class="mb-4 text-center">
+            <i class="fas fa-tasks"></i> Progress Dashboard
+        </h1>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-running"></i> Active Tasks
+                        </h5>
+                        <button id="refresh-btn" class="btn btn-sm btn-light">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="active-tasks-container">
+                            {% if tasks %}
+                                {% for task_id, task in tasks.items() %}
+                                    <div class="task-card mb-3" id="task-{{ task_id }}">
+                                        <div class="card">
+                                            <div class="card-header d-flex justify-content-between align-items-center
+                                                {% if task.status == 'running' %}bg-success text-white
+                                                {% elif task.status == 'paused' %}bg-warning
+                                                {% elif task.status == 'error' %}bg-danger text-white
+                                                {% elif task.status == 'completed' %}bg-info text-white
+                                                {% else %}bg-secondary text-white{% endif %}">
+                                                <h6 class="mb-0">
+                                                    {% if task.status == 'running' %}
+                                                        <i class="fas fa-play"></i>
+                                                    {% elif task.status == 'paused' %}
+                                                        <i class="fas fa-pause"></i>
+                                                    {% elif task.status == 'error' %}
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                    {% elif task.status == 'completed' %}
+                                                        <i class="fas fa-check"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-question"></i>
+                                                    {% endif %}
+                                                    {{ task.task_type|capitalize }}: {{ task_id }}
+                                                </h6>
+                                                <span class="badge bg-light text-dark">
+                                                    {{ task.status|capitalize }}
+                                                </span>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row mb-2">
+                                                    <div class="col">
+                                                        <div class="progress" style="height: 20px;">
+                                                            <div class="progress-bar 
+                                                                {% if task.status == 'running' %}bg-success progress-bar-striped progress-bar-animated
+                                                                {% elif task.status == 'paused' %}bg-warning
+                                                                {% elif task.status == 'error' %}bg-danger
+                                                                {% elif task.status == 'completed' %}bg-info
+                                                                {% else %}bg-secondary{% endif %}"
+                                                                role="progressbar" 
+                                                                style="width: {{ task.progress }}%"
+                                                                aria-valuenow="{{ task.progress }}" 
+                                                                aria-valuemin="0" 
+                                                                aria-valuemax="100">
+                                                                {{ task.progress }}%
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <p class="mb-1">{{ task.message }}</p>
+                                                        <small class="text-muted">
+                                                            Started: {{ task.start_time_formatted }}
+                                                        </small>
+                                                    </div>
+                                                    <div class="col-md-4 text-end">
+                                                        <a href="{{ url_for('progress.task_details', task_id=task_id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-info-circle"></i> Details
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> No active tasks at the moment.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle"></i> Error Summary
+                        </h5>
+                        <a href="{{ url_for('progress.error_dashboard') }}" class="btn btn-sm btn-light">
+                            <i class="fas fa-search"></i> View All
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if error_summary and error_summary.total_errors > 0 %}
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="alert alert-danger mb-0">
+                                        <h5 class="alert-heading">{{ error_summary.total_errors }}</h5>
+                                        <p class="mb-0">Total Errors</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        {% for error_type, count in error_summary.error_types.items() %}
+                                            <div class="col-6 col-md-4 mb-2">
+                                                <div class="border rounded p-2 text-center">
+                                                    <h6>{{ error_type|capitalize }}</h6>
+                                                    <span class="badge bg-danger">{{ count }}</span>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="mt-4 mb-3">Recent Errors</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Message</th>
+                                            <th>Time</th>
+                                            <th>Source</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for error in error_summary.recent_errors %}
+                                            <tr>
+                                                <td>{{ error.error_type }}</td>
+                                                <td>{{ error.message }}</td>
+                                                <td>{{ error.timestamp_formatted }}</td>
+                                                <td>{{ error.source }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> No errors have been recorded.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block scripts %}
+    <script src="{{ url_for('static', filename='js/progress-tracker.js') }}"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up progress tracker
+        const progressTracker = window.progressTracker;
+        
+        // Configure the tracker
+        progressTracker.options.onUpdate = function(taskId, taskData, previousData) {
+            updateTaskCard(taskId, taskData);
+        };
+        
+        // Track all active tasks
+        {% for task_id, task in tasks.items() %}
+            progressTracker.trackTask('{{ task_id }}');
+        {% endfor %}
+        
+        // Refresh button
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            location.reload();
+        });
+        
+        // Initialize tracker
+        progressTracker.init();
+    });
+
+    // Function to update task card with new data
+    function updateTaskCard(taskId, taskData) {
+        const taskCard = document.getElementById(`task-${taskId}`);
+        if (!taskCard) return;
+        
+        // Update progress bar
+        const progressBar = taskCard.querySelector('.progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${taskData.progress}%`;
+            progressBar.textContent = `${taskData.progress}%`;
+            progressBar.setAttribute('aria-valuenow', taskData.progress);
+        }
+        
+        // Update message
+        const messageElement = taskCard.querySelector('p');
+        if (messageElement && taskData.message) {
+            messageElement.textContent = taskData.message;
+        }
+        
+        // Update status badge
+        const badge = taskCard.querySelector('.badge');
+        if (badge) {
+            badge.textContent = taskData.status.charAt(0).toUpperCase() + taskData.status.slice(1);
+        }
+        
+        // Update card header status class
+        const cardHeader = taskCard.querySelector('.card-header');
+        if (cardHeader) {
+            // Remove all status classes
+            cardHeader.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'bg-info', 'bg-secondary');
+            cardHeader.classList.remove('text-white');
+            
+            // Add appropriate status class
+            if (taskData.status === 'running') {
+                cardHeader.classList.add('bg-success', 'text-white');
+            } else if (taskData.status === 'paused') {
+                cardHeader.classList.add('bg-warning');
+            } else if (taskData.status === 'error') {
+                cardHeader.classList.add('bg-danger', 'text-white');
+            } else if (taskData.status === 'completed') {
+                cardHeader.classList.add('bg-info', 'text-white');
+            } else {
+                cardHeader.classList.add('bg-secondary', 'text-white');
+            }
+        }
+        
+        // Update progress bar class
+        if (progressBar) {
+            // Remove all status classes
+            progressBar.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'bg-info', 'bg-secondary');
+            progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+            
+            // Add appropriate status class
+            if (taskData.status === 'running') {
+                progressBar.classList.add('bg-success', 'progress-bar-striped', 'progress-bar-animated');
+            } else if (taskData.status === 'paused') {
+                progressBar.classList.add('bg-warning');
+            } else if (taskData.status === 'error') {
+                progressBar.classList.add('bg-danger');
+            } else if (taskData.status === 'completed') {
+                progressBar.classList.add('bg-info');
+            } else {
+                progressBar.classList.add('bg-secondary');
+            }
+        }
+    }
+    </script>
+    {% endblock %}
+</body>
+</html>

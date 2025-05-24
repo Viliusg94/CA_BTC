@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center my-5">
+        <i class="fas fa-book text-info"></i> API Documentation
+    </h1>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group mb-4">
+                <a href="#introduction" class="list-group-item list-group-item-action">Introduction</a>
+                <a href="#getting-started" class="list-group-item list-group-item-action">Getting Started</a>
+                <a href="#authentication" class="list-group-item list-group-item-action">Authentication</a>
+                <a href="#api-reference" class="list-group-item list-group-item-action">API Reference</a>
+                <a href="#models" class="list-group-item list-group-item-action">Models API</a>
+                <a href="#predictions" class="list-group-item list-group-item-action">Predictions API</a>
+                <a href="#history" class="list-group-item list-group-item-action">History API</a>
+                <a href="#metrics" class="list-group-item list-group-item-action">Metrics API</a>
+                <a href="/docs/api-reference" class="list-group-item list-group-item-action bg-primary text-white">Full API Reference</a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h2 id="introduction" class="mb-0"><i class="fas fa-info-circle"></i> Introduction</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead">
+                        Welcome to the Bitcoin Price Prediction API Documentation. This API allows you to train, manage, and use machine learning models for Bitcoin price predictions.
+                    </p>
+                    <p>
+                        With this API, you can:
+                    </p>
+                    <ul>
+                        <li>Train various ML models (LSTM, GRU, CNN, Transformer)</li>
+                        <li>Generate price predictions for different time horizons</li>
+                        <li>Access historical price data</li>
+                        <li>Compare model performance metrics</li>
+                        <li>Manage model training history</li>
+                    </ul>
+                    
+                    <!-- Add this new section with documentation options -->
+                    <div class="mt-4 d-flex justify-content-center">
+                        <a href="/docs/api-reference" class="btn btn-primary mx-2">
+                            <i class="fas fa-book"></i> API Reference
+                        </a>
+                        <a href="/docs/swagger" class="btn btn-success mx-2">
+                            <i class="fas fa-code"></i> Interactive Swagger UI
+                        </a>
+                        <a href="/static/openapi.json" class="btn btn-info mx-2" target="_blank">
+                            <i class="fas fa-file-code"></i> OpenAPI Spec
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h2 id="getting-started" class="mb-0"><i class="fas fa-rocket"></i> Getting Started</h2>
+                </div>
+                <div class="card-body">
+                    <h4>Base URL</h4>
+                    <div class="bg-dark text-light p-3 rounded mb-4">
+                        <code>http://localhost:5000</code>
+                    </div>
+                    
+                    <h4>Making a Request</h4>
+                    <p>To make an API request, send an HTTP request to the appropriate endpoint with any required parameters.</p>
+                    <p>Example request using curl:</p>
+                    <div class="bg-dark text-light p-3 rounded">
+                        <code>curl http://localhost:5000/api/health</code>
+                    </div>
+                    
+                    <h4 class="mt-4">Response Format</h4>
+                    <p>All API responses are returned in JSON format. A typical successful response looks like:</p>
+                    <div class="bg-dark text-light p-3 rounded">
+<pre><code>{
+    "success": true,
+    // response data here
+}</code></pre>
+                    </div>
+                    
+                    <h4 class="mt-4">Error Handling</h4>
+                    <p>When an error occurs, the API will return an appropriate HTTP status code along with a JSON error message:</p>
+                    <div class="bg-dark text-light p-3 rounded">
+<pre><code>{
+    "success": false,
+    "error": "Error message details"
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h2 id="authentication" class="mb-0"><i class="fas fa-lock"></i> Authentication</h2>
+                </div>
+                <div class="card-body">
+                    <p>Currently, the API does not require authentication for local development use.</p>
+                    <p>For production environments, we recommend implementing an authentication mechanism such as API keys or OAuth.</p>
+                </div>
+            </div>
+            
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h2 id="api-reference" class="mb-0"><i class="fas fa-book-open"></i> API Reference</h2>
+                </div>
+                <div class="card-body">
+                    <p>The API is organized into the following categories:</p>
+                    
+                    <h4 class="mt-3" id="models">Models API</h4>
+                    <p>Endpoints for training and managing machine learning models.</p>
+                    <ul>
+                        <li><code>POST /api/model/train</code> - Train a new model</li>
+                        <li><code>GET /api/model/status</code> - Get model training status</li>
+                        <li><code>GET /api/model/config</code> - Get model configuration</li>
+                        <li><code>POST /api/model/config</code> - Update model configuration</li>
+                    </ul>
+                    
+                    <h4 class="mt-3" id="predictions">Predictions API</h4>
+                    <p>Endpoints for generating and managing predictions.</p>
+                    <ul>
+                        <li><code>GET /api/predict</code> - Generate price predictions</li>
+                        <li><code>GET /api/prediction_history</code> - Get prediction history</li>
+                        <li><code>POST /api/save_prediction</code> - Save a new prediction</li>
+                        <li><code>PUT /api/update_prediction/{id}</code> - Update prediction with actual price</li>
+                        <li><code>GET /api/prediction_accuracy</code> - Get prediction accuracy metrics</li>
+                    </ul>
+                    
+                    <h4 class="mt-3" id="history">History API</h4>
+                    <p>Endpoints for accessing model history and training records.</p>
+                    <ul>
+                        <li><code>GET /api/model_history_db</code> - Get all model history</li>
+                        <li><code>GET /api/model/history_config</code> - Get model instance configuration</li>
+                        <li><code>DELETE /api/delete_model_history/{model_type}/{id}</code> - Delete model history record</li>
+                        <li><code>POST /api/use_model/{model_type}/{id}</code> - Activate a model instance</li>
+                    </ul>
+                    
+                    <h4 class="mt-3" id="metrics">Metrics API</h4>
+                    <p>Endpoints for accessing and comparing model metrics.</p>
+                    <ul>
+                        <li><code>GET /api/metrics/compare</code> - Compare metrics between models</li>
+                        <li><code>GET /api/metrics/history</code> - Get historical metrics for a model type</li>
+                        <li><code>GET /api/metrics/best</code> - Get the best performing model</li>
+                    </ul>
+                    
+                    <div class="mt-4">
+                        <a href="/docs/api-reference" class="btn btn-primary">
+                            <i class="fas fa-book"></i> View Full API Reference
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
